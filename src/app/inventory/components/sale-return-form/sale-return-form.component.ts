@@ -54,7 +54,7 @@ export class SaleReturnFormComponent implements OnInit {
           return of([]);
         }
         this.isSearching = true;
-        return this.returnsService.searchSales(query, this.inventoryService);
+        return this.returnsService.searchSales(query);
       }),
       finalize(() => this.isSearching = false)
     ).subscribe(results => {
@@ -67,7 +67,10 @@ export class SaleReturnFormComponent implements OnInit {
       originalSaleId: ['', Validators.required],
       returnDate: [new Date().toISOString().split('T')[0], Validators.required],
       reason: ['', Validators.required],
-      overallDiscountPercentage: [0],
+      refundAmount: [0, [Validators.required, Validators.min(0)]],
+      overallDiscountPercentage: [0, [Validators.required, Validators.min(0)]],
+      refundMode: ['CASH', Validators.required],
+      refundReference: [''],
       customerName: [''],
       customerMobile: [''],
       items: this.fb.array([])
@@ -122,14 +125,35 @@ export class SaleReturnFormComponent implements OnInit {
   }
 
   selectSale(sale: Sale): void {
-    this.selectedSale = sale;
-    // Clear the search inputs after selection
-    this.searchControl.setValue('', { emitEvent: false });
-    this.saleIdControl.setValue('', { emitEvent: false });
-    this.saleSearchText = this.returnsService.formatSaleId(sale.saleId || sale.id || '');
-    this.filteredSales = [];
+    console.log('Selected sale:', sale);
     
-    this.populateSaleData(sale);
+    // Show loading indicator
+    this.isLoading = true;
+    
+    // Use the returns service to enrich the sale with medicine names
+    this.returnsService.enrichSaleWithMedicineNames(sale).subscribe({
+      next: (enrichedSale) => {
+        console.log('Sale enriched with medicine names:', enrichedSale);
+        this.selectedSale = enrichedSale;
+        this.searchControl.setValue('', { emitEvent: false });
+        this.saleIdControl.setValue('', { emitEvent: false });
+        this.saleSearchText = this.returnsService.formatSaleId(sale.saleId || sale.id || '');
+        this.filteredSales = [];
+        this.populateSaleData(enrichedSale);
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error enriching sale with medicine names:', error);
+        // Fall back to original behavior
+        this.selectedSale = sale;
+        this.searchControl.setValue('', { emitEvent: false });
+        this.saleIdControl.setValue('', { emitEvent: false });
+        this.saleSearchText = this.returnsService.formatSaleId(sale.saleId || sale.id || '');
+        this.filteredSales = [];
+        this.populateSaleData(sale);
+        this.isLoading = false;
+      }
+    });
   }
   
   /**
@@ -181,12 +205,24 @@ export class SaleReturnFormComponent implements OnInit {
     console.log('Performing general search for:', saleIdQuery);
     this.isSearching = true;
     
-    this.returnsService.searchSales(saleIdQuery, this.inventoryService).subscribe({
+    this.returnsService.searchSales(saleIdQuery).subscribe({
       next: (sales) => {
         this.isSearching = false;
-        console.log(`Found ${sales?.length || 0} sales in general search`);
+        console.log('Sales search returned:', sales);
         
         if (sales && sales.length > 0) {
+          // Debug: Print details of the first sale's items
+          if (sales[0].items && sales[0].items.length > 0) {
+            console.log('First sale items:', sales[0].items);
+            console.log('First sale item details:', {
+              medicineId: sales[0].items[0].medicineId,
+              medicineName: sales[0].items[0].medicineName,
+              medicine: sales[0].items[0].medicine,
+              batchNo: sales[0].items[0].batchNo,
+              quantity: sales[0].items[0].quantity
+            });
+          }
+          
           // Found the sale via general search
           console.log('Selecting first matching sale:', sales[0]);
           this.selectSale(sales[0]);
@@ -219,17 +255,26 @@ export class SaleReturnFormComponent implements OnInit {
 
     // Create form groups for each item in the sale
     if (sale.items && sale.items.length > 0) {
+      // Debug sale items
+      console.log('Sale items to populate:', sale.items);
+      
       sale.items.forEach(item => {
+        // Get the medicine name with proper fallbacks
+        const medicineName = item.medicineName || 
+                            (item as any).medicine?.name || 
+                            `Medicine ${item.medicineId ? item.medicineId.split('_')[1]?.substring(0, 8) : ''}`;
+        
         // Handle both the original format and the new API format
         const formattedItem = {
           medicineId: item.medicineId,
-          medicineName: (item as any).medicine?.name || 'Medicine ' + item.medicineId.substring(0, 8),
+          medicineName: medicineName,
           batchNo: item.batchNo || '',
           quantity: item.quantity, // Match the expected property name
           unitPrice: (item as any).mrpPerItem || item.unitPrice || 0,
           returnQuantity: 0
         };
         
+        console.log('Adding item to form array:', formattedItem);
         this.itemsArray.push(this.createItemFormGroup(formattedItem as any));
       });
     }
@@ -257,15 +302,34 @@ export class SaleReturnFormComponent implements OnInit {
   }
 
   // Create a form group for an individual sale item
-  createItemFormGroup(item: Sale['items'][0]): FormGroup {
+  createItemFormGroup(item: any): FormGroup {
+    // IMPORTANT: Make sure we have the correct medicine name
+    // Priority: 1. item.medicineName (directly from our enrichment) 
+    //           2. item.medicine?.name (from the medicine object)
+    //           3. Fallback to medicine ID-based name
+    const medicineName = item.medicineName || 
+                      (item.medicine?.name) || 
+                      `Medicine ${item.medicineId ? item.medicineId.split('_')[1]?.substring(0, 8) : ''}`;
+                      
+    console.log('Creating form group with medicine name:', medicineName, 'for item:', item);
+    
+    // Set default return quantity to 1 and calculate initial refund amount
+    const defaultReturnQty = 1;
+    const maxReturnQty = item.quantity || 1;
+    const safeReturnQty = Math.min(defaultReturnQty, maxReturnQty);
+    const unitPrice = item.unitPrice || 0;
+    const initialRefundAmount = safeReturnQty * unitPrice;
+    
+    console.log('Setting default return quantity to:', safeReturnQty, 'for item:', medicineName);
+    
     return this.fb.group({
       medicineId: [item.medicineId || item.medicine?.id, Validators.required],
-      medicineName: [item.medicine?.name || ''],
+      medicineName: [medicineName], // Use the prepared medicine name
       batchNo: [item.batchNo || '', Validators.required],
-      originalQuantity: [item.quantity || 0],
-      returnQuantity: [0, [Validators.required, Validators.min(1), Validators.max(item.quantity || 1)]],
-      unitPrice: [item.unitPrice || 0],
-      refundAmount: [0]
+      quantity: [item.quantity || 0], // Changed from originalQuantity to quantity to match HTML references
+      returnQuantity: [safeReturnQty, [Validators.required, Validators.min(0), Validators.max(maxReturnQty)]],
+      unitPrice: [unitPrice],
+      refundAmount: [initialRefundAmount]
     });
   }
 
@@ -324,7 +388,7 @@ export class SaleReturnFormComponent implements OnInit {
         batchNo: item.batchNo,
         returnQuantity: item.returnQuantity
       }));
-    
+      
     if (returnItems.length === 0) {
       this.isSubmitting = false;
       this.toastService.showError('Please specify at least one item to return.');
@@ -335,7 +399,10 @@ export class SaleReturnFormComponent implements OnInit {
       originalSaleId: formData.originalSaleId,
       returnDate: formData.returnDate,
       reason: formData.reason,
+      refundAmount: formData.refundAmount || this.calculateRefundAmount(returnItems),
       overallDiscountPercentage: formData.overallDiscountPercentage || 0,
+      refundMode: formData.refundMode || 'CASH',
+      refundReference: formData.refundReference || '',
       items: returnItems
     };
     
@@ -351,5 +418,27 @@ export class SaleReturnFormComponent implements OnInit {
     });
   }
 
+  /**
+   * Calculate the total refund amount based on returned items and their unit prices
+   */
+  private calculateRefundAmount(items: SaleReturnItemDto[]): number {
+    if (!items || items.length === 0 || !this.selectedSale?.items) {
+      return 0;
+    }
 
+    // Calculate total refund by multiplying return quantity by unit price for each item
+    return items.reduce((total, returnItem) => {
+      // Find the matching sale item to get its unit price
+      const originalItem = this.selectedSale?.items?.find(item => 
+        item.medicineId === returnItem.medicineId && item.batchNo === returnItem.batchNo);
+      
+      if (!originalItem) {
+        return total;
+      }
+      
+      // Calculate refund amount for this item
+      const itemRefund = returnItem.returnQuantity * (originalItem.unitPrice || 0);
+      return total + itemRefund;
+    }, 0);
+  }
 }

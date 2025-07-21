@@ -171,7 +171,15 @@ export class PurchaseFormComponent implements OnInit {
     }
   }
   
-  // Form submission tracking - used to control when validation errors are shown
+  /**
+   * Scroll handler to close medicine dropdown when scrolling
+   */
+  private handleScroll = (): void => {
+    // Close dropdown when scrolling
+    if (this.activeMedicineRow !== -1) {
+      this.clearActiveMedicineRow();
+    }
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -259,6 +267,14 @@ export class PurchaseFormComponent implements OnInit {
         }
       }
     });
+    
+    // Add scroll event listener to close dropdown when scrolling
+    window.addEventListener('scroll', this.handleScroll, true);
+  }
+
+  ngOnDestroy(): void {
+    // Remove scroll event listener
+    window.removeEventListener('scroll', this.handleScroll, true);
   }
   
   /**
@@ -1052,12 +1068,16 @@ export class PurchaseFormComponent implements OnInit {
     // Update the form controls
     const row = this.itemsFormArray.at(rowIndex) as FormGroup;
     
-    // Clear the medicineId if we're searching for something new
-    // But keep the medicineName field updated with what the user is typing
-    if (searchText !== row.get('medicineName')?.value) {
+    // Update medicineName field with what the user is typing
+    row.patchValue({
+      medicineName: searchText // Keep the search text visible
+    }, {emitEvent: false});
+    
+    // Only clear medicineId if we're searching for something new (not when deleting)
+    if (searchText !== '' && row.get('medicineId')?.value && 
+        !row.get('medicine')?.value?.name?.toLowerCase().includes(term)) {
       row.patchValue({
-        medicineId: '', // Clear the ID since we're searching for something new
-        medicineName: searchText // Keep the search text visible
+        medicineId: '' // Clear the ID since we're searching for something new
       }, {emitEvent: false});
     }
     
@@ -1082,16 +1102,8 @@ export class PurchaseFormComponent implements OnInit {
       return nameMatch || genericMatch || idMatch;
     });
     
-    // Auto-select the first medicine in the filtered results if there are any matches
-    if (this.filteredMedicinesForRow[rowIndex].length > 0) {
-      const firstMedicine = this.filteredMedicinesForRow[rowIndex][0];
-      console.log('Auto-selecting medicine:', firstMedicine.name);
-      
-      // Use setTimeout to give the UI a moment to show the dropdown before selection
-      setTimeout(() => {
-        this.selectMedicineForRow(firstMedicine, rowIndex);
-      }, 100); // Small delay for better user experience
-    }
+    // DO NOT auto-select - let user choose from dropdown instead
+    // This allows backspace to work and prevents automatic selection
     
     // Always keep dropdown open during search
     this.setActiveMedicineRow(rowIndex);
@@ -1101,10 +1113,31 @@ export class PurchaseFormComponent implements OnInit {
   setActiveMedicineRow(rowIndex: number): void {
     this.activeMedicineRow = rowIndex;
   }
-  
-  // Duplicate methods removed
 
-  // Duplicate searchMedicineForRow method removed
+  clearActiveMedicineRow(): void {
+    this.activeMedicineRow = -1;
+  }
+  
+  /**
+   * Calculates the top position for the medicine dropdown based on row index
+   * This positions the dropdown outside the component at an appropriate vertical position
+   */
+  getDropdownTopPosition(rowIndex: number): number {
+    // Get the input element for the current row
+    const inputElements = document.querySelectorAll('.medicine-select input');
+    if (inputElements && inputElements.length > rowIndex) {
+      const inputEl = inputElements[rowIndex] as HTMLElement;
+      if (inputEl) {
+        // Get the position of the input element relative to the viewport
+        const rect = inputEl.getBoundingClientRect();
+        // Position the dropdown below the input but with some offset
+        // to ensure it doesn't cover the input itself
+        return rect.bottom + window.scrollY + 5; // 5px offset for spacing
+      }
+    }
+    // Default position if element not found
+    return window.scrollY + 100;
+  }
 
   selectMedicineForRow(medicine: Medicine, rowIndex: number): void {
     // Get the form group for this row
@@ -1162,12 +1195,7 @@ export class PurchaseFormComponent implements OnInit {
     this.calculateItemTotal(rowIndex);
   }
 
-// Duplicate setActiveMedicineRow method removed
-
-// Clear active dropdown when not needed
-clearActiveMedicineRow(): void {
-this.activeMedicineRow = null;
-}
+// Method implementation moved to line ~1101
 
 // Calculate totals for a single item row based on backend logic
 calculateItemTotal(index: number): void {
@@ -1640,9 +1668,11 @@ calculateItemTotal(index: number): void {
     this.totalItems = 0;
   }
 
-  // Helper method for consistent rounding
+  // Helper method for consistent decimal precision without rounding
   roundToTwo(num: number): number {
-    return parseFloat(num.toFixed(2));
+    // Use Math.round to avoid floating point errors but maintain exact values
+    // Multiply by 100, round to avoid floating point errors, then divide by 100
+    return Math.round(num * 100) / 100;
   }
   
   // Get effective total tax rate for the purchase
@@ -1993,6 +2023,10 @@ calculateItemTotal(index: number): void {
       invoiceDate: formValue.invoiceDate,
       referenceId: referenceId,
       gstType: formValue.gst, // Use form value instead of hardcoded "EXCLUSIVE"
+      // Include payment fields required by backend API
+      amountPaid: Number(formValue.amountPaid || 0),
+      paymentMode: formValue.paymentMode || 'CASH',
+      paymentReference: formValue.paymentReference || '',
       items: items
     };
     
@@ -2118,8 +2152,18 @@ calculateItemTotal(index: number): void {
       invoiceDate: formData.invoiceDate,
       referenceId: formData.referenceId,
       gstType: formData.gst,
+      // Add payment fields required by API
+      amountPaid: Number(formData.amountPaid || 0),
+      paymentMode: formData.paymentMode || 'CASH',
+      paymentReference: formData.paymentReference || '',
       items: []
     };
+    
+    console.log('Including payment details in request:', {
+      amountPaid: request.amountPaid,
+      paymentMode: request.paymentMode,
+      paymentReference: request.paymentReference
+    });
     
     // Process each item by directly accessing the form controls
     for (let i = 0; i < this.itemsFormArray.length; i++) {

@@ -6,7 +6,7 @@ import { Observable, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap, finalize } from 'rxjs/operators';
 
 import { InventoryService } from '../../services/inventory.service';
-import { Purchase, PurchaseItemDto } from '../../models/inventory.models';
+import { Purchase, PurchaseItemDto, Medicine } from '../../models/inventory.models';
 import { ReturnsService, PurchaseReturnRequest, PurchaseReturnItemDto } from '../../services/returns.service';
 import { ToastService } from '../../../shared/services/toast.service';
 
@@ -19,16 +19,15 @@ import { ToastService } from '../../../shared/services/toast.service';
 })
 export class PurchaseReturnFormComponent implements OnInit {
   returnForm!: FormGroup;
-  purchaseSearchText = '';
   isSearching = false;
-  isSubmitting = false;
   filteredPurchases: Purchase[] = [];
-  
-  // Form control for search input
-  searchControl!: FormControl;
-  isLoading = false;
   selectedPurchase: Purchase | null = null;
-  searchResults$: Observable<Purchase[]> = of([]);
+  purchaseSearchText = '';
+  isLoading = false;
+  isSubmitting = false; // Add back the isSubmitting property
+  searchControl = new FormControl('');
+  searchResults$!: Observable<Purchase[]>;
+  medicines: Medicine[] = [];
 
   constructor(
     public fb: FormBuilder, 
@@ -54,6 +53,7 @@ export class PurchaseReturnFormComponent implements OnInit {
     this.returnsService.searchPurchases(this.purchaseSearchText, this.inventoryService)
       .pipe(finalize(() => this.isSearching = false))
       .subscribe(purchases => {
+        console.log('Found purchases:', purchases);
         this.filteredPurchases = purchases;
       });
   }
@@ -66,20 +66,23 @@ export class PurchaseReturnFormComponent implements OnInit {
     // Initialize search control here after fb is initialized
     this.searchControl = this.fb.control('');
     
-    // Set up search with debounce
-    this.searchResults$ = this.searchControl.valueChanges.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      switchMap(term => {
-        if (!term || term.length < 3) {
-          return of([]);
+    // Setup auto search with debounce
+    this.searchControl.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged()
+      )
+      .subscribe(value => {
+        this.purchaseSearchText = value || ''; // Add empty string fallback
+        if (value && value.trim().length >= 3) {
+          this.searchPurchases({ target: { value } } as unknown as Event);
+        } else {
+          this.filteredPurchases = [];
         }
-        this.isLoading = true;
-        return this.returnsService.searchPurchases(term, this.inventoryService).pipe(
-          finalize(() => this.isLoading = false)
-        );
-      })
-    );
+      });
+    
+    // Load medicines for reference
+    this.loadMedicines();
   }
 
   initForm(): void {
@@ -116,14 +119,22 @@ export class PurchaseReturnFormComponent implements OnInit {
   // Search functionality now handled by searchResults$ observable
 
   selectPurchase(purchase: Purchase): void {
+    console.log('Selected purchase:', purchase);
     this.selectedPurchase = purchase;
-    // Use the ReturnsService formatter
-    this.searchControl.setValue(this.returnsService.formatPurchaseId(purchase.id || ''));
     
+    // Use the ReturnsService formatter
+    const formattedId = this.returnsService.formatPurchaseId(purchase.id || purchase.purchaseId || '');
+    this.searchControl.setValue(formattedId);
+    this.purchaseSearchText = formattedId;
+    
+    // Hide search results
+    this.filteredPurchases = [];
+    
+    // Map purchase data to form
     this.returnForm.patchValue({
-      originalPurchaseId: purchase.id,
+      originalPurchaseId: purchase.id || purchase.purchaseId || '', // Add empty string fallback
       supplierId: purchase.supplierId,
-      supplierName: purchase.supplier ? purchase.supplier.name : 'Unknown Supplier'
+      supplierName: purchase.supplier ? purchase.supplier.name : `Supplier ID: ${purchase.supplierId}`
     });
     
     // Create form controls for each purchase item
@@ -133,28 +144,74 @@ export class PurchaseReturnFormComponent implements OnInit {
         this.itemsArray.push(this.createItemFormGroup(item));
       });
     }
+    
+    // Log for debugging
+    console.log('Updated form values:', this.returnForm.value);
+    console.log('Item array length:', this.itemsArray.length);
   }
 
   createItemFormGroup(item: any): FormGroup {
+    // Extract the correct quantity field from the API response
+    const quantity = item.totalReceivedQuantity || item.quantity || 0;
+    const purchasePrice = item.purchaseCostPerPack || item.purchasePrice || 0;
+    const medicineId = item.medicineId || item.medicine?.id || '';
+    
+    // Find medicine name from our loaded medicines if available
+    const medicineName = this.getMedicineName(medicineId);
+    
+    console.log('Creating item form group:', { 
+      medicineId,
+      medicineName,
+      batchNo: item.batchNo,
+      quantity,
+      price: purchasePrice
+    });
+    
     return this.fb.group({
-      medicineId: [item.medicineId || item.medicine?.id || '', Validators.required],
-      medicineName: [item.medicineName || item.medicine?.name || ''],
+      medicineId: [medicineId, Validators.required],
+      medicineName: [medicineName],
       batchNo: [item.batchNo || '', Validators.required], // Made batch number required
-      originalQuantity: [item.quantity || 0],
-      purchasePrice: [item.purchasePrice || 0],
+      originalQuantity: [quantity],
+      purchasePrice: [purchasePrice],
       returnQuantity: [0, [
         Validators.required, 
         Validators.min(1), 
-        Validators.max(item.quantity || 0)
+        Validators.max(quantity)
       ]],
-      returnValue: [0]
+      returnValue: [0],
+      mrpPerItem: [item.mrpPerItem || item.mrp || 0],
+      expiryDate: [item.expiryDate || ''],
+      taxProfileId: [item.taxProfileId || ''],
+      taxRate: [item.taxRateApplied || 0]
     });
+  }
+  
+  // Helper method to get medicine name from ID
+  getMedicineName(medicineId: string): string {
+    if (!medicineId) return 'Unknown Medicine';
+    
+    const medicine = this.medicines.find(m => m.id === medicineId);
+    return medicine ? medicine.name : `Medicine ID: ${medicineId.substring(0, 8)}`;
   }
 
   clearItemsArray(): void {
-    while (this.itemsArray.length) {
+    while (this.itemsArray.length !== 0) {
       this.itemsArray.removeAt(0);
     }
+  }
+
+  // Load medicines for reference
+  loadMedicines(): void {
+    this.inventoryService.getMedicines()
+      .subscribe({
+        next: (medicines) => {
+          this.medicines = medicines;
+          console.log('Medicines loaded:', medicines.length);
+        },
+        error: (error) => {
+          console.error('Error loading medicines:', error);
+        }
+      });
   }
 
   onSubmit(): void {

@@ -219,6 +219,16 @@ export class SalesComponent implements OnInit {
           return mappedSale;
         });
         
+        // Sort sales in descending order by createdAt timestamp
+        this.sales.sort((a, b) => {
+          // Extract timestamps for comparison
+          const timestampA = this.getTimestampFromSale(a);
+          const timestampB = this.getTimestampFromSale(b);
+          
+          // Sort in descending order (newest first)
+          return timestampB - timestampA;
+        });
+        
         this.filteredSales = [...this.sales];
         this.filterSales();
         this.loading = false;
@@ -411,6 +421,50 @@ export class SalesComponent implements OnInit {
       console.error('Error converting date:', e);
     }
     return null;
+  }
+  
+  /**
+   * Extract timestamp in milliseconds from a sale object for sorting
+   * Uses createdAt if available, otherwise falls back to saleDate
+   */
+  getTimestampFromSale(sale: any): number {
+    try {
+      // First try to get createdAt timestamp
+      if (sale.createdAt) {
+        if (typeof sale.createdAt === 'object' && 'seconds' in sale.createdAt) {
+          return sale.createdAt.seconds * 1000;
+        } else if (typeof sale.createdAt === 'string') {
+          return new Date(sale.createdAt).getTime();
+        } else if (sale.createdAt instanceof Date) {
+          return sale.createdAt.getTime();
+        }
+      }
+      
+      // Fall back to saleDate if createdAt is not available
+      if (sale.saleDate) {
+        if (typeof sale.saleDate === 'object' && 'seconds' in sale.saleDate) {
+          return sale.saleDate.seconds * 1000;
+        } else if (typeof sale.saleDate === 'string') {
+          return new Date(sale.saleDate).getTime();
+        } else if (sale.saleDate instanceof Date) {
+          return sale.saleDate.getTime();
+        }
+      }
+      
+      // Last resort, try date field
+      if (sale.date) {
+        if (typeof sale.date === 'string') {
+          return new Date(sale.date).getTime();
+        } else if (sale.date instanceof Date) {
+          return sale.date.getTime();
+        }
+      }
+    } catch (e) {
+      console.error('Error extracting timestamp from sale:', e);
+    }
+    
+    // Default to 0 (will appear at end of sorted list)
+    return 0;
   }
 
   formatPaymentMethod(method: string | undefined): string {

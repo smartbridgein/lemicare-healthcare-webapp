@@ -266,6 +266,56 @@ $font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
     border-bottom: 1px solid $gray-border;
     animation: slideDown 0.3s ease-out;
     
+    // Payment information styles
+    .payment-info {
+      background-color: white;
+      border-radius: 8px;
+      margin-bottom: 1.25rem;
+      padding: 1rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      
+      .payment-header {
+        border-bottom: 1px solid $gray-border;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        
+        h4 {
+          color: $maroon-primary;
+          font-size: 1rem;
+          font-weight: 600;
+          margin: 0;
+        }
+      }
+      
+      .payment-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+        
+        .payment-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          
+          .payment-label {
+            color: #6c757d;
+            font-size: 0.875rem;
+            font-weight: 500;
+          }
+          
+          .payment-value {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: #333;
+            
+            &.negative {
+              color: #d9534f;
+            }
+          }
+        }
+      }
+    }
+    
     .details-header {
       display: grid;
       grid-template-columns: 1.5fr 0.8fr 0.8fr 0.6fr 0.8fr 0.8fr 1fr 1fr;

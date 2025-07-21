@@ -46,8 +46,9 @@
                     class="list-group-item list-group-item-action"
                     (click)="selectPurchase(purchase)">
                     <div class="d-flex justify-content-between">
-                      <span>{{ returnsService.formatPurchaseId(purchase.id || '') }}</span>
-                      <span>{{ purchase.supplier?.name || 'Unknown Supplier' }}</span>
+                      <span>{{ returnsService.formatPurchaseId(purchase.id || purchase.purchaseId || '') }}</span>
+                      <span>{{ purchase.referenceId || '' }}</span>
+                      <span>{{ purchase.supplier?.name || 'Supplier ID: ' + (purchase.supplierId || '').substring(4, 12) }}</span>
                       <span>{{ purchase.totalAmount | currency:'INR' }}</span>
                     </div>
                   </li>
@@ -112,7 +113,6 @@
                   <th>Purchase Price</th>
                   <th>Original Qty</th>
                   <th>Return Qty</th>
-                  <th>Return Value</th>
                 </tr>
               </thead>
               <tbody>
@@ -137,7 +137,6 @@
                       [max]="item.get('originalQuantity')?.value"
                       [class.is-invalid]="item.get('returnQuantity')?.invalid && item.get('returnQuantity')?.touched" />
                   </td>
-                  <td>{{ item.get('returnQuantity')?.value * item.get('purchasePrice')?.value | currency:'INR' }}</td>
                 </tr>
               </tbody>
             </table>

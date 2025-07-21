@@ -73,6 +73,7 @@
 
         <!-- Transaction Details Expansion Panel -->
         <div class="transaction-details" *ngIf="selectedTransactionIndex === i && transaction.items && transaction.items.length > 0">
+          <!-- Items Information -->
           <div class="details-header">
             <div>Medicine</div>
             <div>Batch</div>
@@ -114,6 +115,37 @@
             <div class="summary-row total">
               <div class="summary-label">Total:</div>
               <div class="summary-value">₹ {{ transaction.amount | number:'1.2-2' }}</div>
+            </div>
+          </div>
+          
+          <!-- Payment Information -->
+          <div class="payment-info">
+            <div class="payment-header">
+              <h4>Payment Information</h4>
+            </div>
+            <div class="payment-details">
+              <div class="payment-row">
+                <div class="payment-label">Total Amount:</div>
+                <div class="payment-value">₹ {{ transaction.amount | number:'1.2-2' }}</div>
+              </div>
+              <div class="payment-row">
+                <div class="payment-label">Amount Paid:</div>
+                <div class="payment-value">₹ {{ transaction.amountPaid | number:'1.2-2' }}</div>
+              </div>
+              <div class="payment-row">
+                <div class="payment-label">Balance Due:</div>
+                <div class="payment-value" [ngClass]="{'negative': (transaction.amount - transaction.amountPaid) > 0}">
+                  ₹ {{ (transaction.amount - transaction.amountPaid) | number:'1.2-2' }}
+                </div>
+              </div>
+              <div class="payment-row">
+                <div class="payment-label">Payment Mode:</div>
+                <div class="payment-value">{{ transaction.paymentMode || 'N/A' }}</div>
+              </div>
+              <div class="payment-row" *ngIf="transaction.paymentReference">
+                <div class="payment-label">Reference Number:</div>
+                <div class="payment-value">{{ transaction.paymentReference }}</div>
+              </div>
             </div>
           </div>
         </div>

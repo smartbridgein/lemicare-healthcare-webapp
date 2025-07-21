@@ -13,8 +13,11 @@ interface SupplierTransaction {
   referenceId?: string;
   date: Date;
   amount: number;
+  amountPaid: number;
   balance: number;
   createdBy: string;
+  paymentMode?: string;
+  paymentReference?: string;
   items?: any[];
 }
 
@@ -38,6 +41,10 @@ interface ApiPurchase {
     nanos: number;
   };
   gstType: string;
+  // Payment fields
+  amountPaid?: number;
+  paymentMode?: string;
+  paymentReference?: string;
   items: any[];
 }
 
@@ -175,9 +182,15 @@ export class SupplierOverviewComponent implements OnInit {
             // Map purchases to transactions and calculate running balance
             let runningBalance = 0;
             this.transactions = supplierPurchases.map((purchase, index) => {
-              // Negate the amount since purchases reduce the balance
+              // Calculate the invoice amount and amount paid
               const amount = purchase.totalAmount || 0;
-              runningBalance -= amount;
+              const amountPaid = purchase.amountPaid || 0;
+              
+              // Calculate remaining balance (total amount - amount paid)
+              const remainingAmount = amount - amountPaid;
+              
+              // Update running balance with the remaining amount only
+              runningBalance -= remainingAmount;
               
               // Convert timestamp to Date
               const purchaseDate = new Date(purchase.invoiceDate.seconds * 1000);
@@ -188,8 +201,11 @@ export class SupplierOverviewComponent implements OnInit {
                 referenceId: purchase.referenceId || '-',
                 date: purchaseDate,
                 amount: amount,
+                amountPaid: amountPaid,
                 balance: runningBalance,
                 createdBy: purchase.createdBy || 'System',
+                paymentMode: purchase.paymentMode || 'CASH',
+                paymentReference: purchase.paymentReference || '',
                 items: purchase.items
               };
             });
@@ -310,7 +326,15 @@ export class SupplierOverviewComponent implements OnInit {
       date.setDate(today.getDate() - (i * 7)); // 1 week apart
       
       const amount = Math.round(Math.random() * 50000) + 5000;
-      runningBalance -= amount;
+      
+      // Generate random payment data
+      const amountPaid = i % 4 === 0 ? 0 : i % 3 === 0 ? Math.round(amount * 0.5) : amount; // Full, partial or no payment
+      const paymentMode = i % 3 === 0 ? 'CASH' : i % 5 === 0 ? 'UPI' : 'CARD';
+      const paymentReference = paymentMode !== 'CASH' ? `REF${Math.round(Math.random() * 10000)}` : '';
+      
+      // Calculate remaining amount for balance
+      const remainingAmount = amount - amountPaid;
+      runningBalance -= remainingAmount;
       
       transactions.push({
         id: i + 1,
@@ -318,7 +342,10 @@ export class SupplierOverviewComponent implements OnInit {
         referenceId: `INV-LMEI-${date.getFullYear()}${String(date.getMonth()+1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}-${Math.round(Math.random() * 999)}`,
         date: date,
         amount: amount,
+        amountPaid: amountPaid,
         balance: runningBalance,
+        paymentMode: paymentMode,
+        paymentReference: paymentReference,
         createdBy: i % 2 === 0 ? 'Dr Amin Hanan R' : 'srileka',
         items: [
           {

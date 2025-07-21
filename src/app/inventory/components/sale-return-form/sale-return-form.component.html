@@ -119,6 +119,56 @@
                 min="0"
                 max="100" />
             </div>
+            
+            <!-- Refund Amount -->
+            <div class="form-group mb-3">
+              <label for="refundAmount" class="form-label">Refund Amount *</label>
+              <div class="input-group">
+                <span class="input-group-text">₹</span>
+                <input 
+                  type="number" 
+                  id="refundAmount" 
+                  formControlName="refundAmount"
+                  class="form-control" 
+                  min="0"
+                  [class.is-invalid]="returnForm.get('refundAmount')?.invalid && returnForm.get('refundAmount')?.touched" />
+              </div>
+              <div class="invalid-feedback" 
+                   *ngIf="returnForm.get('refundAmount')?.invalid && returnForm.get('refundAmount')?.touched">
+                Refund amount is required and must be greater than or equal to 0
+              </div>
+            </div>
+            
+            <!-- Refund Mode -->
+            <div class="form-group mb-3">
+              <label for="refundMode" class="form-label">Refund Mode *</label>
+              <select
+                id="refundMode"
+                formControlName="refundMode"
+                class="form-select"
+                [class.is-invalid]="returnForm.get('refundMode')?.invalid && returnForm.get('refundMode')?.touched">
+                <option value="CASH">Cash</option>
+                <option value="CARD">Card</option>
+                <option value="UPI">UPI</option>
+                <option value="CHEQUE">Cheque</option>
+                <option value="CREDIT">Store Credit</option>
+              </select>
+              <div class="invalid-feedback"
+                   *ngIf="returnForm.get('refundMode')?.invalid && returnForm.get('refundMode')?.touched">
+                Refund mode is required
+              </div>
+            </div>
+            
+            <!-- Refund Reference -->
+            <div class="form-group mb-3">
+              <label for="refundReference" class="form-label">Refund Reference</label>
+              <input
+                type="text"
+                id="refundReference"
+                formControlName="refundReference"
+                class="form-control"
+                placeholder="Transaction ID / Cheque No / Reference" />
+            </div>
           </div>
         </div>
 
@@ -165,12 +215,16 @@
                   <th>MRP</th>
                   <th>Original Qty</th>
                   <th>Return Qty</th>
-                  <th>Return Value</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let item of itemsArray.controls; let i = index" [formGroupName]="i">
-                  <td>{{ returnForm.get('items.'+ i + '.medicineName')?.value }}</td>
+                  <td>
+                    <!-- Display medicine name with debugging info -->
+                    <strong>{{ item.get('medicineName')?.value || 'No Name' }}</strong>
+                    <br>
+                    <small class="text-muted">ID: {{ item.get('medicineId')?.value }}</small>
+                  </td>
                   <td>
                     <input 
                       type="text" 
@@ -179,8 +233,8 @@
                       [class.is-invalid]="item.get('batchNo')?.invalid && item.get('batchNo')?.touched" />
                     <div class="invalid-feedback" *ngIf="item.get('batchNo')?.invalid && item.get('batchNo')?.touched">Batch number is required</div>
                   </td>
-                  <td>{{ returnForm.get('items.'+ i + '.unitPrice')?.value | currency:'INR' }}</td>
-                  <td>{{ returnForm.get('items.'+ i + '.quantity')?.value }}</td>
+                  <td>{{ item.get('unitPrice')?.value | currency:'INR' }}</td>
+                  <td>{{ item.get('quantity')?.value }}</td>
                   <td>
                     <input 
                       type="number" 
@@ -190,7 +244,6 @@
                       [max]="item.get('quantity')?.value"
                       [class.is-invalid]="item.get('returnQuantity')?.invalid && item.get('returnQuantity')?.touched" />
                   </td>
-                  <td>{{ item.get('returnQuantity')?.value * item.get('unitPrice')?.value | currency:'INR' }}</td>
                 </tr>
               </tbody>
             </table>

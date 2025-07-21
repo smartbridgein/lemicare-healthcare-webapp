@@ -158,24 +158,29 @@ export interface Sale {
   saleDate?: string | TimestampFormat;
   createdBy?: string;
   patientId?: string;
-  doctorId?: string;
-  prescriptionDate?: string | TimestampFormat;
+  patientName?: string;
+  phoneNumber?: string;
+  patientMobile?: string; // Added for mapping patient mobile
   walkInCustomerName?: string;
   walkInCustomerMobile?: string;
+  doctorId?: string;
+  doctorName?: string; // Added for doctor name
+  prescriptionDate?: string | TimestampFormat;
   totalTaxableAmount?: number;
   totalTaxAmount?: number;
+  totalTax?: number; // Added to match API response
   grandTotal?: number;
   totalMrpAmount?: number;
   totalDiscountAmount?: number;
+  totalDiscount?: number; // Added to match API response
   items: SaleItem[];
   
   // Legacy fields for backward compatibility
-  patientName?: string;
-  phoneNumber?: string;
   date?: string;
   totalAmount?: number;
   netAmount?: number;
   paymentMethod?: string;
+  paymentMode?: string; // Added to match API response
   status?: string;
   createdAt?: string;
   
@@ -225,7 +230,7 @@ export interface Purchase {
   totalTaxableAmount?: number;
   totalDiscountAmount?: number;
   totalTaxAmount?: number;
-  gstType?: string;
+  gstType?: string; // "EXCLUSIVE", "INCLUSIVE", "NON_GST"
   organizationId?: string;
   branchId?: string;
   createdBy?: string;
@@ -233,8 +238,12 @@ export interface Purchase {
   items: PurchaseItemDto[];
   purchaseItems?: PurchaseItem[]; // For backward compatibility
   paymentMethod?: string;
-  paymentStatus?: string;
+  paymentStatus?: string; // "PENDING", "PAID", "PARTIALLY_PAID"
   notes?: string;
+  
+  // Additional fields from API response
+  amountPaid?: number;
+  dueAmount?: number;
 }
 
 // CreatePurchaseRequest matches backend DTO
@@ -244,6 +253,10 @@ export interface CreatePurchaseRequest {
   referenceId?: string; // Optional invoice number from the supplier
   gstType: string; // "EXCLUSIVE" or "INCLUSIVE"
   items: PurchaseItemDto[];
+  // Payment fields required by the backend API
+  amountPaid: number;
+  paymentMode: string; // 'CASH', 'CARD', 'UPI', etc.
+  paymentReference: string; // Reference number for non-cash payments
 }
 
 // PurchaseItemDto matches backend DTO for create/update operations

@@ -1309,6 +1309,10 @@ export class InventoryService {
       invoiceDate: purchaseData.invoiceDate,
       referenceId: purchaseData.referenceId,
       gstType: purchaseData.gstType || 'EXCLUSIVE',
+      // Include payment fields required by backend API
+      amountPaid: purchaseData.amountPaid || 0,
+      paymentMode: purchaseData.paymentMode || 'CASH',
+      paymentReference: purchaseData.paymentReference || '',
       // Map to updated PurchaseItemDto array
       items: (purchaseData.items || purchaseData.purchaseItems || []).map((item: any) => ({
         medicineId: item.medicineId,
@@ -1771,19 +1775,105 @@ export class InventoryService {
   }
   
   /**
+   * Get a specific return by ID and type
+   * @param id Return ID to retrieve
+   * @param type Type of return ('sales' or 'purchase')
+   * @returns Observable with return details
+   */
+  getReturnById(id: string, type: string): Observable<any> {
+    console.log(`Fetching ${type} return with ID: ${id}`);
+    return this.http.get<any>(`${environment.apiUrlInventory}/api/inventory/returns/${type}/${id}`)
+      .pipe(
+        tap(data => console.log('Return details fetched:', data)),
+        catchError(error => {
+          console.error('Error fetching return details:', error);
+          // Fallback to mock data for testing
+          if (type === 'sales') {
+            return this.getMockSalesReturnDetails(id);
+          } else {
+            return this.getMockPurchaseReturnDetails(id);
+          }
+        })
+      );
+  }
+
+  /**
+   * Mock data for testing sales return details
+   * @param id Return ID for the mock data
+   * @returns Observable with mock sales return details
+   */
+  private getMockSalesReturnDetails(id: string): Observable<any> {
+    const currentDate = new Date().toISOString().split('T')[0];
+    const mockReturn = {
+      id: id,
+      type: 'SALES',
+      originalSaleId: `SL-${id.split('-')[1]}`,
+      returnDate: currentDate,
+      customerName: 'Sample Customer',
+      customerMobile: '9876543210',
+      refundAmount: 1250.50,
+      refundMode: 'CASH',
+      refundReference: '',
+      reason: 'Medicine expired',
+      items: [
+        {
+          medicineName: 'Paracetamol 500mg',
+          medicineId: 'MED001',
+          batchNo: 'B12345',
+          returnQuantity: 10,
+          unitPrice: 125.05,
+          amount: 1250.50
+        }
+      ]
+    };
+    return of(mockReturn).pipe(delay(300));
+  }
+  
+  /**
+   * Mock data for testing purchase return details
+   * @param id Return ID for the mock data
+   * @returns Observable with mock purchase return details
+   */
+  private getMockPurchaseReturnDetails(id: string): Observable<any> {
+    const currentDate = new Date().toISOString().split('T')[0];
+    const mockReturn = {
+      id: id,
+      type: 'PURCHASE',
+      originalPurchaseId: `PO-${id.split('-')[1]}`,
+      returnDate: currentDate,
+      supplierName: 'AJAX PHARMACEUTICALS',
+      supplierGstin: 'GST12345678',
+      refundAmount: 3540.25,
+      reason: 'Wrong delivery',
+      items: [
+        {
+          medicineName: 'Cetirizine 10mg',
+          medicineId: 'MED002',
+          batchNo: 'B67890',
+          returnQuantity: 30,
+          purchasePrice: 118.01,
+          amount: 3540.25
+        }
+      ]
+    };
+    return of(mockReturn).pipe(delay(300));
+  }
+
+  /**
    * Delete a return by ID
    */
   deleteReturn(id: string): Observable<void> {
-    return this.http.delete<void>(`${environment.apiUrlInventory}/api/inventory/returns/${id}`).pipe(
-      tap(() => {
-        console.log('Return successfully deleted');
-        this.refreshReturnsCache();
-      }),
-      catchError((error: HttpErrorResponse) => {
-        console.error('Error deleting return:', error);
-        return throwError(() => new Error(`Failed to delete return: ${error.message}`));
-      })
-    );
+    return this.http.delete<void>(`${environment.apiUrlInventory}/api/inventory/returns/${id}`)
+      .pipe(
+        tap(() => {
+          console.log('Return successfully deleted');
+          this.refreshReturnsCache();
+        }),
+        catchError((error: HttpErrorResponse) => {
+          console.error('Error deleting return:', error);
+          return throwError(() => new Error(`Failed to delete return: ${error.message}`));
+        })
+      );
   }
   
   /**

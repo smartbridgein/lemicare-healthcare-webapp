@@ -32,6 +32,10 @@ export class PurchasesComponent implements OnInit, OnDestroy {
   ];
   selectedDateFilter: string = 'all';
   
+  // Sorting properties
+  sortColumn: string = 'invoiceDate';
+  sortDirection: 'asc' | 'desc' = 'desc';
+  
   private routeSubscription: Subscription | null = null;
   
   // Modal state properties
@@ -119,17 +123,8 @@ export class PurchasesComponent implements OnInit, OnDestroy {
           return processedPurchase;
         });
         
-        // Sort purchases in descending order by date (newest first)
-        const sortedData = processedData.sort((a, b) => {
-          // Use the shared parseDate method to compare dates
-          const dateA = this.parseDate(a.invoiceDate) || this.parseDate(a.createdAt);
-          const dateB = this.parseDate(b.invoiceDate) || this.parseDate(b.createdAt);
-          
-          return dateB - dateA; // Descending order (newest first)
-        });
-        
-        // Save the processed and sorted data
-        this.purchases = sortedData;
+        // Save the processed data
+        this.purchases = processedData;
         
         // Apply date filter (if any) to the loaded purchases
         this.applyDateFilter();
@@ -138,6 +133,9 @@ export class PurchasesComponent implements OnInit, OnDestroy {
         if (this.searchTerm.trim()) {
           this.search();
         }
+        
+        // Apply sorting after filters
+        this.sortPurchases();
         
         this.loading = false;
       },
@@ -385,6 +383,9 @@ export class PurchasesComponent implements OnInit, OnDestroy {
     });
     
     console.log(`Filtered to ${this.filteredPurchases.length} purchases`);
+    
+    // Re-apply sorting after filtering
+    this.sortPurchases();
   }
   
   /**
@@ -396,6 +397,103 @@ export class PurchasesComponent implements OnInit, OnDestroy {
     if (this.searchTerm.trim()) {
       this.search();
     }
+    // Apply sorting after filtering
+    this.sortPurchases();
+  }
+  
+  /**
+   * Sort purchases based on the current sort column and direction
+   */
+  sortPurchases(): void {
+    if (!this.filteredPurchases || this.filteredPurchases.length === 0) {
+      return;
+    }
+    
+    console.log(`Sorting purchases by ${this.sortColumn} in ${this.sortDirection} order`);
+    
+    this.filteredPurchases.sort((a, b) => {
+      let valA: any;
+      let valB: any;
+      
+      // Extract values based on sort column
+      switch (this.sortColumn) {
+        case 'invoiceId':
+          valA = a.referenceId || this.formatPurchaseId(a.id || a.purchaseId);
+          valB = b.referenceId || this.formatPurchaseId(b.id || b.purchaseId);
+          break;
+          
+        case 'supplierId':
+          valA = this.formatSupplierId(a.supplierId);
+          valB = this.formatSupplierId(b.supplierId);
+          break;
+          
+        case 'supplierName':
+          valA = this.getSupplierName(a.supplierId);
+          valB = this.getSupplierName(b.supplierId);
+          break;
+          
+        case 'contactNumber':
+          valA = this.getSupplierContact(a.supplierId);
+          valB = this.getSupplierContact(b.supplierId);
+          break;
+          
+        case 'invoiceDate':
+          valA = this.parseDate(a.invoiceDate) || this.parseDate(a.createdAt);
+          valB = this.parseDate(b.invoiceDate) || this.parseDate(b.createdAt);
+          break;
+          
+        case 'totalAmount':
+          valA = Number(a.totalAmount || 0);
+          valB = Number(b.totalAmount || 0);
+          break;
+          
+        default:
+          valA = this.parseDate(a.invoiceDate) || this.parseDate(a.createdAt);
+          valB = this.parseDate(b.invoiceDate) || this.parseDate(b.createdAt);
+      }
+      
+      // Compare values based on type
+      let comparison = 0;
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        comparison = valA - valB;
+      } else {
+        // Convert to string for comparison if not number
+        const strA = String(valA || '').toLowerCase();
+        const strB = String(valB || '').toLowerCase();
+        comparison = strA.localeCompare(strB);
+      }
+      
+      // Apply sort direction
+      return this.sortDirection === 'asc' ? comparison : -comparison;
+    });
+  }
+  
+  /**
+   * Set sort column and direction
+   * If the same column is clicked again, toggle sort direction
+   */
+  setSortColumn(column: string): void {
+    if (this.sortColumn === column) {
+      // Toggle direction if same column
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      // Set new column and default to ascending
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+    
+    // Re-sort the data
+    this.sortPurchases();
+  }
+  
+  /**
+   * Get the sort icon based on current sort state
+   */
+  getSortIcon(column: string): string {
+    if (this.sortColumn !== column) {
+      return 'fa-sort'; // Neutral sort icon
+    }
+    return this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
   }
   
   /**
@@ -403,39 +501,36 @@ export class PurchasesComponent implements OnInit, OnDestroy {
    * Note: Always call applyDateFilter() before this in case date filter has changed
    */
   search(): void {
-    // If no search term, return (the date filter has already been applied)
-    if (!this.searchTerm.trim()) {
+    const searchLower = this.searchTerm.toLowerCase().trim();
+    
+    if (!searchLower) {
+      // If search is cleared, reset to date-filtered list
+      this.applyDateFilter();
       return;
     }
-
-    // Apply search term filter on the date-filtered results
-    const term = this.searchTerm.toLowerCase().trim();
     
-    // Store current filtered purchases (after date filter)
-    const dateFilteredPurchases = [...this.filteredPurchases];
+    // Search in date-filtered purchases
+    const dateFiltered = [...this.purchases];
+    this.applyDateFilter();
     
-    // Apply text search on the date-filtered results
-    this.filteredPurchases = dateFilteredPurchases.filter(purchase => {
-      const supplier = this.suppliers.get(purchase.supplierId);
+    this.filteredPurchases = this.filteredPurchases.filter(purchase => {
+      // Search in supplier name
+      const supplierName = this.getSupplierName(purchase.supplierId).toLowerCase();
+      if (supplierName.includes(searchLower)) return true;
       
-      // Search in multiple fields
-      return (
-        // Invoice ID / Purchase ID
-        ((purchase.id || purchase.purchaseId || '').toLowerCase().includes(term)) ||
-        // Reference ID / Invoice number
-        (purchase.referenceId?.toLowerCase().includes(term)) ||
-        // Supplier ID
-        (purchase.supplierId?.toLowerCase().includes(term)) ||
-        // Supplier name
-        (supplier?.name?.toLowerCase().includes(term)) ||
-        // Supplier contact
-        (supplier?.contactNumber?.toLowerCase().includes(term)) ||
-        // Invoice date (formatted)
-        (this.formatTimestampDate(purchase.invoiceDate)?.toLowerCase().includes(term))
-      );
+      // Search in supplier contact
+      const contact = this.getSupplierContact(purchase.supplierId).toLowerCase();
+      if (contact.includes(searchLower)) return true;
+      
+      // Search in invoice ID
+      const invoiceId = (purchase.referenceId || this.formatPurchaseId(purchase.id || purchase.purchaseId)).toLowerCase();
+      if (invoiceId.includes(searchLower)) return true;
+      
+      return false;
     });
     
-    console.log(`Search for "${term}" found ${this.filteredPurchases.length} results`);
+    // Re-apply sorting after search filtering
+    this.sortPurchases();
   }
 
   loadMedicines(): void {

@@ -226,7 +226,7 @@
                   <th class="tax-profile-column text-center">GST (%)</th>
                   <th class="taxable-amount-column" style="text-align: right !important;">Taxable Amount</th>
                   <th class="total-column" style="text-align: right !important;">Total Amount</th>
-                  <th class="profit-column" style="text-align: center !important;">Profit (%)</th>
+                 <!-- <th class="profit-column" style="text-align: center !important;">Profit (%)</th> -->
                   <th class="action-column"></th>
                 </tr>
               </thead>
@@ -237,12 +237,28 @@
                     <div class="medicine-select">
                       <input
                         type="text"
-                        class="form-control form-control-sm"
+                        class="form-control form-control-sm medicine-search-input"
                         placeholder="Type to search..."
                         formControlName="medicineName"
-                        (input)="searchMedicine(i)"
+                        (input)="searchMedicineForRow($event, i)"
+                        (focus)="setActiveMedicineRow(i)"
+                        (blur)="clearActiveMedicineRow()"
                         [class.is-invalid]="formSubmitted && item.get('medicineId')?.invalid"
                       >
+                      <!-- Medicine Dropdown -->
+                      <div *ngIf="activeMedicineRow === i && filteredMedicinesForRow && filteredMedicinesForRow[i] && filteredMedicinesForRow[i].length > 0" class="medicine-dropdown fixed-medicine-dropdown" [style.top.px]="getDropdownTopPosition(i)">
+                        <ul class="medicine-list" style="list-style: none; padding: 0; margin: 0;">
+                          <li *ngFor="let medicine of filteredMedicinesForRow[i]" 
+                              class="medicine-item" 
+                              (mousedown)="selectMedicineForRow(medicine, i)"
+                              style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; transition: background-color 0.2s;"
+                              onmouseover="this.style.backgroundColor='#f8f9fc'" 
+                              onmouseout="this.style.backgroundColor='transparent'">
+                            <div style="font-weight: 500;">{{ medicine.name }}</div>
+                            <small class="generic-name" style="display: block; color: #666; font-size: 0.8rem;">{{ medicine.genericName || '' }} <span class="medicine-id" style="color: #6b1d14; float: right;">{{ formatMedicineId(medicine.id) }}</span></small>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                   </td>
                   <td class="generic-mfg-column">
@@ -386,11 +402,11 @@
                   <td class="text-right total-column">
                     <span>₹{{ item.get('totalAmount')?.value || 0 | number:'1.2-2' }}</span>
                   </td>
-                  <td class="profit-column text-center">
+                  <!-- <td class="profit-column text-center">
                     <span *ngIf="calculateProfitPercentage(item)">
                       {{ calculateProfitPercentage(item) | number:'1.2-2' }}%
                     </span>
-                  </td>
+                  </td> -->
                   <td class="action-column">
                     <button type="button" class="btn btn-sm btn-danger" (click)="removePurchaseItem(i)">
                       <i class="fas fa-times"></i>
@@ -421,7 +437,7 @@
           <div class="row">
             <!-- Discount Section -->
             <div class="col-md-5">
-              <div class="discount-panel">
+             <!-- <div class="discount-panel">
                 <h4 class="discount-title" style="color: #333; font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 16px;">Additional Discount</h4>
                 <div class="discount-controls">
                   <div class="input-group">
@@ -441,7 +457,7 @@
                   </div>
                   <small class="text-muted">Applied to all items</small>
                 </div>
-              </div>
+              </div>-->
             </div>
             
             <!-- Summary Totals -->
@@ -575,25 +591,5 @@
         </button>
       </div>
     </form>
-    
-    <!-- Medicine Search Results - Fixed Position Modal (like sales-prescription-form) -->
-    <div class="fixed-medicine-results" *ngIf="showMedicineSearch" style="position: fixed; z-index: 9999; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; background-color: white; border: 2px solid #6b1d14; border-radius: 8px; max-height: 300px; overflow-y: auto; box-shadow: 0 8px 16px rgba(0,0,0,0.2);">
-      <div style="background-color: #6b1d14; color: white; padding: 8px 12px; font-weight: bold; display: flex; justify-content-between; align-items: center;">
-        <span>Select Medicine</span>
-        <button type="button" (click)="showMedicineSearch = false" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer;">×</button>
-      </div>
-      <div class="loading" *ngIf="loadingMedicines" style="padding: 15px; text-align: center;">
-        <span>Loading medicines...</span>
-      </div>
-      <ul *ngIf="!loadingMedicines && filteredMedicines.length > 0" style="list-style: none; margin: 0; padding: 0;">
-        <li *ngFor="let medicine of filteredMedicines" (click)="selectMedicineForRow(medicine, activeSearchIndex)" style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #eee;">
-          <strong>{{ medicine.name }}</strong>
-          <div *ngIf="medicine.genericName" style="font-size: 0.9em; color: #666;">{{ medicine.genericName }}</div>
-        </li>
-      </ul>
-      <div class="no-results" *ngIf="!loadingMedicines && filteredMedicines.length === 0" style="padding: 15px; text-align: center; color: #666;">
-        No medicines found
-      </div>
-    </div>
   </div>
 </div>

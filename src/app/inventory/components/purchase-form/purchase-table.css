@@ -79,6 +79,7 @@
 .medicine-table .medicine-select {
   width: 100%;
   min-width: 180px;
+  position: relative;
 }
 
 .medicine-table .generic-mfg-column {
@@ -208,6 +209,77 @@
   text-overflow: unset;
   width: 100%;
   min-width: 120px;
+}
+
+/* Medicine search input and dropdown enhancement */
+.medicine-table .medicine-search-input {
+  height: 34px;
+  font-size: 0.9rem;
+  border: 1px solid #d1d3e2;
+  border-radius: 4px;
+  padding: 6px 12px;
+}
+
+.medicine-table .medicine-search-input:focus {
+  border-color: #6b1d14;
+  box-shadow: 0 0 0 0.2rem rgba(107, 29, 20, 0.25);
+  z-index: 1051;
+  position: relative;
+}
+
+.medicine-table .medicine-dropdown {
+  max-width: 300px !important;
+  min-width: 240px !important;
+}
+
+.fixed-medicine-dropdown {
+  position: fixed !important;
+  width: 350px !important;
+  left: 30% !important; /* Position in the middle of screen */
+  background: white !important;
+  border: 2px solid #6b1d14 !important;
+  border-radius: 8px !important;
+  max-height: 350px !important;
+  overflow-y: auto !important;
+  z-index: 99999 !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
+  padding: 5px !important;
+}
+
+.medicine-table .medicine-dropdown .medicine-item:hover {
+  background-color: #f8f9fc;
+  cursor: pointer;
+}
+
+.medicine-table .medicine-dropdown .medicine-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s;
+}
+
+.fixed-medicine-dropdown .medicine-item {
+  padding: 10px 15px !important;
+  border-bottom: 1px solid #e9ecef !important;
+  transition: all 0.2s ease !important;
+}
+
+.fixed-medicine-dropdown .medicine-item:hover {
+  background-color: #f8f9fc !important;
+  cursor: pointer !important;
+  transform: translateX(5px) !important;
+}
+
+.fixed-medicine-dropdown .medicine-item:last-child {
+  border-bottom: none !important;
+}
+
+.fixed-medicine-dropdown .generic-name {
+  color: #6b1d14 !important;
+  font-style: italic !important;
+}
+
+.medicine-table .medicine-select {
+  z-index: 1051;
 }
 
 /* Empty state styling */
