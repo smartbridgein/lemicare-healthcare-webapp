@@ -1,0 +1,37 @@
+steps:
+  # Create the Artifact Registry repository if it doesn't exist
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud artifacts repositories describe cosmicdoc-repo --location=${_REGION} || \
+        gcloud artifacts repositories create cosmicdoc-repo \
+        --repository-format=docker \
+        --location=${_REGION} \
+        --description="Docker repository for Cosmicdoc Frontend"
+  
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/cosmicdoc-repo/cosmicdoc-frontend:$COMMIT_SHA', '.']
+  
+  # Push the container image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '${_REGION}-docker.pkg.dev/$PROJECT_ID/cosmicdoc-repo/cosmicdoc-frontend:$COMMIT_SHA']
+  
+  # Deploy container image to Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+    - 'run'
+    - 'deploy'
+    - 'cosmicdoc-frontend'
+    - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/cosmicdoc-repo/cosmicdoc-frontend:$COMMIT_SHA'
+    - '--region=${_REGION}'
+    - '--platform=managed'
+    - '--allow-unauthenticated'  # Makes the service publicly accessible
+
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/cosmicdoc-repo/cosmicdoc-frontend:$COMMIT_SHA'
+  
+substitutions:
+  _REGION: us-central1  # Default region, can be overridden

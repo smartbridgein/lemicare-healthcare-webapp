@@ -1,0 +1,175 @@
+<!-- Header Section -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="h3 mb-0 text-gray-800 fw-bold">Transfer Appointment</h2>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a [routerLink]="['/dashboard']">Dashboard</a></li>
+        <li class="breadcrumb-item"><a [routerLink]="['/appointments']">Appointments</a></li>
+        <li class="breadcrumb-item"><a [routerLink]="['/appointments', appointmentId]">Details</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Transfer</li>
+      </ol>
+    </nav>
+  </div>
+  <div>
+    <button class="btn btn-light px-3" (click)="cancel()">
+      <i class="fas fa-arrow-left me-2"></i>Back
+    </button>
+  </div>
+</div>
+
+<!-- Alerts -->
+<div *ngIf="error" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+  {{ error }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" (click)="error = null"></button>
+</div>
+
+<div *ngIf="success" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+  {{ success }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" (click)="success = null"></button>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="isLoading" class="d-flex justify-content-center my-5">
+  <div class="spinner-border text-primary" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+  <span class="ms-2">Loading appointment details...</span>
+</div>
+
+<!-- Appointment Details -->
+<div *ngIf="appointment && !isLoading" class="row">
+  <div class="col-lg-12 mb-4">
+    <div class="card shadow mb-4" [style.border-left-width.px]="5" [ngClass]="{
+      'border-left-info': appointment.status === 'Queue',
+      'border-left-primary': appointment.status === 'Arrived',
+      'border-left-warning': appointment.status === 'Engaged',
+      'border-left-success': appointment.status === 'Finished',
+      'border-left-danger': appointment.status === 'Cancelled'
+    }">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="mb-1 fw-bold">Appointment for Patient ID: {{ appointment?.patientId }}</h5>
+            <p class="mb-0 text-muted">
+              <span><i class="far fa-calendar me-1"></i>{{ appointment?.appointmentDateTime | date:'MMM d, yyyy' }}</span>
+              <span class="ms-3"><i class="far fa-clock me-1"></i>{{ appointment?.appointmentDateTime | date:'h:mm a' }}</span>
+              <span class="ms-3"><i class="fas fa-user-md me-1"></i>Doctor ID: {{ appointment?.doctorId || 'Not assigned' }}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Transfer Form -->
+  <div class="col-lg-12">
+    <div class="card shadow" style="border-top: 3px solid #4e73df;">
+      <div class="card-header py-3 bg-light">
+        <h6 class="m-0 font-weight-bold text-primary fw-bold">TRANSFER DETAILS</h6>
+      </div>
+      <div class="card-body">
+        <form [formGroup]="transferForm" (ngSubmit)="onSubmit()">
+          
+          <!-- Transfer Type -->
+          <div class="row mb-4">
+            <div class="col-md-12">
+              <h5 class="border-bottom pb-2 text-dark fw-bold">Transfer Type</h5>
+            </div>
+            
+            <div class="col-md-12 mb-3">
+              <div class="btn-group w-100" role="group" aria-label="Transfer type">
+                <button type="button" class="btn btn-outline-primary flex-grow-1" 
+                        [ngClass]="{'active': transferType === 'doctor'}"
+                        (click)="setTransferType('doctor')">
+                  <i class="fas fa-user-md me-2"></i>Transfer to Another Doctor
+                </button>
+                <button type="button" class="btn btn-outline-primary flex-grow-1" 
+                        [ngClass]="{'active': transferType === 'hospital'}"
+                        (click)="setTransferType('hospital')">
+                  <i class="fas fa-hospital me-2"></i>Transfer to Another Hospital
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Transfer Options -->
+          <div class="row mb-4">
+            <div class="col-md-12">
+              <h5 class="border-bottom pb-2 text-dark fw-bold">Transfer Options</h5>
+            </div>
+            
+            <!-- Doctor Selection - Shown when transferType is 'doctor' -->
+            <div *ngIf="transferType === 'doctor'" class="col-md-12 mb-3">
+              <label for="newDoctorId" class="form-label fw-bold">Select New Doctor <span class="text-danger">*</span></label>
+              <select class="form-select" id="newDoctorId" formControlName="newDoctorId">
+                <option value="">-- Select Doctor --</option>
+                <option *ngFor="let doctor of doctors" 
+                        [value]="doctor.doctorId" 
+                        [disabled]="appointment && doctor.doctorId === appointment.doctorId">
+                  Dr. {{ doctor.name }} {{ appointment && doctor.doctorId === appointment.doctorId ? '(Current)' : '' }}
+                </option>
+              </select>
+              <div *ngIf="transferForm.get('newDoctorId')?.invalid && transferForm.get('newDoctorId')?.touched" 
+                   class="text-danger small mt-1">
+                Please select a new doctor
+              </div>
+            </div>
+            
+            <!-- Hospital Selection - Shown when transferType is 'hospital' -->
+            <div *ngIf="transferType === 'hospital'" class="col-md-12 mb-3">
+              <label for="newHospitalId" class="form-label fw-bold">Select New Hospital <span class="text-danger">*</span></label>
+              <select class="form-select" id="newHospitalId" formControlName="newHospitalId">
+                <option value="">-- Select Hospital --</option>
+                <option *ngFor="let hospital of hospitals" [value]="hospital.hospitalId">
+                  {{ hospital.name }}
+                </option>
+              </select>
+              <div *ngIf="transferForm.get('newHospitalId')?.invalid && transferForm.get('newHospitalId')?.touched" 
+                   class="text-danger small mt-1">
+                Please select a new hospital
+              </div>
+            </div>
+            
+            <!-- Transfer Reason -->
+            <div class="col-md-12 mb-3">
+              <label for="transferReason" class="form-label fw-bold">Reason for Transfer <span class="text-danger">*</span></label>
+              <textarea class="form-control" id="transferReason" formControlName="transferReason" rows="3"></textarea>
+              <div *ngIf="transferForm.get('transferReason')?.invalid && transferForm.get('transferReason')?.touched" 
+                   class="text-danger small mt-1">
+                Please provide a reason for the transfer
+              </div>
+            </div>
+            
+            <!-- Notify Patient -->
+            <div class="col-md-12 mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="notifyPatient" formControlName="notifyPatient">
+                <label class="form-check-label fw-bold" for="notifyPatient">
+                  Notify patient about this transfer
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Form Actions -->
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-light px-4" (click)="cancel()">
+              <i class="fas fa-times me-2"></i>Cancel
+            </button>
+            <button type="submit" class="btn btn-primary px-4" [disabled]="isSubmitting">
+              <i class="fas fa-exchange-alt me-2"></i>
+              <span *ngIf="!isSubmitting">Transfer Appointment</span>
+              <span *ngIf="isSubmitting">
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Processing...
+              </span>
+            </button>
+          </div>
+          
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+

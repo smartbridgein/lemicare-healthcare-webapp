@@ -1,0 +1,44 @@
+// Service Master component styles
+.table {
+  td, th {
+    vertical-align: middle;
+  }
+}
+
+// Override bootstrap styles to match application theme
+.btn-primary {
+  background-color: #6b1d14;
+  border-color: #6b1d14;
+  
+  &:hover, &:focus, &:active {
+    background-color: darken(#6b1d14, 10%);
+    border-color: darken(#6b1d14, 10%);
+  }
+}
+
+.badge {
+  padding: 0.35em 0.65em;
+}
+
+// Filter button styling
+.filter-btn {
+  &.active {
+    background-color: #6b1d14;
+    color: white;
+  }
+}
+
+// Form validations
+.ng-invalid.ng-touched {
+  border-color: #dc3545;
+}
+
+// Clickable status badge
+.status-badge {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+}

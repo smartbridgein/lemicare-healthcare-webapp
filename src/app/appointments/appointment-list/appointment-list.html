@@ -1,0 +1,511 @@
+<!-- Header Section -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="mb-0 fw-bold" style="color: #333; font-family: 'Roboto', sans-serif; font-size: 1.75rem;">{{ isTodayView ? 'Today\'s Schedule' : 'Appointments' }}</h2>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a [routerLink]="['/dashboard']" style="color: #6b1d14; text-decoration: none;">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page" style="color: #6b6b6b;">{{ isTodayView ? 'Today\'s Schedule' : 'Appointments' }}</li>
+      </ol>
+    </nav>
+  </div>
+  <a [routerLink]="['/appointments/new']" class="btn px-4 py-2" style="border-radius: 4px; background-color: #6b1d14; color: white; border: none; font-family: 'Roboto', sans-serif;">
+    <i class="fas fa-plus-circle me-2"></i>New Appointment
+  </a>
+</div>
+
+<!-- Empty div to replace the original search & filter section -->
+<div *ngIf="!isTodayView" class="mb-4"></div>
+
+<!-- Today's Schedule View Info -->
+<div *ngIf="isTodayView" class="alert mb-4" style="background-color: rgba(107, 29, 20, 0.1); border-color: rgba(107, 29, 20, 0.2); color: #6b1d14; font-family: 'Roboto', sans-serif;">
+  <div class="d-flex align-items-center">
+    <i class="fas fa-calendar-day me-2"></i>
+    <span>Showing appointments scheduled for today ({{ selectedDate }}).</span>
+  </div>
+</div>
+
+<!-- Today's Schedule Summary Card - with maroon theme -->
+<div class="card mb-4" style="border-top: 3px solid #6b1d14; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);">
+  <div class="card-header" style="background-color: rgba(107, 29, 20, 0.03);">
+    <div class="d-flex align-items-center justify-content-between">
+      <div style="color: #333; font-family: 'Roboto', sans-serif; font-weight: 600;">
+        <i class="fas fa-calendar-day me-2" style="color: #6b1d14;"></i>
+        Today's Schedule Summary
+      </div>
+      <span class="badge" style="background-color: #1cc88a; color: white; font-family: 'Roboto', sans-serif;">{{ filteredAppointments.length }} Appointments</span>
+    </div>
+  </div>
+  <div class="card-body p-0 bg-white">
+    <div class="row g-0">
+      <div class="col-3 border-end">
+        <div class="p-3 text-center">
+          <h5 class="mb-2" style="color: #6b1d14; font-family: 'Roboto', sans-serif;">Queue</h5>
+          <h2 class="mb-0" style="color: #333; font-family: 'Roboto', sans-serif;">{{ queuedAppointments }}</h2>
+        </div>
+      </div>
+      <div class="col-3 border-end">
+        <div class="p-3 text-center">
+          <h5 class="mb-2" style="color: #1cc88a; font-family: 'Roboto', sans-serif;">Arrived</h5>
+          <h2 class="mb-0" style="color: #333; font-family: 'Roboto', sans-serif;">{{ arrivedAppointments }}</h2>
+        </div>
+      </div>
+      <div class="col-3 border-end">
+        <div class="p-3 text-center">
+          <h5 class="mb-2" style="color: #e6c157; font-family: 'Roboto', sans-serif;">Engaged</h5>
+          <h2 class="mb-0" style="color: #333; font-family: 'Roboto', sans-serif;">{{ engagedAppointments }}</h2>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="p-3 text-center">
+          <h5 class="mb-2" style="color: #1cc88a; font-family: 'Roboto', sans-serif;">Finished</h5>
+          <h2 class="mb-0" style="color: #333; font-family: 'Roboto', sans-serif;">{{ finishedAppointments }}</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Error Alert -->
+<div *ngIf="error" class="alert alert-dismissible fade show mb-4" role="alert" style="background-color: rgba(220, 53, 69, 0.1); border-color: rgba(220, 53, 69, 0.2); color: #dc3545; font-family: 'Roboto', sans-serif;">
+  {{ error }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" (click)="error = null"></button>
+</div>
+
+<!-- Appointments Table -->
+<div class="mb-4">
+  <!-- Table Header -->
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h6 class="m-0 fw-bold" style="color: #333; font-family: 'Roboto', sans-serif; letter-spacing: 0.5px;">
+      {{ isTodayView ? 'TODAY\'S SCHEDULE' : 'APPOINTMENTS LIST' }}
+    </h6>
+    <div class="d-flex align-items-center" style="font-family: 'Roboto', sans-serif; font-size: 0.9rem; color: #6b6b6b;">
+      <span>Showing 1 to {{ filteredAppointments.length }} of {{ filteredAppointments.length }} entries</span>
+      <select class="form-select ms-2" style="width: 70px; border-color: #d1d3e2; font-family: 'Roboto', sans-serif;">
+        <option>50</option>
+        <option>100</option>
+        <option>All</option>
+      </select>
+    </div>
+  </div>
+  
+  <!-- Search & Filter Section -->
+  <div class="mb-3">
+    <div class="row g-3">
+      <!-- Search -->
+      <div class="col-md-4">
+        <div class="input-group">
+          <span class="input-group-text bg-white border-end-0" style="border-color: #d1d3e2;"><i class="fas fa-search" style="color: #6b1d14;"></i></span>
+          <input type="text" class="form-control border-start-0" placeholder="Search by ID, patient name or phone" 
+                style="border-color: #d1d3e2; font-family: 'Roboto', sans-serif;"
+                name="searchTerm" [(ngModel)]="searchTerm"
+                (input)="applyFilters()">
+        </div>
+      </div>
+      
+      <!-- Enhanced Date Filter with Navigation -->
+      <div class="col-md-5">
+        <div class="input-group">
+          <span class="input-group-text" style="background-color: rgba(107, 29, 20, 0.05); border-color: #d1d3e2;">
+            <i class="fas fa-calendar" style="color: #6b1d14;"></i>
+          </span>
+          <input type="date" class="form-control" id="appointmentDate" 
+                name="appointmentDate" [(ngModel)]="selectedDate" 
+                (change)="applyFilters()" style="border-color: #d1d3e2; font-size: 1rem; font-weight: 500;">
+          <button class="btn btn-outline-secondary btn-sm" type="button" title="Previous Day" 
+                  (click)="navigateDate(-1)" style="border-color: #d1d3e2;">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <button class="btn btn-outline-secondary btn-sm" type="button" title="Next Day" 
+                  (click)="navigateDate(1)" style="border-color: #d1d3e2;">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+          <button class="btn btn-sm" type="button" title="Today" 
+                  (click)="setToday()" style="background-color: #e6c157; border-color: #e6c157; color: #fff;">
+            Today
+          </button>
+        </div>
+        <small class="text-muted" *ngIf="selectedDate" style="display: block; margin-top: 4px;">
+          Showing: {{ formatSelectedDate() }}
+        </small>
+      </div>
+      
+      <!-- Status Filter with Multi-select using Bootstrap dropdown -->
+      <div class="col-md-2 dropdown">
+        <div class="position-relative">
+          <button class="btn btn-outline-secondary dropdown-toggle btn-sm w-100" type="button" id="statusFilterDropdown" 
+                 data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">
+            <span *ngIf="selectedStatuses.length === 0">All Types</span>
+            <span *ngIf="selectedStatuses.length > 0">{{ selectedStatuses.length }} Selected</span>
+          </button>
+          <ul class="dropdown-menu p-2" aria-labelledby="statusFilterDropdown" style="min-width: 200px; width: 100%; z-index: 1000;">
+            <li>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" 
+                       [checked]="selectedStatuses.includes(AppointmentStatus.SCHEDULED)" 
+                       (change)="toggleStatusSelection(AppointmentStatus.SCHEDULED, $event)" id="statusScheduled">
+                <label class="form-check-label" for="statusScheduled">Queue</label>
+              </div>
+            </li>
+            <li>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" 
+                       [checked]="selectedStatuses.includes(AppointmentStatus.RESCHEDULED)" 
+                       (change)="toggleStatusSelection(AppointmentStatus.RESCHEDULED, $event)" id="statusRescheduled">
+                <label class="form-check-label" for="statusRescheduled">Arrived</label>
+              </div>
+            </li>
+            <li>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" 
+                       [checked]="selectedStatuses.includes(AppointmentStatus.ENGAGED)" 
+                       (change)="toggleStatusSelection(AppointmentStatus.ENGAGED, $event)" id="statusEngaged">
+                <label class="form-check-label" for="statusEngaged">Engaged</label>
+              </div>
+            </li>
+            <li>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" 
+                       [checked]="selectedStatuses.includes(AppointmentStatus.COMPLETED)" 
+                       (change)="toggleStatusSelection(AppointmentStatus.COMPLETED, $event)" id="statusCompleted">
+                <label class="form-check-label" for="statusCompleted">Finished</label>
+              </div>
+            </li>
+            <li>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" 
+                       [checked]="selectedStatuses.includes(AppointmentStatus.CANCELLED)" 
+                       (change)="toggleStatusSelection(AppointmentStatus.CANCELLED, $event)" id="statusCancelled">
+                <label class="form-check-label" for="statusCancelled">Cancelled</label>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+      
+      <!-- Reset Button -->
+      <div class="col-md-1">
+        <button type="button" class="btn btn-outline-secondary btn-sm w-100" (click)="resetFilters()" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;">
+          <i class="fas fa-times-circle me-1"></i>Reset
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Table Body -->
+  <div class="card">
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="text-center py-5">
+      <div class="spinner-border" style="color: #6b1d14;" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+    
+    <!-- Empty State -->
+    <div *ngIf="!isLoading && filteredAppointments.length === 0" class="text-center py-5">
+      <i class="fas fa-calendar-times text-muted mb-3" style="font-size: 48px;"></i>
+      <h4>No Appointments Found</h4>
+      <p class="text-muted">{{ isTodayView ? 'There are no appointments scheduled for today.' : 'Try adjusting your filters to see more results.' }}</p>
+      <a [routerLink]="['/appointments/new']" class="btn btn-sm" style="background-color: #6b1d14; border-color: #6b1d14; color: white; font-family: 'Roboto', sans-serif;" mt-2>
+        <i class="fas fa-plus-circle me-2"></i>Create Appointment
+      </a>
+    </div>
+    
+    <!-- Table -->
+    <div *ngIf="!isLoading && filteredAppointments.length > 0" class="table-responsive appointments-table-container">
+      <table class="table table-hover mb-0" style="border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 1px solid #dee2e6; background-color: rgba(107, 29, 20, 0.03);">
+            <th style="padding: 12px; font-weight: 600; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem;">Appointment ID</th>
+            <th style="padding: 12px; font-weight: 600; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem;">Patient Details</th>
+            <th style="padding: 12px; font-weight: 600; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem;">Date & Time</th>
+            <th style="padding: 12px; font-weight: 600; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem;">Appointement/Case Type</th>
+            <th style="padding: 12px; font-weight: 600; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem;">Status</th>
+            <th style="padding: 12px; font-weight: 600; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Show appointments sorted by date (latest first) -->
+          <ng-container *ngFor="let appointment of filteredAppointments; let i = index">
+            <tr style="height: 56px; font-size: 14px;">
+              <td style="padding: 12px;">
+                <span>APPT-{{ 10000 + i }}</span>
+              </td>
+              <td style="padding: 12px;">
+                <b>{{ appointment.patientName || getPatientName(appointment.patientId) }}</b>
+                <div class="small text-muted">{{ getPatientPhone(appointment.patientId) || 'No phone' }}</div>
+              </td>
+              <td style="padding: 12px;">
+                {{ formatAppointmentDate(appointment.appointmentDateTime) }}
+              </td>
+              <td style="padding: 12px;">
+                <b>{{ appointment.category || 'Regular' }}</b>
+                <div class="small text-muted">{{ appointment.subCategory || 'New' }}</div>
+              </td>
+              <td style="padding: 12px;">
+                <span class="badge rounded-1 px-2 py-1" [ngStyle]="{ 
+                      'background-color': appointment.status === 'SCHEDULED' ? '#e6c157' : 
+                                        appointment.status === 'RESCHEDULED' ? '#d1d3e2' :
+                                        appointment.status === 'ENGAGED' ? '#f7dc6f' :
+                                        appointment.status === 'COMPLETED' ? '#1cc88a' :
+                                        appointment.status === 'CANCELLED' ? '#e74a3b' : '#e6c157',
+                      'color': appointment.status === 'CANCELLED' || appointment.status === 'COMPLETED' ? 'white' : '#333',
+                      'font-family': 'Roboto, sans-serif',
+                      'font-size': '12px',
+                      'font-weight': '500',
+                      'border-radius': '4px'
+                    }">
+                  <ng-container [ngSwitch]="appointment.status">
+                    <span *ngSwitchCase="'SCHEDULED'">Queue</span>
+                    <span *ngSwitchCase="'RESCHEDULED'">Arrived</span>
+                    <span *ngSwitchCase="'ENGAGED'">Engaged</span>
+                    <span *ngSwitchCase="'COMPLETED'">Finished</span>
+                    <span *ngSwitchCase="'CANCELLED'">Cancelled</span>
+                    <span *ngSwitchDefault>{{ appointment.status }}</span>
+                  </ng-container>
+                </span>
+              </td>
+              
+              <!-- Status Button/Label Column -->
+              <td style="padding: 12px; width: 130px;" class="text-center">
+                <!-- Status Button - for active appointments -->
+                <button *ngIf="appointment.status !== 'COMPLETED' && appointment.status !== 'CANCELLED'" 
+                        class="btn btn-sm px-3 py-1" 
+                        style="border: 1px solid #6b1d14; color: #6b1d14; background-color: transparent; font-size: 14px; font-family: 'Roboto', sans-serif; border-radius: 4px; width: 100px;"
+                        type="button" 
+                        (click)="toggleDropdown($event, 'statusDropdown' + appointment.appointmentId)">
+                  Status <i class="fas fa-chevron-down ms-1"></i>
+                </button>
+                
+                <!-- Completed indicator -->
+                <span *ngIf="appointment.status === 'COMPLETED'" style="color: #1cc88a; font-family: 'Roboto', sans-serif;">
+                  <i class="fas fa-check-circle"></i> Completed
+                </span>
+                
+                <!-- Cancelled indicator -->
+                <span *ngIf="appointment.status === 'CANCELLED'" style="color: #e74a3b; font-family: 'Roboto', sans-serif;">
+                  <i class="fas fa-ban"></i> Cancelled
+                </span>
+              </td>
+              
+              <!-- View/Delete Buttons Column -->
+              <td style="padding: 12px; width: 100px; text-align: center;">
+                <div class="d-flex justify-content-center gap-2">
+                  <!-- View Button - for all appointments -->
+                  <button type="button" 
+                          class="btn btn-sm px-2 py-1" 
+                          style="border: 1px solid #6b1d14; color: #6b1d14; background-color: transparent; font-size: 14px; font-family: 'Roboto', sans-serif; border-radius: 4px; width: 40px;" 
+                          (click)="viewAppointmentDetails(appointment)" 
+                          title="View appointment details">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                
+                  <!-- Delete Button - only shown for active appointments -->
+                  <button *ngIf="appointment.status !== 'COMPLETED' && appointment.status !== 'CANCELLED'" 
+                          type="button" 
+                          class="btn btn-sm px-2 py-1" 
+                          style="border: 1px solid #e74a3b; color: #e74a3b; background-color: transparent; font-size: 14px; font-family: 'Roboto', sans-serif; border-radius: 4px; width: 40px;" 
+                          (click)="deleteAppointment(appointment.appointmentId)">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Appointment Details Modal -->
+<div class="modal" [class.show]="showAppointmentDetailsModal" tabindex="-1" [style.display]="showAppointmentDetailsModal ? 'block' : 'none'" aria-modal="true" role="dialog">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background-color: rgba(107, 29, 20, 0.05); border-bottom: 2px solid #6b1d14;">
+        <h5 class="modal-title" style="color: #6b1d14; font-family: 'Roboto', sans-serif; font-weight: 600;">
+          <i class="fas fa-info-circle me-2"></i>Appointment Details
+        </h5>
+        <button type="button" class="btn-close" (click)="closeAppointmentDetailsModal()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="selectedAppointmentDetails" class="appointment-details">
+          
+          <!-- Patient Info -->
+          <div class="card mb-3" style="border-left: 3px solid #6b1d14;">
+            <div class="card-body p-3">
+              <h6 class="mb-2" style="color: #6b1d14; font-family: 'Roboto', sans-serif;">
+                <i class="fas fa-user me-2"></i>Patient Information
+              </h6>
+              <div class="row">
+                <div class="col-md-6 mb-2">
+                  <div class="text-muted small">Name:</div>
+                  <div class="fw-bold">{{ selectedAppointmentDetails.patientName || getPatientName(selectedAppointmentDetails.patientId) }}</div>
+                </div>
+                <div class="col-md-6 mb-2">
+                  <div class="text-muted small">Contact:</div>
+                  <div>{{ getPatientPhone(selectedAppointmentDetails.patientId) || 'Not available' }}</div>
+                </div>
+                <div class="col-md-6 mb-2">
+                  <div class="text-muted small">Patient ID:</div>
+                  <div>{{ selectedAppointmentDetails.patientId || 'Not available' }}</div>
+                </div>
+                <div class="col-md-6 mb-2" *ngIf="patientAge[selectedAppointmentDetails.patientId]">
+                  <div class="text-muted small">Age:</div>
+                  <div>{{ patientAge[selectedAppointmentDetails.patientId] }} years</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Appointment Info -->
+          <div class="card mb-3" style="border-left: 3px solid #e6c157;">
+            <div class="card-body p-3">
+              <h6 class="mb-2" style="color: #6b1d14; font-family: 'Roboto', sans-serif;">
+                <i class="fas fa-calendar-check me-2"></i>Appointment Details
+              </h6>
+              <div class="row">
+                <div class="col-md-6 mb-2">
+                  <div class="text-muted small">Date & Time:</div>
+                  <div class="fw-bold">{{ formatAppointmentDate(selectedAppointmentDetails.appointmentDateTime) }}</div>
+                </div>
+                <div class="col-md-6 mb-2">
+                  <div class="text-muted small">Doctor:</div>
+                  <div>{{ getDoctorName(selectedAppointmentDetails.doctorId) }}</div>
+                </div>
+                <div class="col-md-6 mb-2">
+                  <div class="text-muted small">Status:</div>
+                  <div>
+                    <span class="badge" [ngStyle]="{ 
+                      'background-color': selectedAppointmentDetails.status === 'SCHEDULED' ? '#e6c157' : 
+                                     selectedAppointmentDetails.status === 'RESCHEDULED' ? '#d1d3e2' :
+                                     selectedAppointmentDetails.status === 'ENGAGED' ? '#f7dc6f' :
+                                     selectedAppointmentDetails.status === 'COMPLETED' ? '#1cc88a' :
+                                     selectedAppointmentDetails.status === 'CANCELLED' ? '#e74a3b' : '#e6c157'
+                    }">
+                      <ng-container [ngSwitch]="selectedAppointmentDetails.status">
+                        <span *ngSwitchCase="'SCHEDULED'">Queue</span>
+                        <span *ngSwitchCase="'RESCHEDULED'">Arrived</span>
+                        <span *ngSwitchCase="'ENGAGED'">Engaged</span>
+                        <span *ngSwitchCase="'COMPLETED'">Finished</span>
+                        <span *ngSwitchCase="'CANCELLED'">Cancelled</span>
+                        <span *ngSwitchDefault>{{ selectedAppointmentDetails.status }}</span>
+                      </ng-container>
+                    </span>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-2">
+                  <div class="text-muted small">Type:</div>
+                  <div>{{ selectedAppointmentDetails.category || 'Regular' }} - {{ selectedAppointmentDetails.subCategory || 'New' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Notes Section -->
+          <div class="card" style="border-left: 3px solid #1cc88a;">
+            <div class="card-body p-3">
+              <h6 class="mb-2" style="color: #6b1d14; font-family: 'Roboto', sans-serif;">
+                <i class="fas fa-sticky-note me-2"></i>Appointment Notes
+              </h6>
+              <div class="p-2 rounded" style="background-color: #f8f9fc; min-height: 80px;">
+                <p *ngIf="selectedAppointmentDetails.notes" style="white-space: pre-line;">{{ selectedAppointmentDetails.notes }}</p>
+                <p *ngIf="!selectedAppointmentDetails.notes" class="text-muted">No notes available for this appointment.</p>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" style="background-color: #6b1d14; color: white; border: none;" (click)="closeAppointmentDetailsModal()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reschedule Appointment Modal -->
+<div class="modal" [class.show]="showRescheduleModal" tabindex="-1" [style.display]="showRescheduleModal ? 'block' : 'none'" aria-modal="true" role="dialog">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Reschedule Appointment</h5>
+        <button type="button" class="btn-close" (click)="cancelReschedule()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="error" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+          {{ error }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" (click)="error = null"></button>
+        </div>
+        
+        <div *ngIf="success" class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+          {{ success }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" (click)="success = null"></button>
+        </div>
+        
+        <div class="mb-3">
+          <p *ngIf="appointmentToReschedule">
+            Rescheduling appointment for <strong>{{ appointmentToReschedule.patientName || getPatientName(appointmentToReschedule.patientId) }}</strong>
+          </p>
+        </div>
+        
+        <div class="mb-3">
+          <label for="newAppointmentDate" class="form-label">New Appointment Date</label>
+          <input type="date" class="form-control" id="newAppointmentDate" [(ngModel)]="newAppointmentDate">
+        </div>
+        
+        <div class="mb-3">
+          <label for="newAppointmentTime" class="form-label">New Appointment Time</label>
+          <input type="time" class="form-control" id="newAppointmentTime" [(ngModel)]="newAppointmentTime">
+        </div>
+        
+        <div class="mb-3">
+          <label for="newDoctor" class="form-label">Doctor (Optional)</label>
+          <select class="form-select" id="newDoctor" [(ngModel)]="newDoctorId">
+            <option [ngValue]="null">-- Keep current doctor --</option>
+            <option *ngFor="let doctor of doctors" [ngValue]="doctor.id">
+              {{ doctor.name }} - {{ doctor.specialization || doctor.specialty || 'General Medicine' }}
+            </option>
+          </select>
+          <small class="form-text text-muted">Leave as is to keep the current doctor</small>
+          <small *ngIf="doctors.length === 0" class="form-text text-danger">No doctors available!</small>
+          <small *ngIf="doctors.length > 0" class="form-text text-success">{{doctors.length}} doctors loaded</small>
+          <small *ngIf="newDoctorId" class="form-text text-info">Selected new doctor ID: {{newDoctorId}}</small>
+        </div>
+        
+        <!-- Case Type -->        
+        <div class="mb-3">
+          <label for="caseType" class="form-label">Case Type</label>
+          <div class="position-relative">
+            <select class="form-select" id="caseType" [(ngModel)]="caseType">
+              <option value="New">New</option>
+              <option value="Follow-up">Follow-up</option>
+              <option value="Emergency">Emergency</option>
+              <option value="Routine">Routine</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Category -->        
+        <div class="mb-3">
+          <label for="category" class="form-label">Category</label>
+          <div class="position-relative">
+            <select class="form-select" id="category" [(ngModel)]="category">
+              <option value="Regular">Regular</option>
+              <option value="VIP">VIP</option>
+              <option value="Staff">Staff</option>
+              <option value="Priority">Priority</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" style="background-color: #858796; border-color: #858796; color: white; font-family: 'Roboto', sans-serif;" (click)="cancelReschedule()">Cancel</button>
+        <button type="button" class="btn" style="background-color: #6b1d14; border-color: #6b1d14; color: white; font-family: 'Roboto', sans-serif;" (click)="rescheduleAppointment()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop fade show" *ngIf="showRescheduleModal"></div>

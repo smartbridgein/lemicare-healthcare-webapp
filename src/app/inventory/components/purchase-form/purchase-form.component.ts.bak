@@ -1,0 +1,849 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators, AbstractControl } from '@angular/forms';
+import { InventoryService } from '../../services/inventory.service';
+import { Supplier, Medicine, StockStatus, PurchaseItem } from '../../models/inventory.models';
+import { Router } from '@angular/router';
+import { environment } from '../../../../environments/environment';
+
+@Component({
+  selector: 'app-purchase-form',
+  standalone: true,
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  templateUrl: './purchase-form.component.html',
+  styleUrls: ['./purchase-form.component.scss']
+})
+export class PurchaseFormComponent implements OnInit {
+  purchaseForm: FormGroup;
+  suppliers: Supplier[] = [];
+  medicines: Medicine[] = [];
+  filteredSuppliers: Supplier[] = [];
+  filteredMedicines: Medicine[] = [];
+  filteredMedicinesForRow: { [key: number]: Medicine[] } = {};
+  activeMedicineRow: number | null = null;
+  searchSupplierTerm: string = '';
+  searching = false;
+  selectedSupplier: Supplier | null = null;
+  loadingSuppliers = false;
+  loadingMedicines = false;
+  submitting = false;
+
+  taxTypes = ['Exclusive', 'Inclusive'];
+  
+  // Totals
+  grossTotal: number = 0;
+  discount: number = 0;
+  netTaxableAmt: number = 0;
+  cgstAmount: number = 0;
+  sgstAmount: number = 0;
+  netTotal: number = 0;
+  overallDiscount: number = 0;
+  overallDiscountType: string = '%';
+
+  constructor(
+    private fb: FormBuilder,
+    private inventoryService: InventoryService,
+    private router: Router
+  ) {
+    this.purchaseForm = this.fb.group({
+      supplierId: ['', Validators.required],
+      invoiceDate: [this.getCurrentDate(), Validators.required],
+      referenceId: [''],
+      gst: ['Exclusive', Validators.required],
+      items: this.fb.array([]),
+      overallDiscount: [0]
+    });
+  }
+
+  ngOnInit(): void {
+    this.loadSuppliers();
+    this.loadMedicines();
+    this.addPurchaseItem();
+  }
+
+  get getCurrentDate(): () => string {
+    return () => {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      return `${day}-${month}-${year}`;
+    };
+  }
+
+  get itemsFormArray(): FormArray {
+    return this.purchaseForm.get('items') as FormArray;
+  }
+
+  addPurchaseItem(): void {
+    const itemGroup = this.fb.group({
+      medicineId: ['', Validators.required],
+      medicineName: [''],
+      genericName: [''],
+      hsn: [''],
+      batchNo: ['', Validators.required],
+      expiryDate: ['', Validators.required],
+      pack: [''],
+      freepack: [0],
+      itemsPerPack: [1],
+      quantity: [0, [Validators.required, Validators.min(1)]],
+      mrp: [0, Validators.required],
+      purchaseCost: [0, Validators.required],
+      discount: [0],
+      cgst: [0],
+      sgst: [0],
+      taxableAmount: [0],
+      totalAmount: [0]
+    });
+    
+    // Auto-calculate amounts on changes
+    itemGroup.get('quantity')?.valueChanges.subscribe(() => this.calculateItemTotal(itemGroup));
+    itemGroup.get('purchaseCost')?.valueChanges.subscribe(() => this.calculateItemTotal(itemGroup));
+    itemGroup.get('discount')?.valueChanges.subscribe(() => this.calculateItemTotal(itemGroup));
+    itemGroup.get('medicineName')?.valueChanges.subscribe(value => {
+      // If medicineName is cleared, clear the medicineId as well
+      if (!value || value.trim() === '') {
+        itemGroup.patchValue({ medicineId: '' });
+      }
+    });
+    
+    const newIndex = this.itemsFormArray.length;
+    this.itemsFormArray.push(itemGroup);
+    
+    // Initialize filtered medicines for this new row
+    this.filteredMedicinesForRow[newIndex] = [...this.medicines];
+  }
+
+  removePurchaseItem(index: number): void {
+    this.itemsFormArray.removeAt(index);
+    this.calculateTotals();
+  }
+
+  loadSuppliers(): void {
+    this.loadingSuppliers = true;
+    this.inventoryService.getSuppliers().subscribe({
+      next: (data: Supplier[]) => {
+        this.suppliers = data;
+        this.filteredSuppliers = [...data];
+        this.loadingSuppliers = false;
+        console.log('Loaded suppliers from API:', data.length);
+      },
+      error: (err) => {
+        console.error('Error loading suppliers', err);
+        this.loadingSuppliers = false;
+        // Fallback to sample data
+        this.createSampleSuppliers();
+      }
+    });
+  }
+
+  loadMedicines(): void {
+    this.loadingMedicines = true;
+    this.inventoryService.getMedicines().subscribe({
+      next: (data: Medicine[]) => {
+        this.medicines = data;
+        this.filteredMedicines = [...data];
+        this.loadingMedicines = false;
+        console.log('Loaded medicines from API:', data.length);
+      },
+      error: (err) => {
+        console.error('Error loading medicines', err);
+        this.loadingMedicines = false;
+        // Fallback to sample data
+        this.createSampleMedicines();
+      },
+      complete: () => {
+        // Initialize filtered medicines for the first row
+        this.filteredMedicinesForRow[0] = [...this.medicines];
+      }
+    });
+  }
+
+  searchSupplier(): void {
+    if (!this.searchSupplierTerm.trim()) {
+      this.filteredSuppliers = [...this.suppliers];
+      return;
+    }
+    
+    const term = this.searchSupplierTerm.toLowerCase();
+    this.filteredSuppliers = this.suppliers.filter(supplier => 
+      supplier.name.toLowerCase().includes(term) ||
+      supplier.id.toLowerCase().includes(term)
+    );
+  }
+
+  selectSupplier(supplier: Supplier): void {
+    this.selectedSupplier = supplier;
+    this.purchaseForm.patchValue({
+      supplierId: supplier.id
+    });
+    this.searchSupplierTerm = '';
+    this.filteredSuppliers = [];
+  }
+
+  filterMedicines(searchTerm: string, rowIndex: number): void {
+    if (!searchTerm || searchTerm.trim() === '') {
+      this.filteredMedicinesForRow[rowIndex] = [...this.medicines];
+      return;
+    }
+    
+    const term = searchTerm.toLowerCase().trim();
+    this.filteredMedicinesForRow[rowIndex] = this.medicines.filter(medicine => 
+      medicine.name.toLowerCase().includes(term)
+    );
+  }
+
+  onMedicineInputFocus(rowIndex: number): void {
+    this.activeMedicineRow = rowIndex;
+    if (!this.filteredMedicinesForRow[rowIndex]) {
+      this.filteredMedicinesForRow[rowIndex] = [...this.medicines];
+    }
+    // Close any click outside by adding document listener
+    setTimeout(() => {
+      document.addEventListener('click', this.handleOutsideClick);
+    }, 100);
+  }
+
+  handleOutsideClick = (event: MouseEvent): void => {
+    if (!(event.target as HTMLElement).closest('.medicine-select')) {
+      this.activeMedicineRow = null;
+      document.removeEventListener('click', this.handleOutsideClick);
+    }
+  }
+
+  selectMedicine(medicine: Medicine, itemIndex: number): void {
+    const itemGroup = this.itemsFormArray.at(itemIndex);
+    
+    // Include more comprehensive medicine data in the form
+    itemGroup.patchValue({
+      medicineId: medicine.id,
+      medicineName: medicine.name,
+      genericName: medicine.genericName || medicine.name,
+      hsn: medicine.hsn || '',
+      cgst: medicine.cgstPercentage || 0,
+      sgst: medicine.sgstPercentage || 0,
+      mrp: medicine.mrp || 0
+    });
+    
+    this.calculateItemTotal(itemGroup);
+    this.activeMedicineRow = null;
+  }
+
+  calculateItemTotal(itemGroup: AbstractControl | FormGroup): void {
+    const quantity = itemGroup.get('quantity')?.value || 0;
+    const purchaseCost = itemGroup.get('purchaseCost')?.value || 0;
+    const discount = itemGroup.get('discount')?.value || 0;
+    
+    // Apply discount
+    const discountAmount = (purchaseCost * quantity * discount) / 100;
+    const preTaxAmount = (purchaseCost * quantity) - discountAmount;
+    
+    // Set tax rates (assuming 9% CGST and 9% SGST for example, adjust as needed)
+    const cgstRate = 9;
+    const sgstRate = 9;
+    
+    // Calculate tax amounts
+    const cgstAmount = (preTaxAmount * cgstRate) / 100;
+    const sgstAmount = (preTaxAmount * sgstRate) / 100;
+    
+    // Update form values
+    itemGroup.patchValue({
+      taxableAmount: preTaxAmount,
+      cgst: cgstRate,
+      sgst: sgstRate,
+      totalAmount: preTaxAmount + cgstAmount + sgstAmount
+    }, { emitEvent: false });
+    
+    // Recalculate totals
+    this.calculateTotals();
+  }
+
+  calculateTotals(): void {
+    let gross = 0;
+    let taxable = 0;
+    let cgst = 0;
+    let sgst = 0;
+    let total = 0;
+    
+    // Sum up all item totals
+    this.itemsFormArray.controls.forEach(control => {
+      const itemGroup = control as FormGroup;
+      const quantity = itemGroup.get('quantity')?.value || 0;
+      const purchaseCost = itemGroup.get('purchaseCost')?.value || 0;
+      
+      gross += quantity * purchaseCost;
+      taxable += itemGroup.get('taxableAmount')?.value || 0;
+      
+      // Calculate tax based on taxable amount and rates
+      const itemTaxableAmount = itemGroup.get('taxableAmount')?.value || 0;
+      const cgstRate = itemGroup.get('cgst')?.value || 0;
+      const sgstRate = itemGroup.get('sgst')?.value || 0;
+      
+      cgst += (itemTaxableAmount * cgstRate) / 100;
+      sgst += (itemTaxableAmount * sgstRate) / 100;
+    });
+    
+    // Apply overall discount if any
+    const overallDiscountValue = this.purchaseForm.get('overallDiscount')?.value || 0;
+    let discountAmount = 0;
+    
+    if (this.overallDiscountType === '%') {
+      discountAmount = (gross * overallDiscountValue) / 100;
+    } else {
+      discountAmount = overallDiscountValue;
+    }
+    
+    taxable = gross - discountAmount;
+    total = taxable + cgst + sgst;
+    
+    // Update totals
+    this.grossTotal = gross;
+    this.discount = discountAmount;
+    this.netTaxableAmt = taxable;
+    this.cgstAmount = cgst;
+    this.sgstAmount = sgst;
+    this.netTotal = total;
+  }
+  
+  /**
+   * Helper method to mark all form controls as touched for validation display
+   */
+  markFormGroupTouched(formGroup: FormGroup): void {
+    Object.values(formGroup.controls).forEach(control => {
+      control.markAsTouched();
+      
+      if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
+      }
+      
+      if (control instanceof FormArray) {
+        control.controls.forEach(c => {
+          if (c instanceof FormGroup) {
+            this.markFormGroupTouched(c);
+          }
+        });
+      }
+    });
+  }
+  
+  /**
+   * Find all invalid controls in the form for validation feedback
+   */
+  findInvalidControls(): string[] {
+    const invalid: string[] = [];
+    const controls = this.purchaseForm.controls;
+    
+    for (const name in controls) {
+      if (controls[name].invalid) {
+        const errors = controls[name].errors ? Object.keys(controls[name].errors).join(', ') : '';
+        invalid.push(`${name} (${errors})`);
+      }
+    }
+    
+    // Check items array
+    const items = this.purchaseForm.get('items') as FormArray;
+    if (items) {
+      items.controls.forEach((control: AbstractControl, index: number) => {
+        const itemGroup = control as FormGroup;
+        for (const name in itemGroup.controls) {
+          if (itemGroup.controls[name].invalid) {
+            const errors = itemGroup.controls[name].errors ? Object.keys(itemGroup.controls[name].errors).join(', ') : '';
+            invalid.push(`items[${index}].${name} (${errors})`);
+          }
+        }
+      });
+    }
+    
+    return invalid;
+  }
+  
+  /**
+   * Validate purchase items for business rules like expiry date
+   */
+  validatePurchaseItems(): string[] {
+    const invalidItems: string[] = [];
+    
+    this.itemsFormArray.controls.forEach((control, index) => {
+      const item = control as FormGroup;
+      const medicineName = item.get('medicineName')?.value || `Item ${index + 1}`;
+      
+      // Check for expiry date validation
+      const expiryDateStr = item.get('expiryDate')?.value;
+      
+      if (expiryDateStr) {
+        try {
+          // Parse date from DD-MM-YYYY format
+          const parts = expiryDateStr.split(/[-\/]/);
+          let expiryDate: Date;
+          
+          if (parts[0].length === 4) {
+            // YYYY-MM-DD format
+            expiryDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+          } else {
+            // DD-MM-YYYY format
+            expiryDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+          }
+          
+          const today = new Date();
+          
+          // Check if expiry date is in the past
+          if (expiryDate < today) {
+            invalidItems.push(`${medicineName} (expired)`);
+          }
+        } catch (err) {
+          console.error('Error validating expiry date for', medicineName, err);
+          invalidItems.push(`${medicineName} (invalid date format)`);
+        }
+      } else {
+        invalidItems.push(`${medicineName} (missing expiry date)`);
+      }
+      
+      // Check if the medicine is selected
+      if (!item.get('medicineId')?.value) {
+        invalidItems.push(`${medicineName} (no medicine selected)`);
+      }
+      
+      // Check if quantity is valid
+      const quantity = item.get('quantity')?.value;
+      if (!quantity || quantity <= 0) {
+        invalidItems.push(`${medicineName} (invalid quantity)`);
+      }
+      
+      // Check for valid purchase cost
+      const purchaseCost = item.get('purchaseCost')?.value;
+      if (purchaseCost === undefined || purchaseCost === null || purchaseCost <= 0) {
+        invalidItems.push(`${medicineName} (invalid purchase cost)`);
+      }
+    });
+    
+    return invalidItems;
+  }
+  
+  /**
+   * Format date for API submission
+   */
+  formatDateForApi(dateStr: string): string {
+    if (!dateStr) return '';
+    
+    try {
+      // Handle both DD-MM-YYYY and YYYY-MM-DD formats
+      const parts = dateStr.includes('-') ? dateStr.split('-') : dateStr.split('/');
+      
+      if (parts.length !== 3) {
+        console.error('Invalid date format:', dateStr);
+        return dateStr;
+      }
+      
+      // If first part is 4 digits, assume it's already in YYYY-MM-DD format
+      if (parts[0].length === 4) {
+        return dateStr;
+      }
+      
+      // Convert from DD-MM-YYYY to YYYY-MM-DD
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    } catch (err) {
+      console.error('Error formatting date:', dateStr, err);
+      return dateStr;
+    }
+  }
+  
+  /**
+   * Toggle discount type between percentage and fixed amount
+   */
+  toggleDiscountType(): void {
+    this.overallDiscountType = this.overallDiscountType === '%' ? '₹' : '%';
+    this.calculateTotals();
+  }
+  
+  /**
+   * Create sample suppliers for testing
+   */
+  createSampleSuppliers(): void {
+    this.suppliers = [
+      { id: 'SP-2025057', name: 'ALPHA AGENCIES', mobileNumber: '7550020555', address: '123 Main St', gstin: 'GSTIN1234567890' },
+      { id: 'SP-2025055', name: 'AJAX PHARMACEUTICALS', mobileNumber: '4282592522', address: '456 Oak Ave', gstin: 'GSTIN0987654321' },
+      { id: 'SP-2025056', name: 'UBK', mobileNumber: '7358412905', address: '789 Hospital Street', gstin: 'GSTIN5678901234' }
+    ];
+    this.filteredSuppliers = [...this.suppliers];
+    console.log('Using sample suppliers:', this.suppliers.length);
+  }
+  
+  /**
+   * Create sample medicines for testing
+   */
+  createSampleMedicines(): void {
+    this.medicines = [
+      { 
+        id: 'M001', 
+        name: 'Paracetamol 500mg', 
+        genericName: 'Paracetamol', 
+        hsn: 'HSN001', 
+        mrp: 15, 
+        cgstPercentage: 9, 
+        sgstPercentage: 9,
+        unitOfMeasurement: 'TAB',
+        lowStockThreshold: 10,
+        stockQuantity: 100,
+        stockStatus: StockStatus.NORMAL,
+        taxProfileId: 'TP001',
+        purchasePrice: 10,
+        sellingPrice: 12
+      },
+      { 
+        id: 'M002', 
+        name: 'Amoxicillin 250mg', 
+        genericName: 'Amoxicillin', 
+        hsn: 'HSN002', 
+        mrp: 25, 
+        cgstPercentage: 9, 
+        sgstPercentage: 9,
+        unitOfMeasurement: 'TAB',
+        lowStockThreshold: 10,
+        stockQuantity: 50,
+        stockStatus: StockStatus.NORMAL,
+        taxProfileId: 'TP001',
+        purchasePrice: 15,
+        sellingPrice: 20
+      },
+      { 
+        id: 'M003', 
+        name: 'Cetirizine 10mg', 
+        genericName: 'Cetirizine', 
+        hsn: 'HSN003', 
+        mrp: 18, 
+        cgstPercentage: 9, 
+        sgstPercentage: 9,
+        unitOfMeasurement: 'TAB',
+        lowStockThreshold: 5,
+        stockQuantity: 20,
+        stockStatus: StockStatus.NORMAL,
+        taxProfileId: 'TP001',
+        purchasePrice: 12,
+        sellingPrice: 15
+      }
+    ];
+    this.filteredMedicines = [...this.medicines];
+    
+    // Initialize filtered medicines for rows
+    if (this.itemsFormArray.length > 0) {
+      this.filteredMedicinesForRow[0] = [...this.medicines];
+    }
+  }
+    if (!dateStr) return '';
+    
+    try {
+      // Handle both DD-MM-YYYY and YYYY-MM-DD formats
+      const parts = dateStr.includes('-') ? dateStr.split('-') : dateStr.split('/');
+      
+      if (parts.length !== 3) {
+        console.error('Invalid date format:', dateStr);
+        return dateStr;
+      }
+      
+      // If first part is 4 digits, assume it's already in YYYY-MM-DD format
+      if (parts[0].length === 4) {
+        return dateStr;
+      }
+      
+      // Convert from DD-MM-YYYY to YYYY-MM-DD
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    } catch (err) {
+      console.error('Error formatting date:', dateStr, err);
+      return dateStr;
+    }
+  }
+  
+  /**
+   * Toggle discount type between percentage and fixed amount
+   */
+  toggleDiscountType(): void {
+    this.overallDiscountType = this.overallDiscountType === '%' ? 'fixed' : '%';
+    this.calculateTotals();
+  }
+
+  /**
+   * Create sample suppliers for testing
+   */
+  createSampleSuppliers(): void {
+    this.suppliers = [
+      { id: 'SUP001', name: 'Medical Distributors Ltd', address: '123 Healthcare Avenue', contactNumber: '1234567890', email: 'info@medicaldist.com' },
+      { id: 'SUP002', name: 'Pharma Solutions', address: '456 Medicine Road', contactNumber: '0987654321', email: 'contact@pharmasolutions.com' },
+      { id: 'SUP003', name: 'Healthcare Supplies Co.', address: '789 Hospital Street', contactNumber: '1122334455', email: 'sales@healthcaresupplies.com' }
+    ];
+    this.filteredSuppliers = [...this.suppliers];
+    console.log('Using sample suppliers:', this.suppliers.length);
+  }
+  
+  /**
+   * Create sample medicines for testing
+   */
+  createSampleMedicines(): void {
+    this.medicines = [
+      { id: 'MED001', name: 'Paracetamol 500mg', unitOfMeasurement: 'Tablet', lowStockThreshold: 10, stockQuantity: 100, stockStatus: 'NORMAL' as any, taxProfileId: 'TAX001', genericName: 'Acetaminophen', hsn: '30049099', cgstPercentage: 6, sgstPercentage: 6, mrp: 2.5 },
+      { id: 'MED002', name: 'Amoxicillin 250mg', unitOfMeasurement: 'Capsule', lowStockThreshold: 20, stockQuantity: 50, stockStatus: 'NORMAL' as any, taxProfileId: 'TAX001', genericName: 'Amoxicillin', hsn: '30049099', cgstPercentage: 6, sgstPercentage: 6, mrp: 5.0 },
+      { id: 'MED003', name: 'Ranitidine 150mg', unitOfMeasurement: 'Tablet', lowStockThreshold: 15, stockQuantity: 30, stockStatus: 'LOW' as any, taxProfileId: 'TAX002', genericName: 'Ranitidine', hsn: '30049099', cgstPercentage: 9, sgstPercentage: 9, mrp: 3.75 }
+    ];
+    this.filteredMedicines = [...this.medicines];
+    this.filteredMedicinesForRow[0] = [...this.medicines];
+    console.log('Using sample medicines:', this.medicines.length);
+  }
+
+  onSubmit(): void {
+    // Mark all controls as touched to show validation errors
+    this.markFormGroupTouched(this.purchaseForm);
+    
+    if (this.purchaseForm.invalid) {
+      console.log('Form is invalid', this.findInvalidControls());
+      // Check specific fields for better debugging
+      if (this.purchaseForm.get('supplierId')?.invalid) {
+        console.log('Supplier ID is invalid', this.purchaseForm.get('supplierId')?.errors);
+      }
+      
+      // Check each item for validation issues
+      this.itemsFormArray.controls.forEach((control, i) => {
+        const itemGroup = control as FormGroup;
+        if (itemGroup.invalid) {
+          console.log(`Item ${i} is invalid:`, 
+            Object.keys(itemGroup.controls)
+              .filter(key => itemGroup.get(key)?.invalid)
+              .map(key => `${key}: ${JSON.stringify(itemGroup.get(key)?.errors)}`)
+          );
+        }
+      });
+      
+      alert('Please fill all required fields marked in red');
+      return;
+    }
+    
+    if (this.itemsFormArray.length === 0) {
+      alert('Please add at least one medicine to the purchase');
+      return;
+    }
+    
+    // Validate expiry dates and other business rules
+    const invalidItems = this.validatePurchaseItems();
+    if (invalidItems.length > 0) {
+      alert(`Please fix the following issues: ${invalidItems.join(', ')}`);
+      return;
+    }
+    
+    this.submitting = true;
+    
+    // Format data for API
+    const formValue = this.purchaseForm.value;
+    const purchaseItems: PurchaseItem[] = formValue.items.map((item: any) => ({
+      medicineId: item.medicineId,
+      batchNo: item.batchNo,
+      expiryDate: this.formatDateForApi(item.expiryDate),
+      paidQuantity: item.quantity,
+      freeQuantity: item.freepack || 0,
+      purchaseCost: item.purchaseCost,
+      mrp: item.mrp,
+      // Include optional tax information
+      cgst: item.cgst || 0,
+      sgst: item.sgst || 0,
+      discount: item.discount || 0
+    }));
+    
+    const purchaseData = {
+      supplierId: formValue.supplierId,
+      invoiceDate: this.formatDateForApi(formValue.invoiceDate),
+      referenceId: formValue.referenceId || `INV-${new Date().getTime().toString().slice(-6)}`,
+      purchaseItems: purchaseItems,
+      totalAmount: this.netTotal,
+      gstType: formValue.gst || 'Exclusive'
+    };
+    
+    console.log('Submitting purchase data to API:', purchaseData);
+    
+    this.inventoryService.createPurchase(purchaseData).subscribe({
+      next: (response) => {
+        console.log('Purchase created successfully', response);
+        this.submitting = false;
+        
+        // Show success message before navigation
+        alert('Purchase invoice created successfully!');
+        
+        // Navigate to purchases list
+        this.router.navigate(['/inventory/purchases']);
+      },
+      error: (error) => {
+        console.error('Error creating purchase', error);
+        this.submitting = false;
+        
+        // Show detailed error message
+        const errorMessage = error.error?.message || error.message || 'Unknown error occurred';
+        alert(`Error creating purchase: ${errorMessage}. Please try again.`);
+      }
+    });
+  }
+
+markFormGroupTouched(formGroup: FormGroup): void {
+  Object.values(formGroup.controls).forEach(control => {
+    control.markAsTouched();
+    
+    if (control instanceof FormGroup) {
+      this.markFormGroupTouched(control);
+    }
+    
+    if (control instanceof FormArray) {
+      control.controls.forEach(c => {
+        if (c instanceof FormGroup) {
+          this.markFormGroupTouched(c);
+        }
+    }
+  });
+  
+  alert('Please fill all required fields marked in red');
+  return;
+}
+  
+if (this.itemsFormArray.length === 0) {
+  alert('Please add at least one medicine to the purchase');
+  return;
+}
+  
+// Validate expiry dates and other business rules
+const invalidItems = this.validatePurchaseItems();
+if (invalidItems.length > 0) {
+  alert(`Please fix the following issues: ${invalidItems.join(', ')}`);
+  return;
+}
+  
+this.submitting = true;
+  
+// Format data for API
+const formValue = this.purchaseForm.value;
+const purchaseItems: PurchaseItem[] = formValue.items.map((item: any) => ({
+  medicineId: item.medicineId,
+  batchNo: item.batchNo,
+  expiryDate: this.formatDateForApi(item.expiryDate),
+  paidQuantity: item.quantity,
+  freeQuantity: item.freepack || 0,
+  purchaseCost: item.purchaseCost,
+  mrp: item.mrp,
+  // Include optional tax information
+  cgst: item.cgst || 0,
+  sgst: item.sgst || 0,
+  discount: item.discount || 0
+}));
+  
+const purchaseData = {
+  supplierId: formValue.supplierId,
+  invoiceDate: this.formatDateForApi(formValue.invoiceDate),
+  referenceId: formValue.referenceId || `INV-${new Date().getTime().toString().slice(-6)}`,
+  purchaseItems: purchaseItems,
+  totalAmount: this.netTotal,
+  gstType: formValue.gst || 'Exclusive'
+};
+  
+console.log('Submitting purchase data to API:', purchaseData);
+  
+this.inventoryService.createPurchase(purchaseData).subscribe({
+  next: (response) => {
+    console.log('Purchase created successfully', response);
+    this.submitting = false;
+    
+    // Show success message before navigation
+    alert('Purchase invoice created successfully!');
+    
+    // Navigate to purchases list
+    this.router.navigate(['/inventory/purchases']);
+  },
+  error: (error) => {
+    console.error('Error creating purchase', error);
+    this.submitting = false;
+    
+    // Show detailed error message
+    const errorMessage = error.error?.message || error.message || 'Unknown error occurred';
+    alert(`Error creating purchase: ${errorMessage}. Please try again.`);
+  }
+});
+}
+
+markFormGroupTouched(formGroup: FormGroup): void {
+Object.values(formGroup.controls).forEach(control => {
+  control.markAsTouched();
+  
+  if (control instanceof FormGroup) {
+    this.markFormGroupTouched(control);
+  }
+  
+  if (control instanceof FormArray) {
+    control.controls.forEach(c => {
+      if (c instanceof FormGroup) {
+        this.markFormGroupTouched(c);
+      }
+    });
+  }
+});
+}
+
+formatDateForApi(dateStr: string): string {
+if (!dateStr) return '';
+  
+try {
+  // Handle both DD-MM-YYYY and YYYY-MM-DD formats
+  const parts = dateStr.includes('-') ? dateStr.split('-') : dateStr.split('/');
+    this.suppliers = [
+      {
+        id: 'SP-2025057',
+        name: 'ALPHA AGENCIES',
+        contactNumber: '7550020555'
+      },
+      {
+        id: 'SP-2025055',
+        name: 'AJAX PHARMACEUTICALS',
+        contactNumber: '4282592522'
+      },
+      {
+        id: 'SP-2025056',
+        name: 'UBK',
+        contactNumber: '7358412905'
+      }
+    ];
+    this.filteredSuppliers = [...this.suppliers];
+  }
+  
+  toggleDiscountType(): void {
+    // Toggle between percentage and fixed amount discount types
+    this.overallDiscountType = this.overallDiscountType === '%' ? 'Fixed' : '%';
+    
+    // Recalculate totals with the new discount type
+    this.calculateTotals();
+  }
+  
+  createSampleMedicines(): void {
+    this.medicines = [
+      { 
+        id: 'med_1', 
+        name: 'Acnecrosis body spray', 
+        unitOfMeasurement: 'Spray',
+        lowStockThreshold: 10, 
+        stockQuantity: 0, 
+        stockStatus: 'OUT_OF_STOCK' as any,
+        taxProfileId: 'tax_1'
+      },
+      { 
+        id: 'med_2', 
+        name: 'Adipan Gref serum', 
+        unitOfMeasurement: 'Serum',
+        lowStockThreshold: 5, 
+        stockQuantity: 4, 
+        stockStatus: 'LOW' as any,
+        taxProfileId: 'tax_1'
+      },
+      { 
+        id: 'med_3', 
+        name: 'Aftaglow lotion', 
+        unitOfMeasurement: 'Bottle',
+        lowStockThreshold: 5, 
+        stockQuantity: 0, 
+        stockStatus: 'OUT_OF_STOCK' as any,
+        taxProfileId: 'tax_2'
+      }
+    ];
+    this.filteredMedicines = [...this.medicines];
+  }
+}

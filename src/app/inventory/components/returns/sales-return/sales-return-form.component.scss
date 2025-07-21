@@ -1,0 +1,28 @@
+.sales-return-container {
+  padding: 20px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.back-button a {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  color: #007bff;
+
+  i {
+    margin-right: 5px;
+  }
+}
+
+.form-container {
+  background: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}

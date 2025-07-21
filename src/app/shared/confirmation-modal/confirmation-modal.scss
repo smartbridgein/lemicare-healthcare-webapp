@@ -1,0 +1,33 @@
+// Enhanced modal styles
+.modal-content {
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+  border-top-left-radius: 7px;
+  border-top-right-radius: 7px;
+  
+  &.bg-danger {
+    color: white;
+  }
+  
+  &.bg-warning {
+    color: #212529;
+  }
+}
+
+.modal-title {
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  font-size: 1.05rem;
+}
+
+.modal-footer {
+  padding: 0.75rem 1.25rem 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}

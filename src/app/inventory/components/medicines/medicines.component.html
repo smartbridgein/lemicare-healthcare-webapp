@@ -1,0 +1,95 @@
+<div class="medicines-container">
+  <div class="page-header">
+    <div class="back-button">
+      <a [routerLink]="['/inventory']">
+        <i class="fas fa-arrow-left"></i> Stock
+      </a>
+    </div>
+    
+    <div class="actions">
+      <button class="refresh-btn" (click)="loadMedicines()">Refresh / Filter</button>
+      <div class="dropdown">
+        <button class="dropdown-btn">Stock Details <i class="fas fa-caret-down"></i></button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="stock-details-container">
+    <h2 class="section-title">Stock Details</h2>
+    
+    <div class="search-export-bar">
+      <div class="search-box">
+        <input 
+          type="text" 
+          placeholder="Search" 
+          [(ngModel)]="searchTerm"
+          (input)="search()"
+        >
+        <i class="fas fa-search"></i>
+      </div>
+      
+      <div class="export-button">
+        <button><i class="fas fa-file-export"></i> Export</button>
+      </div>
+      
+      <div class="view-toggle">
+        <button><i class="fas fa-list"></i></button>
+      </div>
+    </div>
+    
+    <div class="medicines-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Medicine Name</th>
+            <th>Generic</th>
+            <th>Group</th>
+            <th>MFG</th>
+            <th>Location</th>
+            <th>Available Stock</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody *ngIf="!loading && filteredMedicines.length > 0">
+          <tr *ngFor="let medicine of filteredMedicines">
+            <td>{{ medicine.name }}</td>
+            <td>{{ medicine.name }}</td>
+            <td>{{ medicine.unitOfMeasurement }}</td>
+            <td>AAA</td>
+            <td>-</td>
+            <td [ngClass]="getStockStatusClass(medicine.stockStatus)">{{ medicine.stockQuantity }}</td>
+            <td>
+              <button class="action-btn">
+                <i class="fas fa-ellipsis-h"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+        <tbody *ngIf="loading">
+          <tr>
+            <td colspan="7" class="loading-message">Loading medicines...</td>
+          </tr>
+        </tbody>
+        <tbody *ngIf="!loading && filteredMedicines.length === 0">
+          <tr>
+            <td colspan="7" class="no-data-message">No medicines found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="pagination" *ngIf="filteredMedicines.length > 0">
+      <span class="page-info">Showing 1 to {{ filteredMedicines.length }} of {{ filteredMedicines.length }} entries</span>
+      <div class="page-controls">
+        <select>
+          <option>50</option>
+          <option>100</option>
+          <option>200</option>
+        </select>
+        <button class="page-btn" disabled><i class="fas fa-chevron-left"></i> Previous</button>
+        <button class="page-number active">1</button>
+        <button class="page-btn" disabled>Next <i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+  </div>
+</div>

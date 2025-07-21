@@ -1,0 +1,462 @@
+// Brand colors
+$maroon-primary: #6b1d14;
+$maroon-dark: #4a0f09;
+$maroon-light: #8c2c21;
+$yellow-accent: #e6c157;
+$yellow-light: #f3d98b;
+$gray-bg: #f8f9fc;
+$gray-light: #f3f4f6;
+$gray-border: #e5e7eb;
+
+// Font family
+$font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+
+.supplier-overview-container {
+  padding: 1.5rem;
+  font-family: $font-family;
+  background-color: $gray-bg;
+  min-height: calc(100vh - 80px);
+}
+
+// Page header styles
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  
+  .back-button {
+    display: flex;
+    align-items: center;
+    color: $maroon-primary;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background-color: rgba($maroon-primary, 0.05);
+    }
+    
+    i {
+      margin-right: 0.75rem;
+    }
+  }
+  
+  .supplier-id {
+    font-size: 0.875rem;
+    color: #6c757d;
+  }
+}
+
+// Supplier details card styles
+.supplier-details-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+  border-top: 4px solid $maroon-primary;
+  background: linear-gradient(to bottom, rgba($maroon-primary, 0.02) 0%, rgba(white, 1) 100%);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(to right, $maroon-primary, $maroon-light);
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .supplier-name-section {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    
+    .supplier-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: $maroon-dark;
+      margin-right: 0.75rem;
+    }
+    
+    .gst-number {
+      font-size: 0.875rem;
+      color: #6c757d;
+      font-weight: normal;
+    }
+  }
+  
+  .contact-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+    
+    .phone {
+      background-color: $gray-light;
+      padding: 0.4rem 0.75rem;
+      border-radius: 50px;
+      display: inline-flex;
+      align-items: center;
+      color: $maroon-primary;
+      
+      i {
+        margin-right: 0.5rem;
+        font-size: 0.8rem;
+      }
+    }
+  }
+  
+  .balance-section {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    
+    .label {
+      font-size: 0.9rem;
+      color: #6c757d;
+      margin-right: 0.75rem;
+    }
+    
+    .amount {
+      font-size: 1.25rem;
+      font-weight: 700;
+      padding: 0.25rem 1rem;
+      border-radius: 8px;
+      
+      &.negative {
+        color: $maroon-primary;
+        background-color: rgba($maroon-primary, 0.08);
+      }
+      
+      &.positive {
+        color: #28a745;
+        background-color: rgba(#28a745, 0.08);
+      }
+    }
+  }
+}
+
+// Transactions card styles
+.transactions-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  margin-bottom: 1rem;
+  border-top: 4px solid $maroon-primary;
+  background: linear-gradient(to bottom, rgba($maroon-primary, 0.02) 0%, rgba(white, 1) 100%);
+  
+  .table-header {
+    display: grid;
+    grid-template-columns: 50px 120px 80px 120px 120px 120px 1fr 80px;
+    gap: 0.5rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(to right, $maroon-primary, $maroon-light);
+    color: white;
+    font-weight: 600;
+    font-size: 0.875rem;
+    
+    div {
+      display: flex;
+      align-items: center;
+    }
+    
+    .amount, .balance {
+      justify-content: flex-end;
+    }
+    
+    .action {
+      justify-content: center;
+    }
+  }
+  
+  .transaction-row {
+    display: grid;
+    grid-template-columns: 50px 120px 80px 120px 120px 120px 1fr 80px;
+    gap: 0.5rem;
+    padding: 0.875rem 1.25rem;
+    border-bottom: 1px solid $gray-border;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    
+    &:hover {
+      background-color: $gray-light;
+    }
+    
+    &.selected {
+      background-color: rgba($maroon-primary, 0.05);
+      border-bottom: none;
+      position: relative;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(to right, $maroon-primary, $yellow-accent);
+      }
+    }
+    
+    .id {
+      color: #6c757d;
+    }
+    
+    .transaction-id {
+      font-weight: 500;
+      color: $maroon-primary;
+    }
+    
+    .amount, .balance {
+      text-align: right;
+      font-weight: 500;
+    }
+    
+    .balance {
+      &.negative {
+        color: $maroon-primary;
+      }
+      
+      &.positive {
+        color: #28a745;
+      }
+    }
+    
+    .action {
+      display: flex;
+      justify-content: center;
+      
+      .action-button {
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          background-color: $gray-border;
+        }
+      }
+    }
+  }
+  
+  // Transaction details expansion panel
+  .transaction-details {
+    background-color: rgba($gray-bg, 0.6);
+    padding: 1rem 1.25rem 1.5rem;
+    border-bottom: 1px solid $gray-border;
+    animation: slideDown 0.3s ease-out;
+    
+    .details-header {
+      display: grid;
+      grid-template-columns: 1.5fr 0.8fr 0.8fr 0.6fr 0.8fr 0.8fr 1fr 1fr;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: $maroon-primary;
+      border-bottom: 1px solid rgba($maroon-primary, 0.1);
+    }
+    
+    .details-row {
+      display: grid;
+      grid-template-columns: 1.5fr 0.8fr 0.8fr 0.6fr 0.8fr 0.8fr 1fr 1fr;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      font-size: 0.8125rem;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      margin-bottom: 0.25rem;
+      background-color: white;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      
+      &:hover {
+        background-color: rgba($gray-light, 0.7);
+      }
+      
+      .medicine-name {
+        font-weight: 500;
+        color: $maroon-dark;
+      }
+      
+      .tax-label {
+        font-weight: 500;
+      }
+      
+      .tax-components {
+        font-size: 0.7rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+      }
+      
+      .total-amount {
+        font-weight: 600;
+        color: $maroon-primary;
+      }
+    }
+    
+    .transaction-summary {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px dashed $gray-border;
+      
+      .summary-row {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        
+        &.total {
+          margin-top: 0.5rem;
+          padding-top: 0.5rem;
+          border-top: 1px solid $gray-border;
+          font-weight: 700;
+          font-size: 1rem;
+          color: $maroon-primary;
+        }
+        
+        .summary-label {
+          margin-right: 1.5rem;
+          color: #6c757d;
+          width: 100px;
+          text-align: right;
+        }
+        
+        .summary-value {
+          width: 120px;
+          text-align: right;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+  
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 0;
+    
+    .spinner {
+      width: 3rem;
+      height: 3rem;
+      border: 3px solid rgba($maroon-primary, 0.2);
+      border-top-color: $maroon-primary;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+    
+    .loading-text {
+      color: #6c757d;
+    }
+  }
+  
+  .no-transactions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 0;
+    color: #6c757d;
+    
+    i {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+  }
+}
+
+// Add Payment button
+.add-payment-button {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: linear-gradient(to right, $maroon-primary, $maroon-light);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 0.75rem 1.5rem;
+  font-family: $font-family;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba($maroon-primary, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba($maroon-primary, 0.4);
+  }
+  
+  i {
+    margin-right: 0.75rem;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    height: 40%;
+    background: linear-gradient(to bottom, rgba(white, 0.15), rgba(white, 0));
+    border-radius: 50px 50px 0 0;
+    pointer-events: none;
+  }
+}
+
+// Animation keyframes
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes slideDown {
+  0% { 
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Modal backdrop
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 1040;
+}

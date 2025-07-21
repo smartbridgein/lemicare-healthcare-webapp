@@ -1,0 +1,226 @@
+<div class="settings-container">
+  <div class="page-header">
+    <h1>Settings</h1>
+    <p>Configure your clinic settings</p>
+  </div>
+
+  <div class="settings-content">
+    <div class="settings-sidebar">
+      <ul class="nav-tabs">
+        <li [class.active]="activeTab === 'general'" (click)="setActiveTab('general')">
+          <i class="fas fa-cog"></i> General
+        </li>
+        <li [class.active]="activeTab === 'users'" (click)="setActiveTab('users')">
+          <i class="fas fa-users"></i> Users
+        </li>
+        <li [class.active]="activeTab === 'clinic'" (click)="setActiveTab('clinic')">
+          <i class="fas fa-hospital"></i> Clinic
+        </li>
+        <li [class.active]="activeTab === 'notifications'" (click)="setActiveTab('notifications')">
+          <i class="fas fa-bell"></i> Notifications
+        </li>
+        <li [class.active]="activeTab === 'integrations'" (click)="setActiveTab('integrations')">
+          <i class="fas fa-plug"></i> Integrations
+        </li>
+        <li [class.active]="activeTab === 'backup'" (click)="setActiveTab('backup')">
+          <i class="fas fa-database"></i> Backup & Restore
+        </li>
+      </ul>
+    </div>
+    
+    <div class="settings-main">
+      <!-- General Settings -->
+      <div class="settings-panel" *ngIf="activeTab === 'general'">
+        <h2>General Settings</h2>
+        <div class="form-group">
+          <label for="siteName">Clinic Name</label>
+          <input type="text" id="siteName" class="form-control" value="Hanan Clinic">
+        </div>
+        <div class="form-group">
+          <label for="timezone">Timezone</label>
+          <select id="timezone" class="form-control">
+            <option value="UTC">UTC</option>
+            <option value="EST" selected>Eastern Time</option>
+            <option value="CST">Central Time</option>
+            <option value="MST">Mountain Time</option>
+            <option value="PST">Pacific Time</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="dateFormat">Date Format</label>
+          <select id="dateFormat" class="form-control">
+            <option value="MM/DD/YYYY" selected>MM/DD/YYYY</option>
+            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+          </select>
+        </div>
+        <button class="btn btn-primary">Save Changes</button>
+      </div>
+
+      <!-- Users Panel -->
+      <div class="settings-panel" *ngIf="activeTab === 'users'">
+        <h2>Doctor Management</h2>
+        
+        <!-- Alert Messages -->
+        <div class="alert alert-danger" *ngIf="formError">{{ formError }}</div>
+        <div class="alert alert-success" *ngIf="formSuccess">{{ formSuccess }}</div>
+        
+        <!-- Doctor Form -->
+        <div id="doctorFormSection" class="card mb-4">
+          <div class="card-header">
+            <h5>
+              <span *ngIf="isEditMode">Edit Doctor</span>
+              <span *ngIf="!isEditMode && selectedDoctor">View Doctor Details</span>
+              <span *ngIf="!isEditMode && !selectedDoctor">Add New Doctor</span>
+            </h5>
+          </div>
+          <div class="card-body">
+            <form (ngSubmit)="saveDoctor()" #doctorForm="ngForm">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group mb-3">
+                    <label for="name">Name*</label>
+                    <input type="text" class="form-control" id="name" name="name" [(ngModel)]="newDoctor.name" required>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group mb-3">
+                    <label for="email">Email*</label>
+                    <input type="email" class="form-control" id="email" name="email" [(ngModel)]="newDoctor.email" required>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group mb-3">
+                    <label for="phoneNumber">Phone Number*</label>
+                    <input type="text" class="form-control" id="phoneNumber" name="phoneNumber" [(ngModel)]="newDoctor.phoneNumber" required>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group mb-3">
+                    <label for="specialization">Specialization*</label>
+                    <input type="text" class="form-control" id="specialization" name="specialization" [(ngModel)]="newDoctor.specialization" required>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group mb-3">
+                    <label for="qualification">Qualification*</label>
+                    <input type="text" class="form-control" id="qualification" name="qualification" [(ngModel)]="newDoctor.qualification" required>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group mb-3">
+                    <label for="licenseNumber">License Number</label>
+                    <input type="text" class="form-control" id="licenseNumber" name="licenseNumber" [(ngModel)]="newDoctor.licenseNumber">
+                  </div>
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group mb-3">
+                    <label for="hospital">Hospital</label>
+                    <input type="text" class="form-control" id="hospital" name="hospital" [(ngModel)]="newDoctor.hospital">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-check form-switch mt-4">
+                    <input class="form-check-input" type="checkbox" id="available" name="available" [(ngModel)]="newDoctor.available">
+                    <label class="form-check-label" for="available">Available for Appointments</label>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="form-actions mt-3">
+                <!-- Show Submit button only when not in view mode -->
+                <button type="submit" class="btn btn-primary" [disabled]="isLoading || !doctorForm.form.valid" *ngIf="!selectedDoctor || isEditMode">
+                  <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                  {{ isEditMode ? 'Update Doctor' : 'Add Doctor' }}
+                </button>
+                
+                <!-- Show Edit button when in view mode -->
+                <button type="button" class="btn btn-primary ms-2" (click)="editDoctor(selectedDoctor!)" *ngIf="selectedDoctor && !isEditMode">
+                  <i class="fas fa-edit me-1"></i> Edit
+                </button>
+                
+                <!-- Show Cancel/Back button when editing or viewing -->
+                <button type="button" class="btn btn-secondary ms-2" (click)="cancelEdit()" *ngIf="isEditMode || selectedDoctor">
+                  {{ isEditMode ? 'Cancel' : 'Back' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        
+        <!-- Doctor List -->
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Doctors List</h5>
+            <div class="spinner-border spinner-border-sm" role="status" *ngIf="isLoading">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Specialization</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngIf="doctors.length === 0 && !isLoading">
+                    <td colspan="6" class="text-center py-3">No doctors found</td>
+                  </tr>
+                  <tr *ngFor="let doctor of doctors">
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <div class="avatar me-2">
+                          <i class="fas fa-user-md" *ngIf="!doctor.profileImage"></i>
+                          <img [src]="doctor.profileImage" *ngIf="doctor.profileImage" alt="{{ doctor.name }}" class="rounded-circle">
+                        </div>
+                        <div>{{ doctor.name }}</div>
+                      </div>
+                    </td>
+                    <td>{{ doctor.specialization }}</td>
+                    <td>{{ doctor.email }}</td>
+                    <td>{{ doctor.phoneNumber }}</td>
+                    <td>
+                      <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-info" (click)="viewDoctor(doctor)" title="View Details">
+                          <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" (click)="editDoctor(doctor)" title="Edit">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" (click)="deleteDoctor(doctor.id!)" title="Delete">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Other panels can be added similarly -->
+      <div class="settings-panel" *ngIf="activeTab !== 'general' && activeTab !== 'users'">
+        <h2>{{ activeTab | titlecase }} Settings</h2>
+        <p>This section is under development. Please check back later.</p>
+      </div>
+    </div>
+  </div>
+</div>

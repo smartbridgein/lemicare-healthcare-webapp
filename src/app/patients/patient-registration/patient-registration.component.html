@@ -1,0 +1,184 @@
+<div class="registration-container">
+  <div class="header">
+    <h1>{{ isEditing ? 'Update Patient' : 'Patient Registration' }}</h1>
+    <a [routerLink]="['/patients']" class="back-btn">
+      <i class="fas fa-arrow-left"></i> Back to Patient List
+    </a>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-spinner">
+    <div class="spinner"></div>
+    <p>Loading patient data...</p>
+  </div>
+
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="successMessage" class="success-message">
+    {{ successMessage }}
+  </div>
+
+  <form [formGroup]="patientForm" (ngSubmit)="onSubmit()" class="registration-form" *ngIf="!isLoading">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="patientId">Patient ID</label>
+        <input type="text" id="patientId" [value]="isEditing ? (patientForm.value.patientId || 'Auto-generated') : 'Auto-generated'" disabled>
+      </div>
+      <div class="form-group">
+        <label for="registrationDate">Registration Date</label>
+        <input type="date" id="registrationDate" [value]="isEditing ? patientForm.value.registrationDate : (currentDate | date:'yyyy-MM-dd')" disabled>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Personal Information</h3>
+      <div class="form-row">
+        <div class="form-group required">
+          <label for="firstName">First Name</label>
+          <input type="text" id="firstName" formControlName="firstName">
+          <div class="error-text" *ngIf="patientForm.get('firstName')?.touched && patientForm.get('firstName')?.errors?.['required']">
+            First name is required
+          </div>
+          <div class="error-text" *ngIf="patientForm.get('firstName')?.touched && patientForm.get('firstName')?.errors?.['pattern']">
+            First name should only contain letters, spaces, apostrophes and hyphens
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="middleName">Middle Name</label>
+          <input type="text" id="middleName" formControlName="middleName">
+          <div class="error-text" *ngIf="patientForm.get('middleName')?.touched && patientForm.get('middleName')?.errors?.['pattern']">
+            Middle name should only contain letters, spaces, apostrophes and hyphens
+          </div>
+        </div>
+        <div class="form-group required">
+          <label for="lastName">Last Name</label>
+          <input type="text" id="lastName" formControlName="lastName">
+          <div class="error-text" *ngIf="patientForm.get('lastName')?.touched && patientForm.get('lastName')?.errors?.['required']">
+            Last name is required
+          </div>
+          <div class="error-text" *ngIf="patientForm.get('lastName')?.touched && patientForm.get('lastName')?.errors?.['pattern']">
+            Last name should only contain letters, spaces, apostrophes and hyphens
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group required">
+          <label for="dateOfBirth">Date of Birth</label>
+          <input type="date" id="dateOfBirth" formControlName="dateOfBirth">
+          <div class="error-text" *ngIf="patientForm.get('dateOfBirth')?.touched && patientForm.get('dateOfBirth')?.invalid">
+            Date of birth is required
+          </div>
+        </div>
+        <div class="form-group required">
+          <label for="gender">Gender</label>
+          <select id="gender" formControlName="gender">
+            <option value="">Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+          <div class="error-text" *ngIf="patientForm.get('gender')?.touched && patientForm.get('gender')?.invalid">
+            Gender is required
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group required">
+          <label for="mobileNumber">Mobile Number</label>
+          <input type="tel" id="mobileNumber" formControlName="mobileNumber">
+          <div class="error-text" *ngIf="patientForm.get('mobileNumber')?.touched && patientForm.get('mobileNumber')?.errors?.['required']">
+            Mobile number is required
+          </div>
+          <div class="error-text" *ngIf="patientForm.get('mobileNumber')?.touched && patientForm.get('mobileNumber')?.errors?.['pattern']">
+            Please enter a valid 10-digit mobile number
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" formControlName="email">
+          <div class="error-text" *ngIf="patientForm.get('email')?.touched && patientForm.get('email')?.errors?.['email']">
+            Please enter a valid email address
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Address</h3>
+      <div class="form-group required full-width">
+        <label for="address">Address</label>
+        <input type="text" id="address" formControlName="address">
+        <div class="error-text" *ngIf="patientForm.get('address')?.touched && patientForm.get('address')?.errors?.['required']">
+          Address is required
+        </div>
+        <div class="error-text" *ngIf="patientForm.get('address')?.touched && patientForm.get('address')?.errors?.['pattern']">
+          Address contains invalid characters
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group required">
+          <label for="city">City</label>
+          <input type="text" id="city" formControlName="city">
+          <div class="error-text" *ngIf="patientForm.get('city')?.touched && patientForm.get('city')?.errors?.['required']">
+            City is required
+          </div>
+          <div class="error-text" *ngIf="patientForm.get('city')?.touched && patientForm.get('city')?.errors?.['pattern']">
+            City should only contain letters, spaces, apostrophes and hyphens
+          </div>
+        </div>
+        <div class="form-group required">
+          <label for="state">State</label>
+          <input type="text" id="state" formControlName="state">
+          <div class="error-text" *ngIf="patientForm.get('state')?.touched && patientForm.get('state')?.errors?.['required']">
+            State is required
+          </div>
+          <div class="error-text" *ngIf="patientForm.get('state')?.touched && patientForm.get('state')?.errors?.['pattern']">
+            State should only contain letters, spaces, apostrophes and hyphens
+          </div>
+        </div>
+        <div class="form-group required">
+          <label for="pinCode">PIN Code</label>
+          <input type="text" id="pinCode" formControlName="pinCode">
+          <div class="error-text" *ngIf="patientForm.get('pinCode')?.touched && patientForm.get('pinCode')?.errors?.['required']">
+            PIN Code is required
+          </div>
+          <div class="error-text" *ngIf="patientForm.get('pinCode')?.touched && patientForm.get('pinCode')?.errors?.['pattern']">
+            Please enter a valid 6-digit PIN Code
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Emergency Contact</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="emergencyContactName">Contact Name</label>
+          <input type="text" id="emergencyContactName" formControlName="emergencyContactName">
+          <div class="error-text" *ngIf="patientForm.get('emergencyContactName')?.touched && patientForm.get('emergencyContactName')?.errors?.['pattern']">
+            Contact name should only contain letters, spaces, apostrophes and hyphens
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="emergencyContactNumber">Contact Number</label>
+          <input type="tel" id="emergencyContactNumber" formControlName="emergencyContactNumber">
+          <div class="error-text" *ngIf="patientForm.get('emergencyContactNumber')?.touched && patientForm.get('emergencyContactNumber')?.errors?.['pattern']">
+            Please enter a valid 10-digit mobile number
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" [routerLink]="['/patients']" class="cancel-btn">Cancel</button>
+      <button type="submit" [disabled]="isSaving" class="save-btn">
+        <span *ngIf="!isSaving">{{ isEditing ? 'Update Patient' : 'Register Patient' }}</span>
+        <span *ngIf="isSaving" class="button-spinner"></span>
+      </button>
+    </div>
+  </form>
+</div>

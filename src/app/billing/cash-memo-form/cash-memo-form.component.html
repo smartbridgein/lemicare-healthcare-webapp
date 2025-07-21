@@ -1,0 +1,301 @@
+<div class="container-fluid px-4 mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h4 mb-2">
+                <a href="javascript:void(0)" class="text-dark text-decoration-none" (click)="cancelForm()">
+                    <i class="fas fa-arrow-left me-2"></i>
+                </a>
+                {{ isEditMode ? 'Edit Outpatient Cash Memo' : 'Add Outpatient Cash Memo' }}
+            </h1>
+        </div>
+    </div>
+
+    <div *ngIf="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading cash memo data...</p>
+    </div>
+
+    <form [formGroup]="cashMemoForm" (ngSubmit)="onSubmit()" *ngIf="!loading">
+        <!-- Search Patient Row -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        placeholder="Search Patient Name or Contact Number" 
+                        [value]="patientSearchTerm"
+                        (input)="onPatientSearchInput($event)"
+                        (focus)="showPatientSearch = true"
+                        (blur)="hidePatientSearch()">
+                    <span class="input-group-text bg-white">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="hidden" formControlName="patientId">
+                    <input type="hidden" formControlName="patientName">
+                </div>
+                
+                <!-- Patient Search Results -->
+                <div *ngIf="showPatientSearch" 
+                    class="search-results shadow border rounded position-absolute w-100 bg-white z-index-dropdown mt-1" 
+                    style="z-index: 1000; max-width: 98%;">
+                    <div class="list-group">
+                        <!-- Loading indicator -->
+                        <div *ngIf="patientResults.length === 1 && patientResults[0].isLoading" class="list-group-item py-2">
+                            <div class="d-flex align-items-center">
+                                <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                <span>Searching for patients...</span>
+                            </div>
+                        </div>
+                        
+                        <!-- No results message -->
+                        <div *ngIf="patientResults.length === 1 && patientResults[0].noResults" class="list-group-item py-2 text-muted">
+                            <i class="fas fa-info-circle me-2"></i> No patients found matching your search
+                        </div>
+                        
+                        <!-- Prompt to type more -->
+                        <div *ngIf="patientResults.length === 1 && patientResults[0].isPrompt" class="list-group-item py-2 text-muted">
+                            <i class="fas fa-keyboard me-2"></i> Type at least 3 characters to search
+                        </div>
+                        
+                        <!-- Error message -->
+                        <div *ngIf="patientResults.length === 1 && patientResults[0].isError" class="list-group-item py-2 text-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i> Error searching for patients
+                        </div>
+                        
+                        <!-- Normal patient results -->
+                        <button type="button" *ngFor="let patient of patientResults" 
+                            class="list-group-item list-group-item-action py-2"
+                            (click)="selectPatient(patient)"
+                            [ngClass]="{'d-none': patient.isLoading || patient.noResults || patient.isPrompt || patient.isError}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ patient.name }}</strong>
+                                    <div *ngIf="patient.contactNumber" class="small text-muted">{{ patient.contactNumber }}</div>
+                                </div>
+                                <small class="text-muted">{{ patient.patientIdDisplay ? patient.patientIdDisplay : 'ID: ' + patient.id }}</small>
+                            </div>
+                        </button>
+                    </div>
+                    <div *ngIf="patientResults.length >= 10 && !(patientResults.length === 1 && (patientResults[0].isLoading || patientResults[0].noResults || patientResults[0].isPrompt || patientResults[0].isError))" 
+                        class="p-2 text-center text-muted">
+                        <small>Showing first 10 results. Type more to refine search.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Header Fields -->
+        <div class="row mb-3">
+            <!-- Taxation -->
+            <div class="col-md-2">
+                <label for="taxation" class="form-label">Taxation *</label>
+                <select class="form-select" formControlName="taxation">
+                    <option value="Non-Gst">Non-Gst</option>
+                    <option value="Exclusive">Exclusive</option>
+                    <option value="Inclusive">Inclusive</option>
+                </select>
+            </div>
+
+            <!-- Patient ID -->
+            <div class="col-md-2">
+                <label for="patientId" class="form-label">Patient Id *</label>
+                <input type="text" class="form-control" [value]="cashMemoForm.get('patientId')?.value || 'Patient Id'" readonly>
+            </div>
+
+            <!-- Category -->
+            <div class="col-md-2">
+                <label for="category" class="form-label">Category *</label>
+                <select class="form-control" formControlName="category">
+                    <option value="SERVICES">SERVICES</option>
+                    <option value="CONSULTATION">CONSULTATION</option>
+                    <option value="PROCEDURE">PROCEDURE</option>
+                </select>
+            </div>
+
+            <!-- Account -->
+            <div class="col-md-2">
+                <label for="account" class="form-label">Account *</label>
+                <input type="text" class="form-control" formControlName="account" [value]="currentUser" >
+            </div>
+
+            <!-- Cash Memo Date -->
+            <div class="col-md-2">
+                <label for="date" class="form-label">Cash Memo Date *</label>
+                <input type="date" class="form-control" formControlName="date" style="min-height: 38px;">
+            </div>
+        </div>
+
+        <!-- Service Line Items Table -->
+        <div class="table-responsive mb-3">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Service Group</th>
+                        <th>Services</th>
+                        <th>Description</th>
+                        <th>Qty</th>
+                        <th>Amount</th>
+                        <th>Discount</th>
+                        <th *ngIf="cashMemoForm.get('taxation')?.value !== 'Non-Gst'">Tax</th>
+                        <th>Total Amount</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody formArrayName="lineItems">
+                    <tr *ngFor="let item of lineItems.controls; let i = index" [formGroupName]="i">
+                        <td>
+                            <input type="date" class="form-control form-control-sm" formControlName="date">
+                        </td>
+                        <td>
+                            <!-- Service Group Dropdown -->
+                            <select class="form-select form-select-sm" [attr.id]="'serviceGroup_' + i" (change)="onGroupChange($event, i)">
+                                <option value="">Select Service Group</option>
+                                <option *ngFor="let group of serviceGroups" [value]="group">{{group}}</option>
+                            </select>
+                            <!-- Hidden field for serviceGroup -->
+                            <input type="hidden" formControlName="serviceGroup">
+                        </td>
+                        <td>
+                            <!-- Service Subcategory Dropdown -->
+                            <select class="form-select form-select-sm" formControlName="serviceId" (change)="onServiceChange(i)">
+                                <option value="">Select Service</option>
+                                <option *ngFor="let service of lineItemFilteredServices[i] || []" [value]="service.id">{{service.name}}</option>
+                            </select>
+                            
+                            <!-- Hidden field for serviceName -->
+                            <input type="hidden" formControlName="serviceName">
+                        </td>
+                        <td>
+                            <input type="text" class="form-control form-control-sm" formControlName="description" placeholder="Description">
+                        </td>
+                        
+                        <td>
+                            <input type="number" class="form-control form-control-sm" formControlName="quantity" (change)="updateLineItemTotal(i)" min="1" value="1">
+                        </td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm" formControlName="rate" (change)="updateLineItemTotal(i)">
+                        </td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm" formControlName="discount" (change)="updateLineItemTotal(i)" min="0" value="0">
+                        </td>
+                        <td *ngIf="cashMemoForm.get('taxation')?.value !== 'Non-Gst'">
+                            <select class="form-select form-select-sm" formControlName="taxProfileId" (change)="updateLineItemTotal(i)">
+                                <option value="">No Tax</option>
+                                <option *ngFor="let profile of taxProfiles" [value]="profile.taxProfileId">{{profile.profileName}} ({{profile.totalRate}}%)</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm" formControlName="totalAmount" readonly>
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeLineItem(i)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Add Service Line Button -->
+        <div class="mb-4">
+            <button type="button" class="btn btn-sm btn-outline-primary me-2" (click)="addLineItem()">
+                <i class="fas fa-plus"></i> Add Service Line
+            </button>
+        </div>
+
+        <!-- Footer Section -->
+        <div class="row">
+            <!-- Left Side - Payment Details -->
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="modeOfPayment" class="form-label">Mode of Payment *</label>
+                    <select class="form-select" formControlName="modeOfPayment">
+                        <option value="Card">Card</option>
+                        <option value="Cash">Cash</option>
+                        <option value="UPI">UPI</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Cheque">Cheque</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="referenceNo" class="form-label">Reference No.</label>
+                    <input type="text" class="form-control" formControlName="referenceNo" placeholder="Reference No.">
+                </div>
+
+                <div class="mb-3">
+                    <label for="notes" class="form-label">Note</label>
+                    <textarea class="form-control" formControlName="notes" rows="3" placeholder="Write Cash Memo Note"></textarea>
+                </div>
+            </div>
+
+            <!-- Right Side - Totals -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>Subtotal</div>
+                            <div>₹{{subtotal}}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>Overall Discount</div>
+                                <div class="input-group input-group-sm" style="width: 150px;">
+                                    <input type="number" class="form-control" formControlName="overallDiscount" 
+                                           (change)="calculateTotal()" min="0" value="0">
+                                    <select class="form-select" formControlName="discountType" (change)="calculateTotal()" style="max-width: 70px;">
+                                        <option value="AMT">₹</option>
+                                        <option value="PCT">%</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Tax Breakdown -->
+                            <ng-container *ngIf="cashMemoForm.value.taxation !== 'Non-Gst' && cashMemoForm.value.taxBreakdown?.length > 0">
+                                <div class="d-flex justify-content-between align-items-center mb-2 mt-3">
+                                    <div><strong>Tax Breakdown</strong></div>
+                                    <div></div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center mb-1" *ngFor="let tax of cashMemoForm.value.taxBreakdown">
+                                    <div>{{tax.name}}</div>
+                                    <div>₹{{tax.amount | number:'1.2-2'}}</div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div><strong>Total Tax</strong></div>
+                                    <div>₹{{cashMemoForm.value.totalTax | number:'1.2-2'}}</div>
+                                </div>
+                            </ng-container>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between">
+                            <div class="h5">Total</div>
+                            <div class="h5">₹{{grandTotal | number:'1.2-2'}}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="button" class="btn btn-outline-secondary me-2" (click)="cancelForm()">Discard</button>
+                    <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+                        <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+<!-- Service Creation Modal Component -->
+<app-service-form-modal (serviceCreated)="onServiceCreated($event)"></app-service-form-modal>
+</div>

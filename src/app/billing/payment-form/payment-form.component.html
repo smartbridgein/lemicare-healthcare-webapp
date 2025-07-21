@@ -1,0 +1,129 @@
+<div class="container-fluid px-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="mt-4">Process Payment</h1>
+            <ol class="breadcrumb mb-4">
+                <li class="breadcrumb-item"><a [routerLink]="['/billing']">Billing Dashboard</a></li>
+                <li class="breadcrumb-item"><a [routerLink]="['/billing/invoices']">Invoices</a></li>
+                <li class="breadcrumb-item active">Process Payment</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-credit-card me-1"></i>
+            Payment Details
+        </div>
+        <div class="card-body">
+            <div *ngIf="loading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading invoice data...</p>
+            </div>
+
+            <div *ngIf="!loading && invoice">
+                <!-- Invoice Summary -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">Invoice Details</div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <dl class="row">
+                                    <dt class="col-sm-4">Invoice Number:</dt>
+                                    <dd class="col-sm-8">{{ invoice.invoiceId }}</dd>
+
+                                    <dt class="col-sm-4">Patient Name:</dt>
+                                    <dd class="col-sm-8">{{ invoice.patientName }}</dd>
+
+                                    <dt class="col-sm-4">Invoice Date:</dt>
+                                    <dd class="col-sm-8">{{ invoice.date | date: 'dd/MM/yyyy' }}</dd>
+                                </dl>
+                            </div>
+                            <div class="col-md-6">
+                                <dl class="row">
+                                    <dt class="col-sm-4">Total Amount:</dt>
+                                    <dd class="col-sm-8">₹{{ invoice.amount | number: '1.2-2' }}</dd>
+
+                                    <dt class="col-sm-4">Amount Paid:</dt>
+                                    <dd class="col-sm-8">₹{{ invoice.paidAmount || 0 | number: '1.2-2' }}</dd>
+
+                                    <dt class="col-sm-4">Balance Due:</dt>
+                                    <dd class="col-sm-8 text-danger fw-bold">₹{{ invoice.balanceAmount || invoice.amount | number: '1.2-2' }}</dd>
+                                </dl>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info" *ngIf="invoice.status === 'PAID'">
+                            <i class="fas fa-info-circle me-2"></i> This invoice is already fully paid.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Form -->
+                <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()" *ngIf="invoice.status !== 'PAID'">
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">Payment Information</div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="amount" class="form-label">Payment Amount (₹)*</label>
+                                    <input type="number" class="form-control" formControlName="amount" 
+                                        [ngClass]="{'is-invalid': submitted && paymentForm.get('amount')?.errors}">
+                                    <div *ngIf="submitted && paymentForm.get('amount')?.errors" class="invalid-feedback">
+                                        <div *ngIf="paymentForm.get('amount')?.errors?.['required']">Payment amount is required</div>
+                                        <div *ngIf="paymentForm.get('amount')?.errors?.['min']">Payment amount must be greater than 0</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="date" class="form-label">Payment Date*</label>
+                                    <input type="date" class="form-control" formControlName="date" 
+                                        [ngClass]="{'is-invalid': submitted && paymentForm.get('date')?.errors}">
+                                    <div *ngIf="submitted && paymentForm.get('date')?.errors" class="invalid-feedback">
+                                        Payment date is required
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="modeOfPayment" class="form-label">Payment Mode*</label>
+                                    <select class="form-select" formControlName="modeOfPayment"
+                                        [ngClass]="{'is-invalid': submitted && paymentForm.get('modeOfPayment')?.errors}">
+                                        <option value="CASH">Cash</option>
+                                        <option value="CARD">Card</option>
+                                        <option value="ONLINE">Online</option>
+                                        <option value="UPI">UPI</option>
+                                        <option value="CHEQUE">Cheque</option>
+                                        <option value="BANK_TRANSFER">Bank Transfer</option>
+                                    </select>
+                                    <div *ngIf="submitted && paymentForm.get('modeOfPayment')?.errors" class="invalid-feedback">
+                                        Payment mode is required
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="referenceId" class="form-label">Reference ID</label>
+                                    <input type="text" class="form-control" formControlName="referenceId" 
+                                        placeholder="Transaction ID, Cheque Number, etc.">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="notes" class="form-label">Notes</label>
+                                    <textarea class="form-control" formControlName="notes" rows="2"></textarea>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="card-footer d-flex justify-content-end">
+                            <button type="button" class="btn btn-secondary me-2" (click)="cancelPayment()">Cancel</button>
+                            <button type="submit" class="btn btn-primary" [disabled]="loading">
+                                <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                Process Payment
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

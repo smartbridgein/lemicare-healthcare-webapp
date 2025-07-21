@@ -1,0 +1,394 @@
+<div class="container-fluid px-4 mt-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="page-title">Cash Memo Management</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a [routerLink]="['/billing']" class="text-decoration-none">Billing Dashboard</a></li>
+                    <li class="breadcrumb-item active">Cash Memos</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a [routerLink]="['/billing/cash-memos/new']" class="btn btn-classic">
+                <i class="fas fa-plus me-2"></i>New Cash Memo
+            </a>
+        </div>
+    </div>
+
+    <!-- Cash Memos Summary -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card classic-card">
+                <div class="card-header">
+                    <h6 class="m-0">TOTAL CASH MEMOS</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="icon-container">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <div class="info-container">
+                            <h2 class="mb-0">{{ cashMemos.length }}</h2>
+                            <p class="mb-0">All Cash Memo Records</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card classic-card">
+                <div class="card-header">
+                    <h6 class="m-0">TOTAL CASH AMOUNT</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="icon-container success">
+                            <i class="fas fa-rupee-sign"></i>
+                        </div>
+                        <div class="info-container">
+                            <h2 class="mb-0 amount-value">₹{{ calculateTotalAmount() | number: '1.2-2' }}</h2>
+                            <p class="mb-0">Total Revenue</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="mb-4">
+        <div class="row g-3">
+            <!-- Search input -->
+            <div class="col-lg-6">
+                <div class="classic-search-container">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" 
+                            placeholder="Search by patient name, bill number or payment mode..." 
+                            [(ngModel)]="searchTerm" (input)="onSearchChange()">
+                        <button class="btn btn-clear" 
+                            type="button" 
+                            *ngIf="searchTerm" 
+                            (click)="searchTerm = ''; onSearchChange()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Date filter controls -->
+            <div class="col-lg-6">
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text" style="background-color: #f8f9fc; border-color: #d1d3e2;">
+                                <i class="fas fa-calendar-alt" style="color: #6b1d14;"></i>
+                            </span>
+                            <select class="form-select shadow-sm" style="border-color: #d1d3e2;" 
+                                    [(ngModel)]="selectedDateFilter" 
+                                    (change)="onDateFilterChange()">
+                                <option *ngFor="let option of dateFilterOptions" [value]="option">{{ option }}</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Custom date range inputs (only shown when Custom is selected) -->
+                    <div class="col-md-6" *ngIf="showCustomDateRange">
+                        <div class="d-flex gap-2">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text" style="background-color: #f8f9fc; border-color: #d1d3e2;">
+                                    <i class="fas fa-calendar-day" style="color: #6b1d14;"></i>
+                                </span>
+                                <input type="date" class="form-control shadow-sm" style="border-color: #d1d3e2;" 
+                                       [(ngModel)]="customDateRange.startDate" 
+                                       (change)="onCustomDateRangeChange()">
+                            </div>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text" style="background-color: #f8f9fc; border-color: #d1d3e2;">
+                                    <i class="fas fa-calendar-check" style="color: #6b1d14;"></i>
+                                </span>
+                                <input type="date" class="form-control shadow-sm" style="border-color: #d1d3e2;" 
+                                       [(ngModel)]="customDateRange.endDate" 
+                                       (change)="onCustomDateRangeChange()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cash Memos Table -->
+    <div class="card border mb-4" style="border-color: #f6c23e !important; border-top-width: 3px !important;">
+        <div class="card-header d-flex align-items-center justify-content-between py-3" style="background-color: #f8f9fc;">
+            <h5 class="mb-0 fw-bold text-dark">
+                <i class="fas fa-money-check-alt me-2 text-warning"></i>Cash Memos List
+            </h5>
+            <div>
+                <span class="badge bg-warning bg-opacity-10 border border-warning text-warning px-3 py-2">
+                    Total: {{ filteredCashMemos.length }} cash memos
+                </span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div *ngIf="loading" class="text-center py-5">
+                <div class="spinner-border spinner-border-sm text-warning" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading cash memos...</p>
+            </div>
+            
+            <div *ngIf="!loading && filteredCashMemos.length === 0" class="text-center py-5 empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <h4 class="empty-title">No Cash Memos Found</h4>
+                <p class="empty-message">No cash memos match your search criteria or no cash memos exist in the system yet.</p>
+                <a [routerLink]="['/billing/cash-memos/new']" class="btn btn-classic">
+                    <i class="fas fa-plus me-2"></i>Create Cash Memo
+                </a>
+            </div>
+            
+            <div class="table-responsive" *ngIf="!loading && filteredCashMemos.length > 0">
+                <table class="table table-bordered mb-0" style="border: 2px solid #dee2e6;">
+                    <thead>
+                        <tr style="background-color: #f0f0f0;">
+                            <th class="py-3 text-center align-middle fw-bold text-nowrap" style="border: 1px solid #dee2e6;">Bill #</th>
+                            <th class="py-3 text-center align-middle fw-bold" style="border: 1px solid #dee2e6;">Patient</th>
+                            <th class="py-3 text-center align-middle fw-bold text-nowrap" style="border: 1px solid #dee2e6;">Date</th>
+                            <th class="py-3 text-center align-middle fw-bold" style="border: 1px solid #dee2e6;">Amount (₹)</th>
+                            <th class="py-3 text-center align-middle fw-bold" style="border: 1px solid #dee2e6;">Payment Mode</th>
+                            <th class="py-3 text-center align-middle fw-bold" style="border: 1px solid #dee2e6;">Created By</th>
+                            <th class="py-3 text-center align-middle fw-bold" style="border: 1px solid #dee2e6;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let cashMemo of filteredCashMemos; let even = even" [ngClass]="even ? 'table-light' : ''">
+                            <td class="py-3 align-middle text-center" style="border: 1px solid #dee2e6;"><span class="fw-semibold">{{ cashMemo.billId }}</span></td>
+                            <td class="py-3 align-middle" style="border: 1px solid #dee2e6;">{{ cashMemo.patientName }}</td>
+                            <td class="py-3 align-middle text-center" style="border: 1px solid #dee2e6;">{{ cashMemo.date | date: 'dd/MM/yyyy' }}</td>
+                            <td class="py-3 align-middle text-end" style="border: 1px solid #dee2e6;">₹{{ cashMemo.amount | number: '1.2-2' }}</td>
+                            <td class="py-3 align-middle text-center" style="border: 1px solid #dee2e6;">
+                                <span [ngClass]="{
+                                    'badge rounded-pill': true,
+                                    'bg-success bg-opacity-10 text-success border border-success': cashMemo.modeOfPayment === 'CASH',
+                                    'bg-info bg-opacity-10 text-info border border-info': cashMemo.modeOfPayment === 'UPI',
+                                    'bg-primary bg-opacity-10 text-primary border border-primary': cashMemo.modeOfPayment === 'CARD',
+                                    'bg-secondary bg-opacity-10 text-secondary border border-secondary': cashMemo.modeOfPayment !== 'CASH' && cashMemo.modeOfPayment !== 'UPI' && cashMemo.modeOfPayment !== 'CARD'
+                                }" style="min-width: 80px; display: inline-block; padding: 0.4rem 0.8rem;">
+                                    {{ cashMemo.modeOfPayment }}
+                                </span>
+                            </td>
+                            <td class="py-3 align-middle" style="border: 1px solid #dee2e6;">{{ cashMemo.createdBy }}</td>
+                            <td class="py-3 align-middle text-center" style="border: 1px solid #dee2e6;">
+                                <div class="btn-group">
+                                    <button (click)="viewCashMemo(cashMemo, detailsModal)" class="btn btn-sm btn-outline-primary" title="View Details">
+                                        <i class="fas fa-eye me-1"></i> View
+                                    </button>
+                                    <a [routerLink]="['/billing/cash-memos', cashMemo.id]" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                        <i class="fas fa-edit me-1"></i> Edit
+                                    </a>
+                                    <button (click)="deleteCashMemo(cashMemo.id)" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="fas fa-trash me-1"></i> Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr style="background-color: #f0f0f0;">
+                            <td colspan="3" class="py-3 text-end fw-bold" style="border: 1px solid #dee2e6;">Grand Total:</td>
+                            <td class="py-3 text-end fw-bold" style="border: 1px solid #dee2e6;">₹{{ calculateTotalAmount() | number: '1.2-2' }}</td>
+                            <td colspan="3" style="border: 1px solid #dee2e6;"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cash Memo Details Modal -->
+<ng-template #detailsModal let-modal>
+    <!-- Print-only header -->
+    <div class="d-none print-only-header">
+        <div class="text-center mb-4">
+            <h2 class="mb-0">Hanan Clinic</h2>
+            <p class="mb-1">123 Healthcare Avenue, Medical District</p>
+            <p>Contact: +91 98765 43210 | Email: info&#64;hananclinic.com</p>
+            <h3 class="mt-3">Cash Memo Receipt</h3>
+            <hr>
+        </div>
+    </div>
+    <div class="modal-header bg-light">
+        <h4 class="modal-title" id="cash-memo-details-title">
+            <i class="fas fa-file-invoice-dollar text-warning me-2"></i>
+            Cash Memo Details
+        </h4>
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+    </div>
+    <div class="modal-body">
+        <div *ngIf="loadingDetails" class="text-center py-5">
+            <div class="spinner-border text-warning" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading cash memo details...</p>
+        </div>
+        
+        <div *ngIf="!loadingDetails && detailedCashMemo" class="cash-memo-details">
+            <!-- Header Info -->
+            <div class="row mb-4 border-bottom pb-3">
+                <div class="col-md-6">
+                    <div class="d-flex flex-column">
+                        <div class="mb-2">
+                            <span class="fw-semibold">Bill Number:</span>
+                            <span class="badge bg-warning text-dark ms-2">{{ detailedCashMemo.billId }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="fw-semibold">Date:</span>
+                            <span class="ms-2">{{ detailedCashMemo.date | date: 'dd/MM/yyyy' }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="fw-semibold">Created By:</span>
+                            <span class="ms-2">{{ detailedCashMemo.createdBy }}</span>
+                        </div>
+                        <div class="mb-2" *ngIf="detailedCashMemo.taxation">
+                            <span class="fw-semibold">GST Type:</span>
+                            <span [ngClass]="{
+                                'badge ms-2': true,
+                                'bg-info text-white': detailedCashMemo.taxation === 'Exclusive',
+                                'bg-warning text-dark': detailedCashMemo.taxation === 'Inclusive',
+                                'bg-secondary text-white': detailedCashMemo.taxation === 'Non-Gst'
+                            }" style="padding: 0.3rem 0.6rem;">
+                                {{ detailedCashMemo.taxation }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex flex-column">
+                        <div class="mb-2">
+                            <span class="fw-semibold">Patient ID:</span>
+                            <span class="ms-2">{{ detailedCashMemo.patientId }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="fw-semibold">Patient Name:</span>
+                            <span class="ms-2">{{ detailedCashMemo.patientName }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="fw-semibold">Payment Mode:</span>
+                            <span [ngClass]="{
+                                'badge fs-6 ms-2': true,
+                                'bg-success text-white': detailedCashMemo.modeOfPayment === 'CASH',
+                                'bg-info text-white': detailedCashMemo.modeOfPayment === 'UPI',
+                                'bg-primary text-white': detailedCashMemo.modeOfPayment === 'CARD',
+                                'bg-secondary text-white': detailedCashMemo.modeOfPayment !== 'CASH' && detailedCashMemo.modeOfPayment !== 'UPI' && detailedCashMemo.modeOfPayment !== 'CARD'
+                            }" style="padding: 0.5rem 0.8rem; min-width: 80px; text-align: center;">
+                                {{ detailedCashMemo.modeOfPayment }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Line Items Table -->
+            <div *ngIf="detailedCashMemo.lineItems && detailedCashMemo.lineItems.length > 0">
+                <h5 class="mb-3">Line Items</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Item/Service</th>
+                                <th class="text-center">Quantity</th>
+                                <th class="text-end">Rate (₹)</th>
+                                <th class="text-center">Discount (₹)</th>
+                                <th class="text-end">Amount (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let item of detailedCashMemo.lineItems; let i = index">
+                                <td>{{ i + 1 }}</td>
+                                <td>
+                                    <!-- Display service name with fallbacks -->
+                                    {{ item.serviceName || item.description || ('Service ' + item.serviceId) }}
+                                </td>
+                                <td class="text-center">{{ item.quantity }}</td>
+                                <td class="text-end">{{ item.rate | number: '1.2-2' }}</td>
+                                <td class="text-center">{{ item.discount | number: '1.2-2' }}</td>
+                                <td class="text-end">{{ item.totalAmount | number: '1.2-2' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Tax Breakdown -->
+            <div class="row mb-3" *ngIf="detailedCashMemo.taxBreakdown && detailedCashMemo.taxBreakdown.length > 0">
+                <div class="col-md-6 offset-md-6">
+                    <h5 class="mb-3">Tax Details</h5>
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr *ngFor="let tax of detailedCashMemo.taxBreakdown">
+                                <td>{{ tax.name }}</td>
+                                <td class="text-end">{{ tax.amount | number: '1.2-2' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Totals Summary -->
+            <div class="row mt-4">
+                <div class="col-md-6 offset-md-6">
+                    <div class="card bg-light">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="fw-semibold">Subtotal:</span>
+                                <span>₹{{ detailedCashMemo.subTotal | number: '1.2-2' }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2" *ngIf="detailedCashMemo.totalDiscount > 0">
+                                <span class="fw-semibold">Total Discount:</span>
+                                <span class="text-danger">-₹{{ detailedCashMemo.totalDiscount | number: '1.2-2' }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2" *ngIf="detailedCashMemo.totalTax > 0">
+                                <span class="fw-semibold">Total Tax:</span>
+                                <span>₹{{ detailedCashMemo.totalTax | number: '1.2-2' }}</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between fw-bold">
+                                <span>Grand Total:</span>
+                                <span class="text-success fs-5">₹{{ detailedCashMemo.amount | number: '1.2-2' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notes Section -->
+            <div class="mt-4" *ngIf="detailedCashMemo.notes">
+                <h5>Notes</h5>
+                <div class="card">
+                    <div class="card-body bg-light">
+                        <p class="mb-0">{{ detailedCashMemo.notes }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-success" (click)="printCashMemo()">
+            <i class="fas fa-print me-2"></i>Print Cash Memo
+        </button>
+        <a [routerLink]="['/billing/cash-memos', detailedCashMemo?.id]" class="btn btn-warning" (click)="modal.close()">
+            <i class="fas fa-edit me-2"></i>Edit Cash Memo
+        </a>
+        <button type="button" class="btn btn-secondary" (click)="modal.close()">
+            <i class="fas fa-times me-2"></i>Close
+        </button>
+    </div>
+</ng-template>

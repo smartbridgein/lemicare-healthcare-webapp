@@ -1,0 +1,596 @@
+/* Modern styling for the patient directory with maroon-yellow-gray-black theme */
+
+// Theme Colors - New Color Scheme
+$maroon-primary: #6b1d14;
+$maroon-dark: #4a0f09;
+$maroon-light: #8c2c21;
+$yellow-accent: #e6c157;
+$yellow-light: #f3d98b;
+$gray-dark: #333333;
+$gray-medium: #666666;
+$gray-light: #f5f5f5;
+
+/* Global font settings */
+.container-fluid {
+  font-family: 'Roboto', Arial, sans-serif;
+}
+
+/* Page Title and Breadcrumb Styling */
+.fw-bold.fs-3 {
+  font-family: 'Roboto', Arial, sans-serif;
+  color: $gray-dark;
+  letter-spacing: 0.02em;
+  font-size: 1.5rem;
+}
+
+/* Custom maroon theme classes */
+.text-maroon {
+  color: $maroon-primary !important;
+}
+
+.bg-maroon {
+  background-color: $maroon-primary !important;
+}
+
+.bg-maroon-light {
+  background-color: lighten($maroon-primary, 45%) !important;
+}
+
+.border-maroon {
+  border-color: $maroon-primary !important;
+}
+
+.patient-id-badge {
+  font-family: 'Roboto', Arial, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.35rem 0.6rem;
+  letter-spacing: 0.02em;
+  background-color: lighten($maroon-primary, 55%) !important;
+  color: $maroon-primary !important;
+  border: 1px solid rgba($maroon-primary, 0.3);
+}
+
+.breadcrumb {
+  font-family: 'Roboto', Arial, sans-serif;
+  
+  .breadcrumb-item a {
+    color: $maroon-primary;
+    text-decoration: none;
+    
+    &:hover {
+      color: $maroon-dark;
+      text-decoration: underline;
+    }
+  }
+  
+  .breadcrumb-item.active {
+    color: $gray-medium;
+  }
+}
+
+/* New Patient Button */
+.btn-new-patient {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: $maroon-primary;
+  color: white;
+  border-radius: 0.2rem;
+  text-decoration: none;
+  font-family: 'Roboto', Arial, sans-serif;
+  font-size: 0.9rem;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid $maroon-dark;
+  
+  &:hover {
+    background-color: $maroon-dark;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  }
+  
+  i {
+    margin-right: 0.5rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Modern Search Input */
+.input-group {
+  .input-group-text {
+    background-color: #fff;
+    border-right: none;
+    color: $gray-medium;
+  }
+  
+  input.form-control {
+    border-left: none;
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 0.9rem;
+    
+    &::placeholder {
+      color: $gray-medium;
+    }
+    
+    &:focus {
+      box-shadow: none;
+      border-color: $yellow-accent;
+    }
+  }
+}
+
+/* Modern table styling and alignment */
+.classic-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background-color: white;
+  margin-bottom: 0;
+  border: 1px solid $gray-light;
+  font-family: 'Roboto', Arial, sans-serif;
+  
+  th, td {
+    vertical-align: middle !important;
+    overflow-wrap: break-word;
+    padding: 0.75rem 1rem !important;
+    text-align: left;
+    border: 1px solid #e3e6f0;
+    height: auto !important;
+  }
+  
+  th {
+    background-color: $gray-light;
+    font-weight: 600;
+    color: $maroon-primary;
+    border-bottom: 2px solid $gray-medium;
+    letter-spacing: 0.03em;
+    font-style: normal;
+    font-size: 0.9rem;
+    padding: 0.8rem 1rem !important;
+  }
+  
+  tbody tr:nth-of-type(odd) {
+    background-color: $gray-light;
+  }
+  
+  tbody tr:hover {
+    background-color: $yellow-light;
+  }
+  
+  /* Patient ID Column */
+  th:nth-child(1),
+  td:nth-child(1) {
+    width: 15%;
+    text-align: center;
+    font-weight: 600;
+  }
+  
+  /* Name Column */
+  th:nth-child(2),
+  td:nth-child(2) {
+    width: 20%;
+    text-align: left;
+  }
+  
+  /* Age/Gender Column */
+  th:nth-child(3),
+  td:nth-child(3) {
+    width: 10%;
+    text-align: center;
+  }
+  
+  /* Mobile Number Column */
+  th:nth-child(4),
+  td:nth-child(4) {
+    width: 15%;
+    text-align: center;
+  }
+  
+  /* Registration Date Column */
+  th:nth-child(5),
+  td:nth-child(5) {
+    width: 15%;
+    text-align: center;
+  }
+  
+  /* Actions Column */
+  th:nth-child(6),
+  td:nth-child(6) {
+    width: 15%;
+    text-align: center;
+  }
+}
+
+/* Card Styling */
+.card {
+  border-radius: 0.35rem;
+  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+  
+  .card-header {
+    background-color: $gray-light;
+    border-bottom: 1px solid $gray-light;
+    padding: 1rem 1.25rem;
+    
+    h5 {
+      font-family: 'Roboto', Arial, sans-serif;
+      font-weight: 600;
+      font-size: 1rem;
+      color: $maroon-primary;
+      letter-spacing: 0.03em;
+      margin-bottom: 0;
+      
+      i {
+        color: $maroon-light;
+      }
+    }
+  }
+  
+  .card-body {
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 0.9rem;
+  }
+  
+  .card-footer {
+    background-color: $gray-light;
+    border-top: 1px solid $gray-light;
+    padding: 0.75rem 1.25rem;
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 0.85rem;
+    color: $gray-medium;
+  }
+}
+
+/* Status Badge Styling */
+.badge {
+  font-family: 'Roboto', Arial, sans-serif;
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 0.4rem 0.8rem;
+  border-width: 1px !important;
+  letter-spacing: 0.03em;
+  
+  &.bg-primary {
+    background-color: rgba($maroon-primary, 0.15) !important;
+    color: $maroon-primary !important;
+    border-color: $maroon-primary !important;
+  }
+  
+  &.bg-success {
+    background-color: rgba($yellow-accent, 0.15) !important;
+    color: darken($yellow-accent, 20%) !important;
+    border-color: $yellow-accent !important;
+  }
+  
+  &.bg-info {
+    background-color: rgba($gray-medium, 0.15) !important;
+    color: $gray-dark !important;
+    border-color: $gray-medium !important;
+  }
+}
+
+/* Age badge styling */
+.age-badge {
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.8rem;
+  background-color: rgba($maroon-primary, 0.15);
+  display: inline-block;
+  white-space: nowrap;
+  font-weight: 600;
+  color: $maroon-primary;
+  font-family: 'Roboto', Arial, sans-serif;
+  border: 1px solid $maroon-primary;
+  letter-spacing: 0.02em;
+}
+
+.gender-text {
+  font-size: 0.75rem;
+  color: $gray-medium;
+  font-family: 'Roboto', Arial, sans-serif;
+  margin-left: 0.25rem;
+}
+
+/* Action button styling */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 0.2rem;
+  font-size: 0.8rem;
+  transition: all 0.15s ease;
+  border-width: 1px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  margin: 0 2px;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  &.btn-view {
+    color: $maroon-primary;
+    border-color: $maroon-primary;
+    
+    &:hover {
+      background-color: rgba($maroon-primary, 0.1);
+    }
+  }
+  
+  &.btn-edit {
+    color: $yellow-accent;
+    border-color: $yellow-accent;
+    
+    &:hover {
+      background-color: rgba($yellow-accent, 0.1);
+    }
+  }
+  
+  &.btn-delete {
+    color: #e74a3b;
+    border-color: #e74a3b;
+    
+    &:hover {
+      background-color: rgba(231, 74, 59, 0.1);
+    }
+  }
+}
+
+/* Button styling for action buttons */
+.btn-sm {
+  padding: 0.15rem;
+  font-size: 0.65rem;
+  line-height: 1;
+  border-radius: 0.2rem;
+  margin: 0;
+  transition: all 0.15s ease-in-out;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-width: 1px;
+}
+  
+.btn-outline-primary:hover {
+  background-color: $maroon-primary;
+  color: white;
+}
+
+.btn-outline-info:hover {
+  background-color: $gray-medium;
+  color: white;
+}
+
+.btn-outline-success:hover {
+  background-color: $yellow-accent;
+  color: white;
+}
+
+.btn-outline-danger:hover {
+  background-color: #e74a3b;
+  color: white;
+}
+    
+/* Button Variants */
+.btn-success {
+  color: #fff;
+  background-color: $yellow-accent;
+  border-color: $yellow-accent;
+  
+  &:hover {
+    background-color: darken($yellow-accent, 10%);
+    border-color: darken($yellow-accent, 15%);
+  }
+}
+
+.btn-info {
+  color: #fff;
+  background-color: $gray-medium;
+  border-color: $gray-medium;
+  
+  &:hover {
+    background-color: darken($gray-medium, 10%);
+    border-color: darken($gray-medium, 15%);
+  }
+}
+
+.btn-danger {
+  color: #fff;
+  background-color: #e74a3b;
+  border-color: #e74a3b;
+  
+  &:hover {
+    background-color: darken(#e74a3b, 10%);
+    border-color: darken(#e74a3b, 15%);
+  }
+}
+
+// New patient button
+.btn-new-patient {
+  background-color: $maroon-primary;
+  color: white;
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.35rem;
+  border: none;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  transition: all 0.15s ease-in-out;
+  text-decoration: none;
+  min-width: 100px;
+  height: 36px;
+  
+  &:hover {
+    background-color: $maroon-dark;
+    color: white;
+    text-decoration: none;
+  }
+  
+  &:active {
+    transform: translateY(1px);
+    box-shadow: 0 0.125rem 0.125rem rgba(0, 0, 0, 0.1);
+  }
+  
+  i {
+    margin-right: 0.35rem;
+    font-size: 0.75rem;
+  }
+  
+  span {
+    font-size: 0.8rem;
+    letter-spacing: -0.2px;
+  }
+}
+
+// Directory header
+.directory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #5a5c69;
+  }
+}
+
+// Pagination styling
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+  
+  .page-item {
+    &.active .page-link {
+      background-color: #4e73df;
+      border-color: #4e73df;
+      color: white;
+    }
+    
+    .page-link {
+      color: #4e73df;
+      border-radius: 3px;
+      margin: 0 2px;
+      min-width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      
+      &:hover {
+        background-color: #eaecf4;
+        border-color: #d1d3e2;
+      }
+      
+      &:focus {
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+      }
+    }
+    
+    &.disabled .page-link {
+      color: #858796;
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Card footer with pagination info
+.card-footer {
+  border-top: 1px solid #e3e6f0;
+  background-color: #f8f9fc;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  .text-muted {
+    font-size: 0.85rem;
+    color: #858796;
+  }
+}
+
+// Mobile number and date styling
+.mobile-number, .reg-date {
+  white-space: nowrap;
+  font-size: 0.75rem;
+  
+  i {
+    font-size: 0.7rem;
+  }
+
+  div {
+    white-space: nowrap;
+  }
+}
+
+// Age/gender styling
+.age-gender-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  
+  .age-badge {
+    display: inline-block;
+    padding: 0.15rem 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border-radius: 20px;
+    background-color: #f0f0f0;
+    color: #666;
+    min-width: 55px;
+    text-align: center;
+  }
+  
+  .gender-badge {
+    display: inline-block;
+    padding: 0.1rem 0.25rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border-radius: 20px;
+    min-width: 45px;
+    text-align: center;
+    
+    &.male {
+      background-color: #17a2b8;
+      color: white;
+    }
+    
+    &.female {
+      background-color: #e83e8c;
+      color: white;
+    }
+  }
+  
+  .gender {
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    
+    &.male {
+      background-color: #cff4fc;
+      color: #055160;
+    }
+    
+    &.female {
+      background-color: #f8d7da;
+      color: #58151c;
+    }
+  }
+}

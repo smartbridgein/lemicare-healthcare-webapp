@@ -1,0 +1,176 @@
+<div class="container-fluid px-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="mt-4">{{ isEditMode ? 'Edit Advance Payment' : 'Create Advance Payment' }}</h1>
+            <ol class="breadcrumb mb-4">
+                <li class="breadcrumb-item"><a [routerLink]="['/billing']" style="color: #6b1d14; text-decoration: none;">Billing Dashboard</a></li>
+                <li class="breadcrumb-item active">{{ isEditMode ? 'Edit Advance' : 'Create Advance' }}</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-hand-holding-usd me-1" style="color: #6b1d14;"></i>
+            {{ isEditMode ? 'Edit Advance Payment Details' : 'New Advance Payment' }}
+        </div>
+        <div class="card-body">
+            <div *ngIf="loading" class="text-center py-5">
+                <div class="spinner-border" role="status" style="color: #6b1d14; border-color: rgba(107, 29, 20, 0.1); border-top-color: #6b1d14;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading advance payment data...</p>
+            </div>
+
+            <form [formGroup]="advanceForm" (ngSubmit)="onSubmit()" *ngIf="!loading">
+                <div class="row mb-4">
+                    <!-- Advance Payment Details -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">Advance Payment Information</div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="advanceId" class="form-label">Advance ID</label>
+                                        <input type="text" class="form-control" formControlName="advanceId" readonly>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="date" class="form-label">Date*</label>
+                                        <input type="date" class="form-control" formControlName="date" 
+                                            [ngClass]="{'is-invalid': submitted && advanceForm.get('date')?.errors}">
+                                        <div *ngIf="submitted && advanceForm.get('date')?.errors" class="invalid-feedback">
+                                            Date is required
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="amount" class="form-label">Amount (₹)*</label>
+                                        <input type="number" class="form-control" formControlName="amount" 
+                                            [ngClass]="{'is-invalid': submitted && advanceForm.get('amount')?.errors}">
+                                        <div *ngIf="submitted && advanceForm.get('amount')?.errors" class="invalid-feedback">
+                                            <div *ngIf="advanceForm.get('amount')?.errors?.['required']">Amount is required</div>
+                                            <div *ngIf="advanceForm.get('amount')?.errors?.['min']">Amount should be greater than 0</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="modeOfPayment" class="form-label">Payment Mode*</label>
+                                        <select class="form-select" formControlName="modeOfPayment"
+                                            [ngClass]="{'is-invalid': submitted && advanceForm.get('modeOfPayment')?.errors}">
+                                            <option value="CASH">Cash</option>
+                                            <option value="CARD">Card</option>
+                                            <option value="ONLINE">Online</option>
+                                            <option value="UPI">UPI</option>
+                                            <option value="CHEQUE">Cheque</option>
+                                            <option value="BANK_TRANSFER">Bank Transfer</option>
+                                        </select>
+                                        <div *ngIf="submitted && advanceForm.get('modeOfPayment')?.errors" class="invalid-feedback">
+                                            Payment mode is required
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="purpose" class="form-label">Purpose*</label>
+                                    <input type="text" class="form-control" formControlName="purpose" 
+                                        [ngClass]="{'is-invalid': submitted && advanceForm.get('purpose')?.errors}">
+                                    <div *ngIf="submitted && advanceForm.get('purpose')?.errors" class="invalid-feedback">
+                                        Purpose is required
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="referenceId" class="form-label">Reference ID</label>
+                                    <input type="text" class="form-control" formControlName="referenceId" 
+                                        placeholder="Transaction ID, Cheque Number, etc.">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="notes" class="form-label">Notes</label>
+                                    <textarea class="form-control" formControlName="notes" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Patient Information -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">Patient Information</div>
+                            <div class="card-body">
+                                <div class="mb-3 position-relative">
+                                    <label for="patientName" class="form-label">Patient Name*</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="patientNameInput"
+                                            [ngClass]="{'is-invalid': submitted && advanceForm.get('patientName')?.errors}"
+                                            [value]="patientSearchTerm"
+                                            (input)="onPatientSearchInput($event)"
+                                            (focus)="showPatientSearch = true"
+                                            (blur)="hidePatientSearch()"
+                                            placeholder="Start typing to search patients...">
+                                        <input type="hidden" formControlName="patientId">
+                                        <input type="hidden" formControlName="patientName">
+                                        <button class="btn btn-outline-secondary" type="button" (click)="clearSelectedPatient()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Selected Patient Info -->
+                                    <div *ngIf="advanceForm.get('patientId')?.value && advanceForm.get('patientName')?.value" 
+                                        class="alert alert-success mt-2 mb-0 py-2">
+                                        <small><i class="fas fa-check-circle me-2"></i>Selected Patient: 
+                                            <strong>{{ advanceForm.get('patientId')?.value }}</strong> - 
+                                            {{ advanceForm.get('patientName')?.value }}</small>
+                                    </div>
+                                    
+                                    <!-- Patient Search Results -->
+                                    <div *ngIf="showPatientSearch && patientResults.length > 0" class="search-results shadow border rounded position-absolute w-100 bg-white z-index-dropdown mt-1" style="z-index: 1000;">
+                                        <div class="list-group">
+                                            <button type="button" *ngFor="let patient of patientResults" 
+                                                class="list-group-item list-group-item-action py-2"
+                                                (click)="selectPatient(patient)">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <strong>{{ patient.name }}</strong>
+                                                    </div>
+                                                    <small class="text-muted">ID: {{ patient.id }}</small>
+                                                </div>
+                                            </button>
+                                        </div>
+                                        <div *ngIf="patientResults.length >= 10" class="p-2 text-center text-muted">
+                                            <small>Showing first 10 results. Type more to refine search.</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div *ngIf="submitted && !advanceForm.get('patientId')?.value" class="invalid-feedback d-block">
+                                        Please select a patient from the search results
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="createdBy" class="form-label">Created By*</label>
+                                    <input type="text" class="form-control" formControlName="createdBy" 
+                                        [ngClass]="{'is-invalid': submitted && advanceForm.get('createdBy')?.errors}">
+                                    <div *ngIf="submitted && advanceForm.get('createdBy')?.errors" class="invalid-feedback">
+                                        Created by is required
+                                    </div>
+                                </div>
+                                
+                                <div class="alert mt-4" style="background-color: rgba(107, 29, 20, 0.1); color: #6b1d14; border-color: rgba(107, 29, 20, 0.2);">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Advance payments can be used later to adjust against invoices.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-end">
+                    <button type="button" class="btn me-2" style="background-color: #e6c157; color: #333;" (click)="cancelForm()">Cancel</button>
+                    <button type="submit" class="btn" style="background-color: #6b1d14; color: white;" [disabled]="loading">
+                        <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        {{ isEditMode ? 'Update Advance' : 'Create Advance' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

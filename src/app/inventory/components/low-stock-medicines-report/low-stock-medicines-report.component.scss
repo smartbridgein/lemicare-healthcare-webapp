@@ -1,0 +1,141 @@
+// Apply classic styling with Times New Roman font and blue color palette
+:host ::ng-deep {
+  font-family: "Times New Roman", Times, serif;
+}
+
+.card {
+  border: 2px solid #ccd6e5;
+  border-radius: 0.35rem;
+  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.card-header {
+  border-bottom: 2px solid #4e73df;
+  padding: 1rem;
+  background-color: #f8f9fc;
+  
+  h5 {
+    font-family: "Times New Roman", Times, serif;
+    font-weight: 700;
+    color: #2c3e50;
+    letter-spacing: 0.02em;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+}
+
+// Table styling
+.table {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 0.95rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  
+  thead {
+    background-color: #f8f9fc;
+    
+    th {
+      border-bottom: 2px solid #4e73df;
+      font-family: "Times New Roman", Times, serif;
+      font-weight: 700;
+      color: #2c3e50;
+      letter-spacing: 0.02em;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+  }
+  
+  tbody {
+    tr:nth-child(even) {
+      background-color: #f8f9fc;
+    }
+    
+    tr:hover {
+      background-color: #eaecf4;
+    }
+    
+    td {
+      border-bottom: 1px solid #e3e6f0;
+      color: #3a3b45;
+      letter-spacing: 0.01em;
+    }
+  }
+}
+
+// Status badges styling
+.badge {
+  padding: 0.4rem 0.6rem;
+  font-family: "Times New Roman", Times, serif;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  font-style: italic;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  border-radius: 0.35rem;
+}
+
+.out-of-stock {
+  background-color: #e74a3b;
+  color: white;
+}
+
+.critical {
+  background-color: #e74a3b;
+  color: white;
+}
+
+.low-stock {
+  background-color: #f6c23e;
+  color: #212529;
+}
+
+.normal {
+  background-color: #1cc88a;
+  color: white;
+}
+
+// Button styling
+.btn-outline-primary {
+  border: 2px solid #4e73df;
+  color: #4e73df;
+  font-family: "Times New Roman", Times, serif;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border-radius: 0.35rem;
+  box-shadow: 0 2px 4px rgba(78, 115, 223, 0.1);
+}
+
+.btn-outline-primary:hover {
+  background-color: #4e73df;
+  color: white;
+}
+
+// Pagination styling
+.pagination {
+  .page-link {
+    color: #4e73df;
+    border: 2px solid #ccd6e5;
+    font-family: "Times New Roman", Times, serif;
+    font-weight: 600;
+    
+    &:hover {
+      background-color: #eaecf4;
+      border-color: #4e73df;
+    }
+  }
+  
+  .page-item.active .page-link {
+    background-color: #4e73df;
+    border-color: #4e73df;
+    color: white;
+  }
+  
+  .page-item.disabled .page-link {
+    color: #a0aec0;
+    border-color: #ccd6e5;
+  }
+}
+
+.pagination-info {
+  font-family: "Times New Roman", Times, serif;
+  font-style: italic;
+  color: #5a5c69;
+  letter-spacing: 0.01em;
+}

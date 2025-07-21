@@ -1,0 +1,260 @@
+<div class="p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="fw-bold mb-1" style="color: #6b1d14; font-family: 'Roboto', sans-serif;">Medicine Master</h3>
+      <div class="d-flex align-items-center">
+        <p class="text-muted small mb-0 me-3" style="font-family: 'Roboto', sans-serif;">
+          <span class="badge me-1" style="background-color: #1cc88a; color: white; font-family: 'Roboto', sans-serif; font-size: 12px;">{{ getActiveMedicineCount() }} Active</span>
+          <span class="badge me-1" style="background-color: #e74a3b; color: white; font-family: 'Roboto', sans-serif; font-size: 12px;">{{ getInactiveMedicineCount() }} Inactive</span>
+        </p>
+        <button class="btn btn-sm" (click)="toggleInactiveMedicines()" 
+                [ngStyle]="{
+                  'background': showInactive ? 'linear-gradient(to right, #6b1d14, #8c2c21)' : 'white',
+                  'color': showInactive ? 'white' : '#6b1d14',
+                  'border': showInactive ? 'none' : '1px solid #6b1d14',
+                  'font-family': 'Roboto, sans-serif',
+                  'font-size': '0.75rem',
+                  'border-radius': '4px'
+                }">
+          <i class="fas" [ngClass]="showInactive ? 'fa-eye-slash' : 'fa-eye'"></i>
+          {{ showInactive ? 'Hide Inactive' : 'Show Inactive' }}
+        </button>
+      </div>
+    </div>
+    <div class="d-flex">
+      <div class="input-group me-3" style="width: 300px;">
+        <input type="text" class="form-control shadow-sm" placeholder="Search medicines..." 
+               [(ngModel)]="searchTerm" (input)="searchMedicines()">
+        <span class="input-group-text bg-white">
+          <i class="fas fa-search text-primary"></i>
+        </span>
+      </div>
+      <button class="btn shadow-sm" style="background-color: #6b1d14; color: white; font-family: 'Roboto', sans-serif;" (click)="openAddModal()">
+        <i class="fas fa-plus-circle me-2"></i> Add New Medicine
+      </button>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0" style="border-collapse: separate; border-spacing: 0;">
+          <thead>
+            <tr class="bg-light">
+              <th class="fw-medium py-3" style="width: 18%; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Medicine Name</th>
+              <th class="fw-medium py-3" style="width: 10%; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Category</th>
+              <th class="fw-medium py-3" style="width: 10%; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Vendor Name</th>
+              <th class="fw-medium py-3" style="width: 8%; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">SKU</th>
+              <th class="fw-medium py-3" style="width: 10%; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Purchase Price</th>
+              <th class="fw-medium py-3" style="width: 10%; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Unit Price</th>
+              <th class="fw-medium py-3" style="width: 10%; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Stock Status</th>
+              <th class="fw-medium py-3" style="width: 10%; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Status</th>
+              <th class="fw-medium py-3" style="width: 12%; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="loading">
+              <td colspan="9" class="text-center py-4">
+                <div class="spinner-border spinner-border-sm" style="color: #6b1d14;" role="status"></div>
+                <span class="ms-2">Loading medicines...</span>
+              </td>
+            </tr>
+            <tr *ngIf="!loading && filteredMedicines.length === 0">
+              <td colspan="9" class="text-center py-4">
+                <i class="fas fa-info-circle text-muted me-2"></i>No medicines found
+              </td>
+            </tr>
+            <tr *ngFor="let medicine of filteredMedicines">
+              <td style="font-family: 'Roboto', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">{{ medicine.name }}</td>
+              <td style="font-family: 'Roboto', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ medicine.category || '-' }}</td>
+              <td style="font-family: 'Roboto', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ medicine.manufacturer || '-' }}</td>
+              <td style="font-family: 'Roboto', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ medicine.sku || '-' }}</td>
+              <td style="font-family: 'Roboto', sans-serif;">₹{{ medicine.purchasePrice || '0.00' }}</td>
+              <td style="font-family: 'Roboto', sans-serif;">₹{{ medicine.unitPrice || '0.00' }}</td>
+              <td>
+                <span class="badge" [ngStyle]="{
+                  'background-color': medicine.stockStatus === StockStatus.NORMAL ? '#1cc88a' : 
+                                    medicine.stockStatus === StockStatus.LOW ? '#e6c157' : 
+                                    medicine.stockStatus === StockStatus.OUT_OF_STOCK ? '#e74a3b' : '#d1d3e2',
+                  'color': medicine.stockStatus === StockStatus.OUT_OF_STOCK ? 'white' : '#333',
+                  'font-family': 'Roboto, sans-serif',
+                  'font-size': '12px',
+                  'font-weight': '500',
+                  'border-radius': '4px'
+                }">
+                  {{ getStockStatusDisplay(medicine.stockStatus) }}
+                </span>
+              </td>
+              <td>
+                <span class="badge" [ngStyle]="{
+                  'background-color': medicine.status === 'ACTIVE' ? '#1cc88a' : 
+                                    medicine.status === 'INACTIVE' ? '#e74a3b' : '#d1d3e2',
+                  'color': medicine.status === 'INACTIVE' ? 'white' : '#333',
+                  'font-family': 'Roboto, sans-serif',
+                  'font-size': '12px',
+                  'font-weight': '500',
+                  'border-radius': '4px',
+                  'white-space': 'nowrap'
+                }">
+                  {{ medicine.status || 'ACTIVE' }}
+                </span>
+              </td>
+              <td>
+                <div class="btn-group">
+                  <button class="btn btn-sm" style="border: 1px solid #6b1d14; color: #6b1d14; background-color: transparent;" (click)="openEditModal(medicine)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-sm" 
+                    [ngStyle]="{
+                      'border': '1px solid #6b1d14',
+                      'color': medicine.status === 'ACTIVE' ? '#e74a3b' : '#1cc88a',
+                      'background-color': 'transparent'
+                    }" 
+                    [title]="medicine.status === 'ACTIVE' ? 'Deactivate Medicine' : 'Activate Medicine'" 
+                    (click)="toggleMedicineStatus(medicine)">
+                    <i class="fas" [ngClass]="medicine.status === 'ACTIVE' ? 'fa-toggle-on' : 'fa-toggle-off'"></i>
+                  </button>
+                  <button class="btn btn-sm" 
+                    style="border: 1px solid #e74a3b; color: white; background-color: #e74a3b;" 
+                    title="Delete Medicine" 
+                    (click)="openDeleteConfirmation(medicine)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Medicine Modal -->
+<div class="modal" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header" style="background-color: #f8f9fc; font-family: 'Roboto', sans-serif;">
+        <h5 class="modal-title fw-bold" style="color: #333; font-family: 'Roboto', sans-serif;">
+          <i class="fas {{ isEditMode ? 'fa-edit' : 'fa-plus-circle' }} me-2" style="color: #6b1d14;"></i>
+          {{ isEditMode ? 'Edit Medicine' : 'Add New Medicine' }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body" style="font-family: 'Roboto', sans-serif;">
+        <!-- Error alert for duplicate medicine name -->
+        <div *ngIf="duplicateNameError" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+          <i class="fas fa-exclamation-circle me-2"></i>
+          {{ duplicateNameError }}
+          <button type="button" class="btn-close" (click)="duplicateNameError = null" aria-label="Close"></button>
+        </div>
+        
+        <div class="alert alert-info mb-3">
+          <small><i class="fas fa-info-circle me-2"></i> Fields marked with an asterisk (*) are required.</small>
+        </div>
+        
+        <form [formGroup]="medicineForm" (ngSubmit)="submitForm()">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Medicine Name*</label>
+              <input type="text" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="name" 
+                [class.is-invalid]="medicineForm.get('name')?.invalid && medicineForm.get('name')?.touched">
+              <div *ngIf="medicineForm.get('name')?.invalid && medicineForm.get('name')?.touched" class="invalid-feedback" style="font-family: 'Roboto', sans-serif; font-size: 12px; color: #e74a3b;">
+                Medicine name is required
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Generic Name*</label>
+              <input type="text" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="genericName" 
+                [class.is-invalid]="medicineForm.get('genericName')?.invalid && medicineForm.get('genericName')?.touched">
+              <div *ngIf="medicineForm.get('genericName')?.invalid && medicineForm.get('genericName')?.touched" class="invalid-feedback" style="font-family: 'Roboto', sans-serif; font-size: 12px; color: #e74a3b;">
+                Generic name is required
+              </div>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Manufacturer/Company*</label>
+              <input type="text" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="manufacturer" 
+                [class.is-invalid]="medicineForm.get('manufacturer')?.invalid && medicineForm.get('manufacturer')?.touched">
+              <div *ngIf="medicineForm.get('manufacturer')?.invalid && medicineForm.get('manufacturer')?.touched" class="invalid-feedback" style="font-family: 'Roboto', sans-serif; font-size: 12px; color: #e74a3b;">
+                Manufacturer name is required
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Category *</label>
+              <input type="text" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="category"
+                [class.is-invalid]="medicineForm.get('category')?.invalid && medicineForm.get('category')?.touched">
+              <div *ngIf="medicineForm.get('category')?.invalid && medicineForm.get('category')?.touched" class="invalid-feedback" style="font-family: 'Roboto', sans-serif; font-size: 12px; color: #e74a3b;">
+                Category is required
+              </div>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">SKU <small class="text-muted">(optional)</small></label>
+              <input type="text" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="sku">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">HSN Code <small class="text-muted">(optional)</small></label>
+              <input type="text" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="hsnCode">
+            </div>
+          </div>
+          <!-- Hidden manufacturer field preserved in the DOM but not visible -->
+          <div style="display: none;">
+            <input type="text" class="form-control" formControlName="manufacturer">
+          </div>
+          
+          <!-- Status field with full row width -->
+          <div class="row mb-3">
+            <div class="col-md-12">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Status</label>
+              <select class="form-select" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="status">
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+              </select>
+            </div>
+          </div>
+         
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Unit of Measurement </label>
+              <input type="text" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="unitOfMeasurement">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Low Stock Threshold*</label>
+              <input type="number" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="lowStockThreshold"
+                [class.is-invalid]="medicineForm.get('lowStockThreshold')?.invalid && medicineForm.get('lowStockThreshold')?.touched">
+              <div *ngIf="medicineForm.get('lowStockThreshold')?.invalid && medicineForm.get('lowStockThreshold')?.touched" class="invalid-feedback" style="font-family: 'Roboto', sans-serif; font-size: 12px; color: #e74a3b;">
+                Low stock threshold is required and must be at least 1
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Tax Profile <small class="text-muted">(optional)</small></label>
+              <select class="form-select" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="taxProfileId">
+                <option *ngFor="let taxProfile of taxProfiles" [value]="taxProfile.id">{{ taxProfile.profileName }}</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer" style="background-color: #f8f9fc; border-top: 1px solid #d1d3e2; font-family: 'Roboto', sans-serif;">
+        <button type="button" class="btn" style="background-color: #d1d3e2; color: #333; font-family: 'Roboto', sans-serif; font-size: 14px;" (click)="closeModal()">Cancel</button>
+        <button type="button" class="btn" 
+                [disabled]="!isFormValid()" 
+                (click)="submitForm()"
+                style="background: linear-gradient(to right, #6b1d14, #8c2c21); 
+                       color: white; 
+                       font-family: 'Roboto', sans-serif; 
+                       font-size: 14px; 
+                       border: none; 
+                       box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+                       transition: all 0.2s ease;">
+          <i class="fas fa-check me-1"></i> {{ isEditMode ? 'Update' : 'Save' }} Medicine
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade show" *ngIf="showModal"></div>

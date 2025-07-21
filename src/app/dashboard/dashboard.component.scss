@@ -1,0 +1,842 @@
+// Dashboard Component Styles
+
+// Import Roboto font if not already imported elsewhere
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap');
+
+// Variables
+$primary-color: #6b1d14; // Classic maroon (matching sidebar-bg)
+$secondary-color: #9b2918; // Darker maroon (matching sidebar-highlight)
+$accent-color: #e6c157; // Yellow accent (matching sidebar-accent)
+$gradient-start: #6b1d14; // Start of gradient
+$gradient-end: #4a1410; // Darker end of gradient
+$warning-color: #e6c157; // Yellow accent for warnings
+$danger-color: #b54942; // Classic red
+$light-color: #f5f6f7;
+$dark-color: #343a40;
+$text-color: #333333;
+$border-radius: 6px;
+$box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+$header-height: 60px;
+$sidebar-width: 260px;
+$sidebar-collapsed-width: 70px;
+$sidebar-bg: #6b1d14; // Classic maroon background
+$sidebar-text: #f1e2b9; // Light yellow text
+$sidebar-highlight: #9b2918; // Darker maroon for highlights
+$sidebar-accent: #e6c157; // Yellow accent
+
+// Layout Styles
+.dashboard-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #f5f7fa;
+  position: relative;
+}
+
+// Sidebar Styles
+.sidebar {
+  width: $sidebar-width;
+  background: linear-gradient(to bottom, $gradient-start, $gradient-end);
+  color: $sidebar-text;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  box-shadow: 3px 0 15px rgba(0, 0, 0, 0.3);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 10;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  
+  // Collapsed state
+  &.collapsed {
+    width: $sidebar-collapsed-width;
+    
+    .clinic-logo {
+      padding: 1.2rem 0.5rem;
+      justify-content: center;
+      
+      h2 {
+        opacity: 0;
+        transform: translateX(-20px);
+        width: 0;
+        overflow: hidden;
+      }
+    }
+    
+    .nav-item span {
+      opacity: 0;
+      width: 0;
+      display: none;
+    }
+    
+    .fas.ml-auto {
+      display: none;
+    }
+    
+    .nav-link {
+      justify-content: center;
+      padding: 0.8rem;
+      
+      i:not(.ml-auto) {
+        font-size: 1.2rem;
+        margin: 0;
+      }
+    }
+    
+    .submenu {
+      max-height: 0 !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      margin: 0 !important;
+    }
+    
+    .doctor-info {
+      padding: 1rem 0.5rem;
+      justify-content: center;
+      
+      .doctor-details {
+        display: none;
+      }
+      
+      .doctor-avatar {
+        margin-right: 0;
+      }
+    }
+  }
+  
+  // Clinic logo styles
+  .clinic-logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1.5rem 0.8rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.15);
+    
+    .clinic-branding {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      width: 100%;
+      
+      .logo-icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 48px;
+        height: 48px;
+        background: $accent-color;
+        border-radius: 50%;
+        margin-right: 12px;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+        
+        i {
+          font-size: 24px;
+          color: $primary-color;
+        }
+      }
+      
+      .clinic-name {
+        display: flex;
+        flex-direction: column;
+        
+        h2 {
+          margin: 0 0 2px 0;
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: $accent-color;
+          font-family: 'Roboto', sans-serif;
+          letter-spacing: 0.5px;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          line-height: 1.1;
+        }
+        
+        .clinic-tagline {
+          font-size: 0.8rem;
+          color: rgba(255, 255, 255, 0.7);
+          font-style: italic;
+          letter-spacing: 0.3px;
+        }
+      }
+    }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -5px;
+      height: 5px;
+      background: linear-gradient(to right, transparent, $accent-color, transparent);
+      opacity: 0.5;
+      background: linear-gradient(to right, $sidebar-accent, darken($sidebar-highlight, 10%));
+      border-radius: 2px;
+    }
+    
+    img {
+      height: 36px;
+      width: auto;
+      margin-right: 10px;
+    }
+    
+    h2 {
+      margin: 0;
+      color: darken($sidebar-text, 15%);
+      font-size: 1.25rem;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: all 0.3s ease;
+      text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+      letter-spacing: 0.5px;
+    }
+  }
+  
+  // Sidebar toggle button
+  .sidebar-toggle {
+    position: absolute;
+    top: 15px;
+    right: -18px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: $accent-color;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    color: $primary-color;
+    cursor: pointer;
+    z-index: 100;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+    
+    &:active {
+      transform: scale(0.95);
+    }
+    
+    &.collapsed {
+      .toggle-icon {
+        transform: rotate(180deg);
+      }
+    }
+  }
+  
+  .sidebar-nav {
+    margin-top: 1rem;
+    padding: 0;
+    
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      overflow: hidden;
+    }
+    
+    .nav-item {
+      margin-bottom: 0.25rem;
+      
+      &.expanded {
+        .submenu {
+          visibility: visible;
+          max-height: 1000px;
+          opacity: 1;
+          margin-top: 0.25rem;
+          margin-bottom: 0.25rem;
+        }
+        
+        .fa-chevron-down {
+          transform: rotate(180deg);
+          color: $sidebar-accent;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+          transition: all 0.3s ease;
+          filter: drop-shadow(0 0 3px rgba($sidebar-accent, 0.7));
+        }
+        
+        span {
+          color: white;
+          font-weight: 500;
+        }
+      }
+      
+      .nav-link {
+        display: flex;
+        align-items: center;
+        padding: 0.85rem 1.2rem;
+        border-radius: 0 4px 4px 0;
+        text-decoration: none;
+        color: $sidebar-text;
+        transition: all 0.2s ease-out;
+        cursor: pointer;
+        border-left: 3px solid transparent;
+        margin-left: -3px;
+        
+        &:hover {
+          background-color: rgba($sidebar-highlight, 0.2);
+          border-left: 3px solid rgba($accent-color, 0.5);
+          
+          i {
+            transform: translateX(3px);
+            color: rgba($accent-color, 0.8);
+          }
+        }
+        
+        i {
+          font-size: 1rem;
+          margin-right: 1rem;
+          width: 1.25rem;
+          text-align: center;
+          color: rgba($sidebar-text, 0.7);
+          transition: all 0.2s ease;
+        }
+        
+        span {
+          flex: 1;
+          white-space: nowrap;
+        }
+        
+        &:hover {
+          background-color: rgba($sidebar-highlight, 0.35);
+          border-left: 3px solid $sidebar-accent;
+          color: lighten($sidebar-text, 15%);
+          box-shadow: inset 0 0 8px rgba($sidebar-accent, 0.25), 0 0 4px rgba($sidebar-highlight, 0.4);
+          
+          i:not(.ml-auto) {
+            color: $sidebar-accent;
+            transform: translateX(2px);
+            filter: drop-shadow(0 0 3px rgba($sidebar-accent, 0.5));
+          }
+        }
+        
+        &.active {
+          background-color: rgba($sidebar-highlight, 0.45);
+          border-left: 4px solid $sidebar-accent;
+          color: #ffffff;
+          font-weight: 600;
+          box-shadow: inset 0 0 12px rgba($sidebar-highlight, 0.5), 0 0 5px rgba($sidebar-accent, 0.3);
+          text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+          
+          i:not(.ml-auto) {
+            color: $sidebar-accent;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+            filter: drop-shadow(0 0 4px rgba($sidebar-accent, 0.6));
+            transform: translateX(2px) scale(1.05);
+          }
+        }
+        
+        .fas.ml-auto {
+          font-size: 0.9rem;
+          transition: transform 0.3s ease, color 0.3s ease, text-shadow 0.3s ease, filter 0.3s ease;
+          position: absolute;
+          right: 1.5rem;
+          color: $sidebar-accent;
+          display: block;
+          filter: drop-shadow(0 0 2px rgba($sidebar-highlight, 0.4));
+          
+          &.fa-chevron-down {
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
+            transform: translateY(1px);
+            opacity: 0.9;
+          }
+          
+          &.fa-chevron-right {
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
+            filter: drop-shadow(0 0 2px rgba($sidebar-accent, 0.5));
+          }
+        }
+        
+        &:hover .fas.ml-auto {
+          color: $sidebar-accent;
+          text-shadow: 0 0 6px rgba($sidebar-highlight, 0.5);
+        }
+      }
+      
+      .submenu {
+        padding-left: 0;
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        visibility: hidden;
+        transition: max-height 0.3s ease-in-out, opacity 0.2s ease-in-out, margin 0.2s ease-in-out, visibility 0s linear 0.3s;
+        margin: 0;
+        background-color: rgba(0, 0, 0, 0.15);
+        border-radius: 0 0 6px 6px;
+        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+        
+        &.show {
+          visibility: visible;
+          max-height: 1000px;
+          opacity: 1;
+          margin: 0.25rem 0.5rem 0.5rem;
+          display: block;
+          transition: max-height 0.35s ease-in-out, opacity 0.25s ease-in-out, margin 0.3s ease-in-out, visibility 0s;
+          box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.15);
+        }
+        
+        li {
+          margin: 0;
+          padding: 0;
+          list-style: none;
+          position: relative;
+          
+          a {
+            display: flex;
+            align-items: center;
+            padding: 0.65rem 1rem 0.65rem 1.75rem;
+            color: rgba($sidebar-text, 0.85);
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            position: relative;
+            border-left: 2px solid transparent;
+            margin-left: -2px;
+            
+            &:before {
+              content: '';
+              position: absolute;
+              left: 0.75rem;
+              top: 50%;
+              transform: translateY(-50%);
+              width: 4px;
+              height: 4px;
+              border-radius: 50%;
+              background-color: rgba($sidebar-accent, 0.7);
+              transition: all 0.2s ease;
+            }
+            
+            i {
+              font-size: 0.8rem;
+              margin-right: 0.6rem;
+              color: rgba($sidebar-text, 0.7);
+              transition: all 0.2s ease;
+            }
+            
+            &:hover {
+              color: $sidebar-text;
+              background-color: rgba(0, 0, 0, 0.1);
+              border-left: 2px solid rgba($sidebar-accent, 0.5);
+              
+              &:before {
+                background-color: $sidebar-accent;
+                box-shadow: 0 0 3px rgba($sidebar-accent, 0.6);
+                transform: translateY(-50%) scale(1.2);
+              }
+              
+              i {
+                color: $sidebar-accent;
+                transform: translateX(2px);
+              }
+            }
+            
+            &.active {
+              color: #ffffff;
+              background-color: rgba(0, 0, 0, 0.15);
+              border-left: 2px solid $sidebar-accent;
+              font-weight: 500;
+              
+              &:before {
+                background-color: $sidebar-accent;
+                width: 5px;
+                height: 5px;
+                box-shadow: 0 0 4px rgba($sidebar-accent, 0.8);
+              }
+              
+              i {
+                color: $sidebar-accent;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  // Doctor info section at bottom
+  .doctor-info {
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    background-color: rgba($sidebar-accent, 0.18);
+    margin-top: auto;
+    border-top: 1px solid rgba($sidebar-accent, 0.3);
+    transition: all 0.3s ease;
+    
+    .doctor-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background-color: rgba($sidebar-accent, 0.25);
+      border: 2px solid rgba($sidebar-accent, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 0.75rem;
+      flex-shrink: 0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      
+      i {
+        color: $sidebar-text;
+        font-size: 1rem;
+      }
+      
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+      }
+    }
+    
+    .doctor-details {
+      flex: 1;
+      min-width: 0;
+      
+      .doctor-name {
+        color: $sidebar-text;
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-shadow: 0 1px 1px rgba(255, 255, 255, 0.3);
+      }
+      
+      .doctor-role {
+        color: rgba($sidebar-text, 0.85);
+        font-size: 0.8rem;
+        margin: 0;
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+// Main Content Styles
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8f5f0;
+  overflow-y: auto;
+  margin-left: $sidebar-width; // Add margin equal to sidebar width
+  transition: margin-left 0.3s ease;
+  font-family: 'Roboto', sans-serif;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: auto;
+  
+  &.sidebar-collapsed {
+    margin-left: $sidebar-collapsed-width; // Adjust margin when sidebar is collapsed
+  }
+}
+
+.content-container {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+// Header Styles
+.main-header {
+  height: $header-height;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  box-shadow: 0 2px 6px rgba($primary-color, 0.1);
+  border-bottom: 1px solid rgba($primary-color, 0.15);
+  z-index: 5;
+  font-family: 'Roboto', sans-serif;
+  
+  .page-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: $primary-color;
+    position: relative;
+    padding-left: 15px;
+    font-family: 'Roboto', sans-serif;
+    
+    &:before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 18px;
+      background-color: $accent-color;
+      border-radius: 2px;
+      box-shadow: 0 0 4px rgba($accent-color, 0.5);
+    }
+  }
+  
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    
+    // Styling for the appointment count badge in the header
+    .appointment-count-badge {
+      display: flex;
+      align-items: center;
+      background-color: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 8px 15px;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background-color: #e9ecef;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      
+      .appointment-icon {
+        font-size: 18px;
+        color: #dc3545; // Use the same red as other appointment-related UI elements
+      }
+      
+      .count-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        
+        .loading-spinner {
+          font-size: 14px;
+          color: #6c757d;
+        }
+        
+        .appointment-count {
+          font-weight: bold;
+          font-size: 18px;
+          color: #dc3545;
+        }
+        
+        .count-label {
+          font-size: 11px;
+          color: #6c757d;
+        }
+      }
+    }
+    
+    // Token display styling
+    .token-display {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background-color: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 10px;
+      min-width: 180px;
+      transition: all 0.2s ease;
+      
+      &.loading {
+        opacity: 0.7;
+      }
+      
+      .token-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #495057;
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 6px;
+        
+        i {
+          color: #007bff;
+        }
+      }
+      
+      .token-body {
+        display: flex;
+        align-items: center;
+        
+        &.empty {
+          flex-direction: column;
+          align-items: center;
+          
+          .no-token {
+            font-style: italic;
+            color: #6c757d;
+            font-size: 13px;
+          }
+        }
+        
+        .token-number {
+          font-size: 24px;
+          font-weight: bold;
+          color: #007bff;
+          background: #e7f1ff;
+          border-radius: 4px;
+          padding: 2px 8px;
+          margin-right: 10px;
+        }
+        
+        .token-details {
+          display: flex;
+          flex-direction: column;
+          
+          .token-patient {
+            font-weight: 500;
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 120px;
+          }
+          
+          .token-waiting {
+            font-size: 11px;
+            color: #dc3545;
+          }
+        }
+      }
+      
+      .token-controls {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 8px;
+        
+        .token-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 4px 8px;
+          border-radius: 4px;
+          transition: background-color 0.2s;
+          
+          &:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+          }
+          
+          &.complete i {
+            color: #28a745;
+          }
+          
+          &.skip i {
+            color: #ffc107;
+          }
+        }
+      }
+      
+      .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 8px;
+        
+        i {
+          color: #007bff;
+          font-size: 18px;
+        }
+      }
+    }
+    
+    .user-profile {
+      margin-left: auto;
+      position: relative;
+      
+      &.classic {
+        display: flex;
+        align-items: center;
+        padding: 0 0.5rem;
+        margin-right: 0.5rem;
+        height: 40px;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+        
+        &:hover {
+          background-color: rgba($sidebar-highlight, 0.08);
+          border: 1px solid rgba($sidebar-highlight, 0.15);
+        }
+        
+        .user-info {
+          text-align: right;
+          margin-right: 0.75rem;
+          
+          .welcome-text {
+            display: block;
+            font-size: 0.75rem;
+            color: rgba($primary-color, 0.7);
+            margin-bottom: 2px;
+            font-family: 'Roboto', sans-serif;
+          }
+          
+          .user-name {
+            font-weight: 600;
+            color: $primary-color;
+            font-size: 0.9rem;
+            font-family: 'Roboto', sans-serif;
+          }
+        }
+        
+        .user-avatar-circle {
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          background-color: rgba($primary-color, 0.1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 2px solid rgba($accent-color, 0.6);
+          box-shadow: 0 0 5px rgba($primary-color, 0.2);
+          transition: all 0.3s ease;
+          
+          i {
+            color: $primary-color;
+            font-size: 1rem;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+          }
+        }
+      }
+    }
+    
+    .logout-btn {
+      background-color: rgba($primary-color, 0.1);
+      color: $primary-color;
+      border: 1px solid rgba($accent-color, 0.4);
+      padding: 0.4rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-family: 'Roboto', sans-serif;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      
+      i {
+        margin-right: 6px;
+        color: $primary-color;
+      }
+      
+      &:hover {
+        background-color: rgba($primary-color, 0.15);
+        border-color: rgba($accent-color, 0.6);
+        box-shadow: 0 1px 4px rgba($primary-color, 0.2);
+      }
+    }
+  }
+}

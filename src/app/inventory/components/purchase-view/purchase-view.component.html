@@ -1,0 +1,269 @@
+<div class="purchase-view-container" style="font-family: 'Roboto', sans-serif;">
+  <!-- Header with back button and action buttons -->
+  <div class="page-header">
+    <div class="d-flex justify-content-between align-items-center w-100">
+      <div class="back-button">
+        <a [routerLink]="['/inventory/purchases']" style="color: #6b1d14; font-family: 'Roboto', sans-serif;">
+          <i class="fas fa-arrow-left"></i> Purchase Invoices
+        </a>
+        <span class="view-mode-badge ml-2">View Only</span>
+      </div>
+      
+      <div class="action-buttons">
+        <button type="button" class="btn btn-outline-primary btn-print" (click)="window.print()">
+          <i class="fas fa-print"></i> Print
+        </button>
+       <!--<button type="button" class="btn btn-primary" [routerLink]="['/inventory/purchases/edit', purchaseId]">
+          <i class="fas fa-edit"></i> Edit
+        </button>--> 
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading spinner -->
+  <div *ngIf="loading" class="loading-spinner">
+    <i class="fas fa-spinner fa-spin"></i>
+  </div>
+  
+  <!-- Error message -->
+  <div *ngIf="error" class="error-message">
+    <i class="fas fa-exclamation-circle mr-2"></i> {{ error }}
+  </div>
+  
+  <!-- Purchase view content -->
+  <div *ngIf="!loading && !error && purchase" class="purchase-view-wrapper">
+    <!-- Top info cards layout - Document (Left) and Supplier (Right) -->
+    <div class="row info-cards-container">
+      <!-- Document Information Card - Left Side -->
+      <div class="col-md-6">
+        <div class="info-card h-100">
+          <div class="card-header">
+            <h3><i class="fas fa-file-invoice"></i> Document Information</h3>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-12">
+                <div class="info-group">
+                  <label>Invoice Date</label>
+                  <div class="info-value">{{ formatTimestampDate(purchase.invoiceDate) }}</div>
+                </div>
+              </div>
+              <div class="col-md-12">
+                <div class="info-group">
+                  <label>Invoice Number</label>
+                  <div class="info-value">{{ purchase.referenceId || 'N/A' }}</div>
+                </div>
+              </div>
+              <div class="col-md-12">
+                <div class="info-group">
+                  <label>Purchase ID</label>
+                  <div class="info-value">{{ purchase.id || purchase.purchaseId || 'N/A' }}</div>
+                </div>
+              </div>
+              <div class="col-md-12">
+                <div class="info-group">
+                  <label>Created At</label>
+                  <div class="info-value">{{ formatTimestampDate(purchase.createdAt) }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Supplier Information Card - Right Side -->
+      <div class="col-md-6">
+        <div class="info-card supplier-card h-100">
+          <div class="card-header">
+            <h3><i class="fas fa-truck"></i> Supplier Information</h3>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-12">
+                <div class="info-group">
+                  <label>Supplier Name</label>
+                  <div class="info-value">{{ getSupplierName(purchase.supplierId) }}</div>
+                </div>
+              </div>
+              <div class="col-md-12">
+                <div class="info-group">
+                  <label>Supplier ID</label>
+                  <div class="info-value">{{ formatSupplierId(purchase.supplierId) }}</div>
+                </div>
+              </div>
+              <div class="col-md-12">
+                <div class="info-group">
+                  <label>Contact Number</label>
+                  <div class="info-value">{{ getSupplierContact(purchase.supplierId) }}</div>
+                </div>
+              </div>
+              <div class="col-md-12">
+                <div class="info-group">
+                  <label>GST Type</label>
+                  <div class="info-value">{{ purchase.gstType || 'N/A' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Medicine Items Card -->
+    <div class="info-card items-card">
+      <div class="card-header items-header" style="background-color: #f8f9fc;">
+        <h3 style="color: #333; font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 18px;"><i class="fas fa-pills" style="color: #6b1d14;"></i> Medicine Items</h3>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table medicine-table table-bordered">
+            <thead>
+              <tr>
+                <th class="index-cell">#</th>
+                <th class="medicine-column">Medicine</th>
+                <th class="batch-column">Batch#</th>
+                <th class="expiry-column">Exp. Date</th>
+                <th class="pack-column">Pack</th>
+                <th class="pack-column">Free</th>
+                <th class="items-pack-column">Items/Pack</th>
+                <th class="qty-column">Total Qty</th>
+                <th class="mrp-column">MRP</th>
+                <th class="cost-column">Cost</th>
+                <th class="disc-pct-column">Disc%</th>
+                <th class="disc-pct-column">Disc Amt</th>
+                <th class="tax-profile-column">GST%</th>
+                <th class="taxable-amount-column">Taxable</th>
+                <th class="tax-profile-column">Tax Amt</th>
+                <th class="total-column">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of purchase.items; let i = index" class="medicine-item-row">
+                <td class="index-cell">{{ i+1 }}</td>
+                <td class="medicine-column">{{ getMedicineName(item.medicineId) }}</td>
+                <td class="batch-column">{{ item.batchNo }}</td>
+                <td class="expiry-column">{{ formatTimestampDate(item.expiryDate) }}</td>
+                <td class="pack-column text-center">{{ item.packQuantity | number:'1.0-0' }}</td>
+                <td class="pack-column text-center">{{ item.freePackQuantity | number:'1.0-0' }}</td>
+                <td class="items-pack-column text-center">{{ item.itemsPerPack | number:'1.0-0' }}</td>
+                <td class="qty-column text-center">{{ calculateTotalQuantity(item) | number:'1.0-0' }}</td>
+                <td class="mrp-column text-right">₹{{ item.mrpPerItem | number:'1.2-2' }}</td>
+                <td class="cost-column text-right">₹{{ item.purchaseCostPerPack | number:'1.2-2' }}</td>
+                <td class="disc-pct-column text-center">{{ item.discountPercentage | number:'1.0-1' }}%</td>
+                <td class="disc-pct-column text-right">₹{{ item.lineItemDiscountAmount | number:'1.2-2' }}</td>
+                <td class="tax-profile-column text-center">
+                  <span>{{ item.taxRateApplied | number:'1.1-1' }}%</span>
+                </td>
+                <td class="taxable-amount-column text-right">₹{{ item.lineItemTaxableAmount | number:'1.2-2' }}</td>
+                <td class="tax-profile-column text-right">₹{{ item.lineItemTaxAmount | number:'1.2-2' }}</td>
+                <td class="total-column text-right">₹{{ item.lineItemTotalAmount | number:'1.2-2' }}</td>
+              </tr>
+              <tr *ngIf="!purchase.items || purchase.items.length === 0">
+                <td colspan="16" class="text-center">No items found</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="totals-footer-row">
+                <td colspan="13" class="text-right totals-label"><strong>Totals:</strong></td>
+                <td class="taxable-amount-column text-right"><strong>₹{{ purchase.totalTaxableAmount | number:'1.2-2' }}</strong></td>
+                <td class="tax-profile-column text-right"><strong>₹{{ purchase.totalTaxAmount | number:'1.2-2' }}</strong></td>
+                <td class="total-column text-right"><strong>₹{{ purchase.totalAmount | number:'1.2-2' }}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Bottom row with Additional Information and Invoice Summary -->
+    <div class="row info-cards-container">
+      <!-- Additional Information Card - Left Side -->
+      <div class="col-md-6">
+        <div class="info-card additional-info-card h-100">
+          <div class="card-header">
+            <h3><i class="fas fa-info-circle"></i> Additional Information</h3>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-12">
+                <div class="info-group">
+                  <label>Payment Method</label>
+                  <div class="info-value">{{ purchase.paymentMethod || 'Cash' }}</div>
+                </div>
+              </div>
+              <div class="col-md-12">
+                <div class="info-group">
+                  <label>Payment Status</label>
+                  <div class="info-value">{{ purchase.paymentStatus || 'Paid' }}</div>
+                </div>
+              </div>
+              <div class="col-md-12">
+                <div class="info-group">
+                  <label>Notes</label>
+                  <div class="info-value">{{ purchase.notes || 'No additional notes' }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Totals and Summary Card - Right Side -->
+      <div class="col-md-6">
+        <div class="info-card summary-card h-100">
+          <div class="card-header summary-header">
+            <h3><i class="fas fa-calculator"></i> Invoice Summary</h3>
+          </div>
+          <div class="invoice-summary-container">
+            <div class="invoice-summary-row">
+              <div class="invoice-summary-label">Gross Taxable Amount:</div>
+              <div class="invoice-summary-value">₹{{ purchase.totalTaxableAmount | number:'1.2-2' }}</div>
+            </div>
+            
+            <div class="invoice-summary-row">
+              <div class="invoice-summary-label">Discount Amount:</div>
+              <div class="invoice-summary-value">₹{{ purchase.totalDiscountAmount | number:'1.2-2' }}</div>
+            </div>
+            
+            <div class="invoice-summary-section">
+              <div class="tax-breakdown-title">Tax Breakdown:</div>
+              
+              <div class="invoice-summary-row tax-row">
+                <div class="invoice-summary-label tax-label">CGST:</div>
+                <div class="invoice-summary-value">₹{{ getComponentTaxAmount('CGST') | number:'1.2-2' }}</div>
+              </div>
+              
+              <div class="invoice-summary-row tax-row">
+                <div class="invoice-summary-label tax-label">SGST:</div>
+                <div class="invoice-summary-value">₹{{ getComponentTaxAmount('SGST') | number:'1.2-2' }}</div>
+              </div>
+              
+              <div class="invoice-summary-row tax-row" *ngIf="hasTaxComponent('IGST')">
+                <div class="invoice-summary-label tax-label">IGST:</div>
+                <div class="invoice-summary-value">₹{{ getComponentTaxAmount('IGST') | number:'1.2-2' }}</div>
+              </div>
+              
+              <div class="invoice-summary-row tax-row" *ngIf="hasTaxComponent('CESS')">
+                <div class="invoice-summary-label tax-label">CESS:</div>
+                <div class="invoice-summary-value">₹{{ getComponentTaxAmount('CESS') | number:'1.2-2' }}</div>
+              </div>
+              
+              <div class="invoice-summary-row tax-total-row">
+                <div class="invoice-summary-label">Total Tax:</div>
+                <div class="invoice-summary-value">₹{{ purchase.totalTaxAmount | number:'1.2-2' }}</div>
+              </div>
+            </div>
+            
+            <div class="invoice-summary-row grand-total-row">
+              <div class="invoice-summary-label">Grand Total:</div>
+              <div class="invoice-summary-value">₹{{ purchase.totalAmount | number:'1.2-2' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Additional Info Card -->
+    
+  </div>
+</div>

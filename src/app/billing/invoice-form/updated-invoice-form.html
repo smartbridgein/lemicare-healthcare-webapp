@@ -1,0 +1,353 @@
+<div class="container-fluid px-4 mt-3">
+    <!-- Back arrow and title -->
+    <div class="d-flex align-items-center mb-3">
+        <a [routerLink]="['/billing/invoices']" class="text-decoration-none me-3">
+            <i class="fas fa-arrow-left text-muted"></i>
+        </a>
+        <h4 class="m-0">{{ isEditMode ? 'Edit Invoice' : 'Create New Invoice' }}</h4>
+    </div>
+
+    <div class="card shadow-sm rounded mb-4">
+        <div class="card-body p-4">
+            <div *ngIf="loading" class="text-center py-5">
+                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading invoice data...</p>
+            </div>
+
+            <form [formGroup]="invoiceForm" (ngSubmit)="onSubmit()" *ngIf="!loading">
+                <!-- Patient Search Bar -->
+                <div class="mb-4">
+                    <div class="position-relative">
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" placeholder="Search Patient Name or Contact Number" 
+                                [formControl]="searchField" (click)="showPatientSearch = true">
+                            <button class="btn btn-outline-secondary" type="button">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Selected Patient Info Card -->
+                        <div *ngIf="selectedPatient && selectedPatient.id" class="card shadow-sm mt-2">
+                            <div class="card-body py-2 px-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold">{{ selectedPatient.name }}</div>
+                                        <div class="text-muted small">{{ selectedPatient.contactNumber }}</div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-link text-danger" (click)="clearSelectedPatient()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Search Results Dropdown -->
+                    <div *ngIf="showPatientSearch && patientResults.length > 0" class="card position-absolute start-0 w-100 shadow-sm" style="z-index: 1000;">
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                <button *ngFor="let patient of patientResults" 
+                                    type="button" 
+                                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                    (click)="selectPatient(patient)">
+                                    <div>
+                                        <div class="fw-bold">{{ patient.name }}</div>
+                                        <div class="text-muted small">{{ patient.contactNumber }}</div>
+                                    </div>
+                                    <div class="badge bg-light text-dark">Select</div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoice Details Row -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-medium">Invoice Date</label>
+                            <input type="date" class="form-control" formControlName="invoiceDate">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-medium">Account</label>
+                            <input type="text" class="form-control" formControlName="createdBy" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-medium">Package</label>
+                            <select class="form-select" formControlName="package" (change)="applyPackage($event)">
+                                <option value="">Select a Package (optional)</option>
+                                <option value="Hydra Package">Hydra Package</option>
+                                <option value="Whole Body LHR Package">Whole Body LHR Package</option>
+                                <option value="UnderArm LHR Package">UnderArm LHR Package</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoice Items Section -->
+                <div class="mb-4">
+                    <div class="table-responsive">
+                        <table class="table table-borderless">
+                            <thead>
+                                <tr class="bg-light border-bottom">
+                                    <th class="text-secondary small fw-medium">Date</th>
+                                    <th class="text-secondary small fw-medium">Services</th>
+                                    <th class="text-secondary small fw-medium">Description</th>
+                                    <th class="text-secondary small fw-medium">Quantity</th>
+                                    <th class="text-secondary small fw-medium">Rate (₹)</th>
+                                    <th class="text-secondary small fw-medium">Amount</th>
+                                    <th class="text-secondary small fw-medium">Discount</th>
+                                    <th class="text-secondary small fw-medium">Tax</th>
+                                    <th class="text-secondary small fw-medium">Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody formArrayName="items">
+                                <tr *ngFor="let item of items.controls; let i=index" [formGroupName]="i" class="align-middle border-bottom">
+                                    <!-- Date -->
+                                    <td>
+                                        <input type="date" class="form-control form-control-sm" 
+                                               formControlName="serviceDate">
+                                    </td>
+                                    
+                                    <!-- Service Type -->
+                                    <td>
+                                        <select class="form-select form-select-sm" formControlName="serviceType" (change)="onServiceTypeChange(i)">
+                                            <option value="">Select</option>
+                                            <option value="OPD">OPD</option>
+                                            <option value="CONSULTATION">CONSULTATION</option>
+                                            <option value="MNRF">MNRF</option>
+                                            <option value="Hydra Package">Hydra Package</option>
+                                            <option value="Whole Body LHR Package">Whole Body LHR Package</option>
+                                            <option value="UnderArm LHR Package">UnderArm LHR Package</option>
+                                        </select>
+                                    </td>
+                                    
+                                    <!-- Description -->
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm" 
+                                               formControlName="serviceDescription">
+                                    </td>
+                                    
+                                    <!-- Quantity -->
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm" 
+                                               formControlName="quantity" min="1"
+                                               (change)="calculateItemTotal(i)">
+                                    </td>
+                                    
+                                    <!-- Rate -->
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm" 
+                                               formControlName="rate" min="0"
+                                               (change)="calculateItemTotal(i)">
+                                    </td>
+                                    
+                                    <!-- Amount -->
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm" 
+                                               formControlName="amount" readonly>
+                                    </td>
+                                    
+                                    <!-- Discount -->
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm" 
+                                               formControlName="discount" min="0"
+                                               (change)="calculateItemTotal(i)">
+                                    </td>
+                                    
+                                    <!-- Tax -->
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm" 
+                                               formControlName="tax" min="0"
+                                               (change)="calculateItemTotal(i)">
+                                    </td>
+                                    
+                                    <!-- Total Amount -->
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm" 
+                                               formControlName="totalAmount" readonly>
+                                    </td>
+                                    
+                                    <!-- Remove Button -->
+                                    <td>
+                                        <button type="button" class="btn btn-sm text-danger" (click)="removeItem(i)">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Add Service Line Button -->
+                    <div class="d-flex mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary me-2" (click)="addItem()">
+                            <i class="fas fa-plus me-1"></i> Add Service Line
+                        </button>
+                        
+                        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="openServiceModal()">
+                            <i class="fas fa-plus me-1"></i> Create New Service
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Payment Section (only in Edit Mode) -->
+                <div class="card border-0 shadow-sm mb-4" *ngIf="isEditMode">
+                    <div class="card-header bg-white py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="far fa-money-bill-alt me-2 text-success"></i>
+                                <h5 class="m-0 fw-bold">Payments</h5>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-success">
+                                <i class="fas fa-plus me-1"></i> Add Payment
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr class="bg-light">
+                                        <th class="py-3 text-dark fw-bold border-bottom-2">Date</th>
+                                        <th class="py-3 text-dark fw-bold border-bottom-2">Amount (₹)</th>
+                                        <th class="py-3 text-dark fw-bold border-bottom-2">Method</th>
+                                        <th class="py-3 text-dark fw-bold border-bottom-2">Reference #</th>
+                                        <th class="py-3 text-dark fw-bold border-bottom-2">Notes</th>
+                                        <th class="py-3 text-dark fw-bold border-bottom-2 text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody formArrayName="payments">
+                                    <tr *ngFor="let payment of payments.controls; let i=index" [formGroupName]="i">
+                                        <td>
+                                            <input type="date" class="form-control form-control-sm" 
+                                                  formControlName="paymentDate">
+                                        </td>
+                                        <td>
+                                            <input type="number" class="form-control form-control-sm" 
+                                                  formControlName="amount" min="0" (change)="calculateTotals()">
+                                        </td>
+                                        <td>
+                                            <select class="form-select form-select-sm" formControlName="paymentMethod">
+                                                <option value="CASH">Cash</option>
+                                                <option value="CREDIT_CARD">Credit Card</option>
+                                                <option value="DEBIT_CARD">Debit Card</option>
+                                                <option value="UPI">UPI</option>
+                                                <option value="BANK_TRANSFER">Bank Transfer</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm" 
+                                                  formControlName="referenceNumber">
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm" 
+                                                  formControlName="notes">
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-sm btn-outline-danger" (click)="removePayment(i)">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="bg-light">
+                                        <td colspan="1" class="text-end fw-medium">Total Paid:</td>
+                                        <td>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">₹</span>
+                                                <input type="text" class="form-control text-end" formControlName="totalPaid" readonly>
+                                            </div>
+                                        </td>
+                                        <td colspan="4"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoice Notes and Totals -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-medium">Notes</label>
+                            <textarea class="form-control" rows="4" formControlName="notes" 
+                                      placeholder="Enter any additional notes here..."></textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-light border-0">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Subtotal:</span>
+                                    <span class="fw-medium">₹ {{ invoiceForm.get('subtotal')?.value || 0 | number:'1.2-2' }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Discount:</span>
+                                    <span class="fw-medium">₹ {{ invoiceForm.get('totalDiscount')?.value || 0 | number:'1.2-2' }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Tax:</span>
+                                    <span class="fw-medium">₹ {{ invoiceForm.get('totalTax')?.value || 0 | number:'1.2-2' }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted fw-bold">Grand Total:</span>
+                                    <span class="fw-bold">₹ {{ invoiceForm.get('grandTotal')?.value || 0 | number:'1.2-2' }}</span>
+                                </div>
+                                <div *ngIf="isEditMode" class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted fw-bold">Amount Paid:</span>
+                                    <span class="fw-bold">₹ {{ invoiceForm.get('totalPaid')?.value || 0 | number:'1.2-2' }}</span>
+                                </div>
+                                <div *ngIf="isEditMode" class="d-flex justify-content-between pt-2 border-top">
+                                    <span class="text-muted fw-bold">Balance Due:</span>
+                                    <span class="fw-bold text-danger">₹ {{ getBalanceDue() | number:'1.2-2' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-between mb-3">
+                    <button type="button" class="btn btn-light" (click)="cancelForm()">
+                        Discard
+                    </button>
+                    <button type="submit" class="btn btn-primary px-4" [disabled]="loading">
+                        <span *ngIf="loading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <i *ngIf="!loading" class="fas fa-check me-2"></i>Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Service Creation Modal -->
+<div class="modal fade show" tabindex="-1" [ngClass]="{'d-block': showServiceModal}" [ngStyle]="{'display': showServiceModal ? 'block' : 'none'}">
+    <div class="modal-dialog modal-dialog-centered">
+        <app-service-modal
+            *ngIf="showServiceModal"
+            (save)="saveNewService($event)"
+            (close)="closeServiceModal()"
+        ></app-service-modal>
+    </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop fade show" *ngIf="showServiceModal"></div>
+
+<!-- Spinner for loading state -->
+<div *ngIf="loading" class="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white bg-opacity-75" style="z-index: 9999;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>

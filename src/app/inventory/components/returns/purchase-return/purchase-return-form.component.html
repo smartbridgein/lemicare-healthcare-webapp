@@ -1,0 +1,162 @@
+<div class="purchase-return-container">
+  <div class="page-header">
+    <div class="back-button">
+      <a [routerLink]="['/inventory/returns']">
+        <i class="fas fa-arrow-left"></i> Add Purchase Return
+      </a>
+    </div>
+  </div>
+  
+  <div class="form-container">
+    <form [formGroup]="purchaseReturnForm" (ngSubmit)="onSubmit()">
+      <!-- Invoice Search Section -->
+      <div class="search-container mb-4">
+        <div class="input-group">
+          <input 
+            type="text" 
+            formControlName="invoiceSearch" 
+            class="form-control" 
+            placeholder="Search Invoice Id"
+          />
+          <span class="input-group-text">
+            <i class="fas fa-search"></i>
+          </span>
+        </div>
+        <button type="button" class="btn btn-link clear-btn" (click)="clearInvoiceSearch()">
+          <i class="fas fa-times-circle"></i> Clear
+        </button>
+      </div>
+
+      <!-- Purchase Return Date -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <label for="returnDate" class="form-label">Purchase Return Date</label>
+          <div class="input-group date">
+            <input 
+              type="text" 
+              formControlName="returnDate" 
+              class="form-control" 
+              placeholder="dd-mm-yyyy" 
+              id="returnDate"
+            />
+            <span class="input-group-text">
+              <i class="far fa-calendar-alt"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Items Table -->
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead>
+            <tr class="bg-primary text-white">
+              <th>Medicine Name*</th>
+              <th>Generic & Mfg</th>
+              <th>HSN</th>
+              <th>Batch*</th>
+              <th>Exp. Date*</th>
+              <th>Pack* & Free Pack</th>
+              <th>Item per Pack*</th>
+              <th>Qty</th>
+              <th>MRP*</th>
+              <th>Purch Cost*</th>
+              <th>Dis (%)</th>
+              <th>GST (%)</th>
+              <th>Taxable Amount</th>
+              <th>Total Amount</th>
+            </tr>
+          </thead>
+          <tbody formArrayName="items">
+            <tr *ngFor="let item of itemsFormArray.controls; let i = index" [formGroupName]="i">
+              <td>{{ getItemName(item.get('medicineId')?.value) }}</td>
+              <td>{{ item.get('genericAndMfg')?.value }}</td>
+              <td>{{ item.get('hsn')?.value }}</td>
+              <td>{{ item.get('batch')?.value }}</td>
+              <td>{{ item.get('expiryDate')?.value | date:'MMM yyyy' }}</td>
+              <td>{{ item.get('pack')?.value }} + {{ item.get('freePack')?.value }}</td>
+              <td>{{ item.get('itemsPerPack')?.value }}</td>
+              <td>
+                <input type="number" formControlName="returnQuantity" class="form-control form-control-sm"
+                  min="1" [max]="item.get('originalQuantity')?.value">
+              </td>
+              <td>₹{{ item.get('mrp')?.value }}</td>
+              <td>₹{{ item.get('purchaseCost')?.value }}</td>
+              <td>{{ item.get('discount')?.value }}</td>
+              <td>{{ item.get('gst')?.value }}</td>
+              <td>₹{{ calculateTaxableAmount(item) }}</td>
+              <td>₹{{ calculateSubtotal(item) }}</td>
+            </tr>
+            <tr *ngIf="!itemsFormArray.controls.length">
+              <td colspan="14" class="text-center py-3">No data available in table</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Summary and Actions -->
+      <div class="row mt-4">
+        <div class="col-md-6"><!-- Left side spacing --></div>
+        
+        <div class="col-md-6">
+          <!-- Financial Summary -->
+          <div class="financial-summary">
+            <div class="row mb-2">
+              <div class="col-6 text-start">Gross total</div>
+              <div class="col-6 text-end">₹ {{ calculateGrossTotal() }}</div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-6 text-start">Discount</div>
+              <div class="col-6 text-end">₹ {{ calculateTotalDiscount() }}</div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-6 text-start">Net Taxable Amt.</div>
+              <div class="col-6 text-end">₹ {{ calculateNetTaxableAmount() }}</div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-6 text-start">CGST</div>
+              <div class="col-6 text-end">₹ {{ calculateTotalCGST() }}</div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-6 text-start">SGST</div>
+              <div class="col-6 text-end">₹ {{ calculateTotalSGST() }}</div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-6 text-start">Net Total</div>
+              <div class="col-6 text-end">₹ {{ calculateNetTotal() }}</div>
+            </div>
+
+            <!-- Overall Discount -->
+            <div class="overall-discount p-3 bg-light rounded mt-3 mb-3">
+              <div class="row align-items-center">
+                <div class="col-6 text-start">Overall Discount</div>
+                <div class="col-6 d-flex">
+                  <input type="number" formControlName="overallDiscount" class="form-control form-control-sm" min="0" max="100">
+                  <div class="input-group-append">
+                    <span class="input-group-text">AMT</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Total -->
+            <div class="row total-row p-2">
+              <div class="col-6 text-start fw-bold">Total</div>
+              <div class="col-6 text-end fw-bold">₹ {{ calculateFinalTotal() }}</div>
+            </div>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="d-flex justify-content-end mt-4">
+            <button type="button" class="btn btn-outline-secondary me-2" (click)="onCancel()">
+              Discard
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="purchaseReturnForm.invalid || !hasItemsToReturn()">
+              <i class="fas fa-check"></i> Submit
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

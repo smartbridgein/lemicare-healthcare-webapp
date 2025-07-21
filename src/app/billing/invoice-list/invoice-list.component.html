@@ -1,0 +1,248 @@
+<div class="container-fluid px-4 mt-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="page-title">Invoice Management</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="classic-breadcrumb">
+                    <li class="breadcrumb-item"><a [routerLink]="['/billing']" class="text-decoration-none">Billing Dashboard</a></li>
+                    <li class="breadcrumb-item active">Invoices</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a [routerLink]="['/billing/invoices/new']" class="btn btn-maroon">
+                <i class="far fa-file-alt me-2"></i>New Invoice
+            </a>
+        </div>
+    </div>
+
+    <!-- Invoice Status Summary -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="classic-summary-card maroon-accent">
+                <div class="summary-card-header">
+                    <h6 class="summary-card-title">TOTAL INVOICES</h6>
+                </div>
+                <div class="summary-card-body">
+                    <div class="summary-content">
+                        <div class="summary-icon maroon-bg">
+                            <i class="far fa-file-alt"></i>
+                        </div>
+                        <div class="summary-text">
+                            <h2 class="summary-value maroon-text">{{ invoices.length }}</h2>
+                            <p class="summary-label">All Invoice Records</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="classic-summary-card yellow-accent">
+                <div class="summary-card-header">
+                    <h6 class="summary-card-title">PAID INVOICES</h6>
+                </div>
+                <div class="summary-card-body">
+                    <div class="summary-content">
+                        <div class="summary-icon yellow-bg">
+                            <i class="far fa-check-circle"></i>
+                        </div>
+                        <div class="summary-text">
+                            <h2 class="summary-value yellow-text">{{ countByStatus('PAID') }}</h2>
+                            <p class="summary-label">Fully Paid Invoices</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="classic-summary-card maroon-accent">
+                <div class="summary-card-header">
+                    <h6 class="summary-card-title">UNPAID INVOICES</h6>
+                </div>
+                <div class="summary-card-body">
+                    <div class="summary-content">
+                        <div class="summary-icon maroon-bg">
+                            <i class="far fa-times-circle"></i>
+                        </div>
+                        <div class="summary-text">
+                            <h2 class="summary-value maroon-text">{{ countByStatus('UNPAID') }}</h2>
+                            <p class="summary-label">Pending Payments</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="classic-summary-card gray-accent">
+                <div class="summary-card-header">
+                    <h6 class="summary-card-title">PARTIAL PAYMENTS</h6>
+                </div>
+                <div class="summary-card-body">
+                    <div class="summary-content">
+                        <div class="summary-icon gray-bg">
+                            <i class="far fa-clock"></i>
+                        </div>
+                        <div class="summary-text">
+                            <h2 class="summary-value gray-text">{{ countByStatus('PARTIAL') }}</h2>
+                            <p class="summary-label">Partially Paid</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="classic-filters-container mb-4">
+        <div class="row g-3">
+            <div class="col-md-8">
+                <div class="classic-search-container">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="far fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" 
+                            placeholder="Search by patient name or invoice number..." 
+                            [(ngModel)]="searchTerm" 
+                            (input)="onSearchChange()">
+                        <button class="btn btn-clear" 
+                            type="button" 
+                            *ngIf="searchTerm" 
+                            (click)="searchTerm = ''; onSearchChange()">
+                            <i class="far fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="classic-select-container">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="far fa-filter"></i>
+                        </span>
+                        <select class="form-select" 
+                            [(ngModel)]="statusFilter" 
+                            (change)="onStatusFilterChange()">
+                            <option value="ALL">All Statuses</option>
+                            <option value="PAID">Paid</option>
+                            <option value="UNPAID">Unpaid</option>
+                            <option value="PARTIAL">Partial</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoices Table -->
+    <div class="classic-table-container mb-4">
+        <div class="classic-table-header">
+            <div class="d-flex align-items-center justify-content-between">
+                <h5 class="table-title">
+                    <i class="far fa-file-alt me-2"></i>Invoice List
+                </h5>
+                <div>
+                    <span class="classic-badge maroon-badge">
+                        Total: {{ filteredInvoices.length }} invoices
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="classic-table-body">
+            <div *ngIf="loading" class="text-center py-5">
+                <div class="classic-spinner maroon-spinner">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="loading-text">Loading invoices...</p>
+            </div>
+            
+            <div *ngIf="!loading && filteredInvoices.length === 0" class="text-center py-5 empty-state">
+                <div class="empty-icon">
+                    <i class="far fa-file-alt"></i>
+                </div>
+                <h4 class="empty-title">No Invoices Found</h4>
+                <p class="empty-message">No invoices match your search criteria or no invoices exist in the system yet.</p>
+                <a [routerLink]="['/billing/invoices/new']" class="btn btn-maroon">
+                    <i class="far fa-plus me-2"></i>Create Invoice
+                </a>
+            </div>
+            
+            <div class="classic-table-responsive" *ngIf="!loading && filteredInvoices.length > 0">
+                <table class="classic-table">
+                    <thead>
+                        <tr>
+                            <th class="text-nowrap">Invoice #</th>
+                            <th>Patient</th>
+                            <th class="text-nowrap">Date</th>
+                            <th class="text-nowrap text-end">Amount (₹)</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let invoice of filteredInvoices; let odd=odd" [ngClass]="{'alt-row': odd}">
+                            <td>
+                                <a [routerLink]="['/billing/invoices', invoice.id]" class="invoice-link">{{ invoice.invoiceId }}</a>
+                            </td>
+                            <td>{{ invoice.patientName }}</td>
+                            <td>
+                                <div class="date-container">
+                                    <div class="date-primary">
+                                        <span class="date-badge">
+                                            <i class="far fa-calendar-alt"></i>
+                                        </span>
+                                        {{ invoice.date | date: 'dd/MM/yyyy' }}
+                                    </div>
+                                    <div class="date-secondary">Created {{ invoice.date | date: 'MMM d, y' }}</div>
+                                </div>
+                            </td>
+                            <td class="text-end">{{ invoice.amount | number: '1.2-2' }}</td>
+                            <td>
+                                <span class="status-badge" [ngClass]="{
+                                    'status-paid': invoice.status === 'PAID',
+                                    'status-partial': invoice.status === 'PARTIAL',
+                                    'status-unpaid': invoice.status === 'UNPAID'
+                                }">
+                                    <i [ngClass]="{
+                                        'far fa-check-circle': invoice.status === 'PAID',
+                                        'far fa-clock': invoice.status === 'PARTIAL',
+                                        'far fa-times-circle': invoice.status === 'UNPAID'
+                                    }"></i>
+                                    {{ invoice.status === 'PAID' ? 'Paid' : 
+                                       invoice.status === 'PARTIAL' ? 'Partial' : 
+                                       invoice.status === 'UNPAID' ? 'Unpaid' : invoice.status }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="classic-action-buttons">
+                                    <button class="btn-action btn-yellow" 
+                                        [routerLink]="['/billing/receipts/new']" 
+                                        [queryParams]="{invoiceId: invoice.id}" 
+                                        title="Record Payment">
+                                        <i class="far fa-money-bill-alt"></i>
+                                        <span class="action-text">Pay</span>
+                                    </button>
+                                   
+                                    <button class="btn-action btn-maroon" 
+                                        (click)="confirmDelete(invoice.id)" 
+                                        title="Delete Invoice">
+                                        <i class="far fa-trash-alt"></i>
+                                        <span class="action-text">Delete</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-end">Total:</td>
+                            <td class="total-amount text-maroon">{{ calculateTotalAmount() | number: '1.2-2' }}</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

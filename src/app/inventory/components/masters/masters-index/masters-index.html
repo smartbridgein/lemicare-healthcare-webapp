@@ -1,0 +1,33 @@
+<div class="container-fluid p-3">
+  <h2 class="mb-4 fw-bold" style="color: #6b1d14; font-family: 'Roboto', sans-serif;">Inventory Masters</h2>
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-white">
+      <ul class="nav nav-tabs card-header-tabs">
+        <li class="nav-item">
+          <a class="nav-link fw-medium px-4" [routerLink]="['./medicine']" [class.active]="activeTab === 'medicine'" (click)="setActiveTab('medicine')" style="font-family: 'Roboto', sans-serif; color: #6b1d14;">
+            <i class="fas fa-pills me-2"></i>Medicine Master
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link fw-medium px-4" [routerLink]="['./supplier']" [class.active]="activeTab === 'supplier'" (click)="setActiveTab('supplier')" style="font-family: 'Roboto', sans-serif; color: #6b1d14;">
+            <i class="fas fa-truck-medical me-2"></i>Supplier Master
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link fw-medium px-4" [routerLink]="['./tax-profile']" [class.active]="activeTab === 'tax-profile'" (click)="setActiveTab('tax-profile')" style="font-family: 'Roboto', sans-serif; color: #6b1d14;">
+            <i class="fas fa-percent me-2"></i>Tax Profile Master
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link fw-medium px-4" [routerLink]="['./service']" [class.active]="activeTab === 'service'" (click)="setActiveTab('service')" style="font-family: 'Roboto', sans-serif; color: #6b1d14;">
+            <i class="fas fa-stethoscope me-2"></i>Service Master
+          </a>
+        </li>
+      </ul>
+    </div>
+    <div class="card-body p-0">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div>

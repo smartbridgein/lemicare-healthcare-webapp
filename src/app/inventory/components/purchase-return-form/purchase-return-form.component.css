@@ -1,0 +1,38 @@
+/* Styles for purchase return form */
+.return-form-container {
+  padding: 20px;
+}
+
+.search-results {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.purchase-item {
+  cursor: pointer;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.purchase-item:hover {
+  background-color: #f8f9fa;
+}
+
+.selected-purchase {
+  margin: 20px 0;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.return-items-table {
+  width: 100%;
+  margin-top: 20px;
+}
+
+.form-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

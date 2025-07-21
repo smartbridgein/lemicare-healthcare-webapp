@@ -1,0 +1,211 @@
+<div class="container-fluid px-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="mt-4">{{ isEditMode ? 'Edit Receipt' : 'Create Receipt' }}</h1>
+            <ol class="breadcrumb mb-4">
+                <li class="breadcrumb-item"><a [routerLink]="['/billing']" style="color: #6b1d14; text-decoration: none;">Billing Dashboard</a></li>
+                <li class="breadcrumb-item"><a [routerLink]="['/billing/receipts']" style="color: #6b1d14; text-decoration: none;">Receipts</a></li>
+                <li class="breadcrumb-item active">{{ isEditMode ? 'Edit Receipt' : 'Create Receipt' }}</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-receipt me-1"></i>
+            {{ isEditMode ? 'Edit Receipt Details' : 'New Receipt Details' }}
+        </div>
+        <div class="card-body">
+            <div *ngIf="loading" class="text-center py-5">
+                <div class="spinner-border" role="status" style="color: #6b1d14; border-color: rgba(107, 29, 20, 0.1); border-top-color: #6b1d14;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading receipt data...</p>
+            </div>
+
+            <form [formGroup]="receiptForm" (ngSubmit)="onSubmit()" *ngIf="!loading">
+                <div class="row mb-4">
+                    <!-- Receipt Details -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light"><i class="fas fa-info-circle me-1" style="color: #6b1d14;"></i>Receipt Information</div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="receiptId" class="form-label">Receipt Number</label>
+                                        <input type="text" class="form-control" formControlName="receiptId" readonly>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="date" class="form-label">Date*</label>
+                                        <input type="date" class="form-control" formControlName="date" 
+                                            [ngClass]="{'is-invalid': submitted && receiptForm.get('date')?.errors}">
+                                        <div *ngIf="submitted && receiptForm.get('date')?.errors" class="invalid-feedback">
+                                            Date is required
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="amount" class="form-label">Amount (₹)*</label>
+                                        <input type="number" class="form-control" formControlName="amount" 
+                                            [ngClass]="{'is-invalid': submitted && receiptForm.get('amount')?.errors}">
+                                        <div *ngIf="submitted && receiptForm.get('amount')?.errors" class="invalid-feedback">
+                                            <div *ngIf="receiptForm.get('amount')?.errors?.['required']">Amount is required</div>
+                                            <div *ngIf="receiptForm.get('amount')?.errors?.['min']">Amount should be greater than 0</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="modeOfPayment" class="form-label">Payment Mode*</label>
+                                        <select class="form-select payment-dropdown" id="modeOfPayment" 
+                                                (change)="selectPaymentMode($event)"
+                                                [ngClass]="{'is-invalid': submitted && receiptForm.get('modeOfPayment')?.errors}">
+                                            <option value="" disabled selected>Select payment mode</option>
+                                            <option value="CASH" [selected]="receiptForm.get('modeOfPayment')?.value === 'CASH'">
+                                                <span>Cash</span>
+                                            </option>
+                                            <option value="CARD" [selected]="receiptForm.get('modeOfPayment')?.value === 'CARD'">
+                                                Card
+                                            </option>
+                                            <option value="UPI" [selected]="receiptForm.get('modeOfPayment')?.value === 'UPI'">
+                                                UPI
+                                            </option>
+                                            <option value="ONLINE" [selected]="receiptForm.get('modeOfPayment')?.value === 'ONLINE'">
+                                                Online
+                                            </option>
+                                            <option value="CHEQUE" [selected]="receiptForm.get('modeOfPayment')?.value === 'CHEQUE'">
+                                                Cheque
+                                            </option>
+                                            <option value="BANK_TRANSFER" [selected]="receiptForm.get('modeOfPayment')?.value === 'BANK_TRANSFER'">
+                                                Bank Transfer
+                                            </option>
+                                        </select>
+                                        <input type="hidden" formControlName="modeOfPayment">
+                                        <div *ngIf="submitted && receiptForm.get('modeOfPayment')?.errors" class="invalid-feedback">
+                                            Payment mode is required
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="createdBy" class="form-label">Created By*</label>
+                                    <input type="text" class="form-control" formControlName="createdBy" 
+                                        [ngClass]="{'is-invalid': submitted && receiptForm.get('createdBy')?.errors}">
+                                    <div *ngIf="submitted && receiptForm.get('createdBy')?.errors" class="invalid-feedback">
+                                        Created by is required
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="referenceId" class="form-label">Reference ID</label>
+                                    <input type="text" class="form-control" formControlName="referenceId" 
+                                        placeholder="Transaction ID, Cheque Number, etc.">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="purpose" class="form-label">Purpose*</label>
+                                    <input type="text" class="form-control" formControlName="purpose" 
+                                        placeholder="Treatment, Consultation, etc."
+                                        [ngClass]="{'is-invalid': submitted && receiptForm.get('purpose')?.errors}">
+                                    <div *ngIf="submitted && receiptForm.get('purpose')?.errors" class="invalid-feedback">
+                                        Purpose is required
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Patient & Invoice Information -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light"><i class="fas fa-user me-1" style="color: #6b1d14;"></i>Patient & Invoice Information</div>
+                            <div class="card-body">
+                                <div class="mb-3 position-relative">
+                                    <label for="patientName" class="form-label">Patient Name*</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" 
+                                            id="patientSearchInput"
+                                            [value]="patientSearchTerm || receiptForm.get('patientName')?.value"
+                                            (input)="onPatientSearchInput($event)"
+                                            (focus)="showPatientSearch = true"
+                                            (click)="showPatientSearch = true"
+                                            [ngClass]="{'is-invalid': submitted && receiptForm.get('patientName')?.errors}">
+                                        <input type="hidden" formControlName="patientName">
+                                        <button class="btn btn-outline-maroon" type="button" (click)="searchPatients(); showPatientSearch = true">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Patient Search Results -->
+                                    <div *ngIf="showPatientSearch && patientResults.length > 0" class="search-results shadow border rounded position-absolute bg-white w-100 z-3" style="max-height: 200px; overflow-y: auto; margin-top: 2px;">
+                                        <div class="list-group list-group-flush">
+                                            <button type="button" *ngFor="let patient of patientResults" 
+                                                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                                (click)="selectPatient(patient)">
+                                                <div>
+                                                    <span class="fw-bold">{{ patient.name }}</span>
+                                                    <span class="badge bg-gray ms-2">ID: {{ patient.id }}</span>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div *ngIf="submitted && receiptForm.get('patientName')?.errors" class="invalid-feedback d-block">
+                                        Patient name is required
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3 position-relative">
+                                    <label for="invoiceId" class="form-label">Invoice ID (Optional)</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" 
+                                            id="invoiceSearchInput"
+                                            [value]="invoiceSearchTerm || receiptForm.get('invoiceId')?.value"
+                                            (input)="onInvoiceSearchInput($event)"
+                                            (focus)="showInvoiceSearch = true"
+                                            (click)="showInvoiceSearch = true">
+                                        <input type="hidden" formControlName="invoiceId">
+                                        <button class="btn btn-outline-maroon" type="button" (click)="searchInvoices(); showInvoiceSearch = true">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Invoice Search Results -->
+                                    <div *ngIf="showInvoiceSearch && invoiceResults.length > 0" class="search-results shadow border rounded position-absolute bg-white w-100 z-3" style="max-height: 200px; overflow-y: auto; margin-top: 2px;">
+                                        <div class="list-group list-group-flush">
+                                            <button type="button" *ngFor="let invoice of invoiceResults" 
+                                                class="list-group-item list-group-item-action"
+                                                (click)="selectInvoice(invoice)">
+                                                <div class="d-flex flex-column w-100">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <span class="fw-bold">{{ invoice.id }}</span>
+                                                            <span class="ms-2">{{ invoice.patientName }}</span>
+                                                        </div>
+                                                        <span class="badge bg-yellow">₹{{ invoice.balance }}</span>
+                                                    </div>
+                                                    <div class="small text-muted mt-1">
+                                                        <i class="far fa-calendar-alt me-1"></i> {{ invoice.date || 'No date available' }}
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-text">
+                                        If this payment is for a specific invoice, enter the invoice number or search for it.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-end">
+                    <button type="button" class="btn me-2" style="background-color: #e6c157; color: #333; border: none;" (click)="cancelForm()">Cancel</button>
+                    <button type="submit" class="btn" style="background-color: #6b1d14; color: white; border: none;" [disabled]="loading">
+                        <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" style="color: white;" role="status" aria-hidden="true"></span>
+                        {{ isEditMode ? 'Update Receipt' : 'Create Receipt' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

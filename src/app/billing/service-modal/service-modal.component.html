@@ -1,0 +1,59 @@
+<div class="modal-content">
+  <div class="modal-header">
+    <h4 class="modal-title fw-bold">Create New Services</h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="dismiss()"></button>
+  </div>
+
+  <div class="modal-body">
+    <form [formGroup]="serviceForm">
+      <!-- Group Field -->
+      <div class="mb-3">
+        <label for="group" class="form-label fw-medium">Group</label>
+        <div class="position-relative">
+          <select class="form-select form-control-lg" formControlName="group">
+            <option *ngFor="let group of groupOptions" [value]="group">{{ group }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Service Name Field -->
+      <div class="mb-3">
+        <label for="serviceName" class="form-label fw-medium">Service Name</label>
+        <input 
+          type="text" 
+          class="form-control form-control-lg" 
+          formControlName="serviceName"
+          placeholder="Service Name">
+      </div>
+
+      <!-- Description Field -->
+      <div class="mb-3">
+        <label for="description" class="form-label fw-medium">Description</label>
+        <input 
+          type="text" 
+          class="form-control form-control-lg" 
+          formControlName="description"
+          placeholder="Description">
+      </div>
+
+      <!-- Rate Field -->
+      <div class="mb-4">
+        <label for="rate" class="form-label fw-medium">Rate</label>
+        <input 
+          type="number" 
+          class="form-control form-control-lg" 
+          formControlName="rate"
+          placeholder="Rate">
+      </div>
+
+      <!-- Submit Button -->
+      <button 
+        type="button" 
+        class="btn btn-primary btn-lg w-100" 
+        [disabled]="serviceForm.invalid"
+        (click)="addService()">
+        Add Service <i class="fas fa-check ms-2"></i>
+      </button>
+    </form>
+  </div>
+</div>

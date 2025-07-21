@@ -1,0 +1,227 @@
+<div class="container-fluid py-4">
+  <!-- Back button and page title -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <button type="button" class="btn btn-outline-primary" routerLink="/inventory/returns">
+      <i class="fas fa-arrow-left me-2"></i>Back to Returns
+    </button>
+    <h3 class="mb-0">Create Sale Return</h3>
+    <div></div> <!-- Empty div for flex spacing -->
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">Sales Return Form</h4>
+        <small>All fields marked with * are required</small>
+      </div>
+    </div>
+    <div class="card-body">
+      <form [formGroup]="returnForm" (ngSubmit)="onSubmit()">
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <!-- Sale Selection -->
+            <div class="form-group mb-3">
+              <label for="saleIdSearch" class="form-label">Search Sale by ID</label>
+              <div class="input-group">
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="saleIdSearch" 
+                  [formControl]="saleIdControl"
+                  placeholder="Enter Sale ID (e.g. sale_3fc57b9e-c6c5...)"
+                  (keyup.enter)="searchSaleById()" />
+                <button 
+                  class="btn btn-outline-primary" 
+                  type="button"
+                  [disabled]="isSearching || !saleIdControl.value"
+                  (click)="searchSaleById()">
+                  <i class="fas" [ngClass]="{'fa-search': !isSearching, 'fa-spinner fa-spin': isSearching}"></i>
+                  Search
+                </button>
+              </div>
+            </div>
+            
+            <!-- Or search by other criteria -->
+            <div class="form-group mb-3">
+              <label for="saleSearch" class="form-label">Search by Customer Info</label>
+              <div class="input-group">
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="saleSearch" 
+                  [formControl]="searchControl"
+                  placeholder="Search by patient name or phone" />
+                <button 
+                  class="btn btn-outline-secondary" 
+                  type="button"
+                  [disabled]="isSearching">
+                  <i class="fas" [ngClass]="{'fa-search': !isSearching, 'fa-spinner fa-spin': isSearching}"></i>
+                </button>
+              </div>
+              <!-- Sale Search Results -->
+              <div class="position-relative">
+                <ul class="list-group position-absolute w-100" style="z-index: 1000; max-height: 300px; overflow-y: auto;" 
+                    *ngIf="filteredSales.length > 0">
+                  <li 
+                    *ngFor="let sale of filteredSales" 
+                    class="list-group-item list-group-item-action"
+                    (click)="selectSale(sale)">
+                    <div class="d-flex justify-content-between">
+                      <span>{{ returnsService.formatSaleId(sale.saleId || sale.id || '') }}</span>
+                      <span>{{ sale.walkInCustomerName || sale.patientName || 'Walk-in Customer' }}</span>
+                      <span>{{ sale.grandTotal | currency:'INR' }}</span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Return Date -->
+            <div class="form-group mb-3">
+              <label for="returnDate" class="form-label">Return Date</label>
+              <input 
+                type="datetime-local" 
+                id="returnDate" 
+                formControlName="returnDate"
+                class="form-control" 
+                [class.is-invalid]="returnForm.get('returnDate')?.invalid && returnForm.get('returnDate')?.touched" />
+              <div class="invalid-feedback" 
+                   *ngIf="returnForm.get('returnDate')?.invalid && returnForm.get('returnDate')?.touched">
+                Return date is required
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <!-- Reason -->
+            <div class="form-group mb-3">
+              <label for="reason" class="form-label">Reason for Return</label>
+              <textarea 
+                id="reason" 
+                formControlName="reason"
+                class="form-control" 
+                rows="3"
+                [class.is-invalid]="returnForm.get('reason')?.invalid && returnForm.get('reason')?.touched"></textarea>
+              <div class="invalid-feedback" 
+                   *ngIf="returnForm.get('reason')?.invalid && returnForm.get('reason')?.touched">
+                Reason is required
+              </div>
+            </div>
+
+            <!-- Overall Discount Percentage -->
+            <div class="form-group mb-3">
+              <label for="discountPercentage" class="form-label">Overall Discount %</label>
+              <input 
+                type="number" 
+                id="discountPercentage" 
+                formControlName="overallDiscountPercentage"
+                class="form-control" 
+                min="0"
+                max="100" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer Information -->        
+        <div class="mb-4" *ngIf="selectedSale">
+          <div class="card">
+            <div class="card-header bg-light">
+              <h5 class="mb-0">Sale Information</h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <dl class="row mb-0">
+                    <dt class="col-sm-4">Sale ID:</dt>
+                    <dd class="col-sm-8">{{ returnsService.formatSaleId(selectedSale.saleId || selectedSale.id || '') }}</dd>
+                    
+                    <dt class="col-sm-4">Sale Date:</dt>
+                    <dd class="col-sm-8">{{ formatDate(selectedSale.saleDate) }}</dd>
+                  </dl>
+                </div>
+                <div class="col-md-6">
+                  <dl class="row mb-0">
+                    <dt class="col-sm-4">Customer:</dt>
+                    <dd class="col-sm-8">{{ returnForm.get('customerName')?.value || 'Walk-in Customer' }}</dd>
+                    
+                    <dt class="col-sm-4">Phone:</dt>
+                    <dd class="col-sm-8">{{ returnForm.get('customerMobile')?.value || 'N/A' }}</dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Sale Items -->
+        <div class="mb-3" *ngIf="selectedSale">
+          <h5>Sale Items</h5>
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+              <thead>
+                <tr>
+                  <th>Medicine</th>
+                  <th>Batch No</th>
+                  <th>MRP</th>
+                  <th>Original Qty</th>
+                  <th>Return Qty</th>
+                  <th>Return Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of itemsArray.controls; let i = index" [formGroupName]="i">
+                  <td>{{ returnForm.get('items.'+ i + '.medicineName')?.value }}</td>
+                  <td>
+                    <input 
+                      type="text" 
+                      formControlName="batchNo"
+                      class="form-control form-control-sm"
+                      [class.is-invalid]="item.get('batchNo')?.invalid && item.get('batchNo')?.touched" />
+                    <div class="invalid-feedback" *ngIf="item.get('batchNo')?.invalid && item.get('batchNo')?.touched">Batch number is required</div>
+                  </td>
+                  <td>{{ returnForm.get('items.'+ i + '.unitPrice')?.value | currency:'INR' }}</td>
+                  <td>{{ returnForm.get('items.'+ i + '.quantity')?.value }}</td>
+                  <td>
+                    <input 
+                      type="number" 
+                      formControlName="returnQuantity"
+                      class="form-control form-control-sm" 
+                      min="0"
+                      [max]="item.get('quantity')?.value"
+                      [class.is-invalid]="item.get('returnQuantity')?.invalid && item.get('returnQuantity')?.touched" />
+                  </td>
+                  <td>{{ item.get('returnQuantity')?.value * item.get('unitPrice')?.value | currency:'INR' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card-footer bg-light d-flex justify-content-between mt-4">
+          <button 
+            type="button" 
+            class="btn btn-outline-secondary"
+            routerLink="/inventory/returns">
+            <i class="fas fa-times me-2"></i>Cancel
+          </button>
+          <div>
+            <button 
+              type="button" 
+              class="btn btn-outline-danger me-2"
+              (click)="resetForm()">
+              <i class="fas fa-redo me-2"></i>Reset Form
+            </button>
+            <button 
+              type="submit" 
+              class="btn btn-primary"
+              [disabled]="isSubmitting || returnForm.invalid">
+              <i class="fas fa-save me-2" *ngIf="!isSubmitting"></i>
+              <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+              Create Return
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

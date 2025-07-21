@@ -1,0 +1,81 @@
+<div class="container-fluid p-3">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Company Master</h2>
+    <div class="d-flex">
+      <div class="input-group me-2">
+        <input type="text" class="form-control" placeholder="Search" [(ngModel)]="searchTerm" (input)="searchCompanies()">
+        <button class="btn btn-outline-secondary" type="button">
+          <i class="bi bi-search"></i>
+        </button>
+      </div>
+      <button class="btn btn-primary" (click)="openAddModal()">
+        <i class="bi bi-plus"></i> Add New Company
+      </button>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>No. #</th>
+          <th>Company Name</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="loading">
+          <td colspan="3" class="text-center py-3">Loading companies...</td>
+        </tr>
+        <tr *ngIf="!loading && filteredCompanies.length === 0">
+          <td colspan="3" class="text-center py-3">No companies found</td>
+        </tr>
+        <tr *ngFor="let company of filteredCompanies; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ company.name }}</td>
+          <td>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline-primary" (click)="openEditModal(company)">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="deleteCompany(company.id)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Company Modal -->
+<div class="modal" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ isEditMode ? 'Edit Company' : 'Add New Company' }}</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="companyForm" (ngSubmit)="submitForm()">
+          <div class="mb-3">
+            <label class="form-label">Company Name *</label>
+            <input type="text" class="form-control" formControlName="name" 
+              [class.is-invalid]="companyForm.get('name')?.invalid && companyForm.get('name')?.touched">
+            <div *ngIf="companyForm.get('name')?.invalid && companyForm.get('name')?.touched" class="invalid-feedback">
+              Company name is required
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" [disabled]="companyForm.invalid" (click)="submitForm()">
+          <i class="bi bi-check"></i> Submit
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade show" *ngIf="showModal"></div>

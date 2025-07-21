@@ -1,0 +1,185 @@
+<div class="container-fluid px-4 mt-4">
+  <!-- Header Section -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="fw-bold fs-3 mb-1">Patient Management</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0 fs-6">
+          <li class="breadcrumb-item"><a href="#" class="text-decoration-none">Home</a></li>
+          <li class="breadcrumb-item active">Patient List</li>
+        </ol>
+      </nav>
+    </div>
+    <div class="d-flex align-items-center">
+      <div class="input-group me-2" style="max-width: 220px;">
+        <span class="input-group-text bg-white border-end-0 py-1 px-2"><i class="fas fa-search text-muted"></i></span>
+        <input 
+          type="text" 
+          placeholder="Search" 
+          [(ngModel)]="searchTerm" 
+          (input)="applyFilter()" 
+          class="form-control border-start-0 py-1"
+        >
+      </div>
+      <a [routerLink]="['/patients/registration']" class="btn-new-patient">
+        <i class="fas fa-plus"></i>
+        <span>New Patient</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Card Section -->
+  <div class="card border mb-4" style="border-color: #6b1d14 !important; border-top-width: 3px !important;">
+    <div class="card-header d-flex align-items-center justify-content-between py-3" style="background-color: #f8f9fc;">
+      <h5 class="mb-0 fw-bold text-maroon">
+        <i class="fas fa-users me-2"></i>Patient Directory
+      </h5>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-white border border-maroon text-maroon px-3 py-2 fw-bold">
+          Total: {{ filteredPatients.length }} patients
+        </span>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-maroon" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3 text-muted">Loading patient records...</p>
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="error && isLoading === false" class="alert alert-danger m-4">
+        <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Error Loading Patients</h5>
+        <p>{{ error }}</p>
+        <div *ngIf="errorDetails" class="mt-2 mb-3">
+          <p><strong>Details:</strong> {{ errorDetails }}</p>
+          <p class="text-muted small">If you're seeing CORS errors, please ensure the backend server is running and configured to allow cross-origin requests.</p>
+        </div>
+        <hr>
+        <div class="d-flex gap-2">
+          <button (click)="loadPatients()" class="btn btn-outline-danger">
+            <i class="fas fa-sync-alt me-1"></i> Retry
+          </button>
+          <button (click)="showTroubleshooting = !showTroubleshooting" class="btn btn-outline-secondary">
+            <i class="fas fa-question-circle me-1"></i> {{ showTroubleshooting ? 'Hide Help' : 'Get Help' }}
+          </button>
+        </div>
+        
+        <div *ngIf="showTroubleshooting" class="mt-3 bg-light p-3 rounded">
+          <h6 class="fw-bold">Troubleshooting Steps:</h6>
+          <ol class="mb-0">
+            <li>Ensure the OPD Management backend is running on port 8084</li>
+            <li>Check that the API endpoint in PatientService matches the controller endpoint</li>
+            <li>Verify CORS is properly configured in the backend</li>
+            <li>Check network tab in browser developer tools for detailed error information</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Patient List Table -->
+      <div *ngIf="!isLoading && !error" class="table-responsive">
+        <table class="table table-bordered table-striped mb-0 classic-table">
+          <thead>
+            <tr style="background-color: #f8f9fc;">
+              <th class="py-2 text-dark fw-bold text-center" style="width: 15%; font-size: 0.95rem;">
+                Patient ID
+              </th>
+              <th class="py-2 text-dark fw-bold text-nowrap" (click)="setSortField('name')" style="cursor: pointer; width: 20%; font-size: 0.95rem;">
+                Name
+                <i *ngIf="sortField === 'name'" class="fas fa-sort-{{ sortDirection === 'asc' ? 'up' : 'down' }} ms-1 text-maroon"></i>
+              </th>
+              <th class="py-2 text-dark fw-bold text-center" style="width: 10%; font-size: 0.95rem;">Age / Gender</th>
+              <th class="py-2 text-dark fw-bold text-center" style="width: 15%; font-size: 0.95rem;">Mobile Number</th>
+              <th class="py-2 text-dark fw-bold text-center" (click)="setSortField('registrationDate')" style="cursor: pointer; width: 15%; font-size: 0.95rem;">
+                Registration Date
+                <i *ngIf="sortField === 'registrationDate'" class="fas fa-sort-{{ sortDirection === 'asc' ? 'up' : 'down' }} ms-1 text-maroon"></i>
+              </th>
+              <th class="py-2 text-dark fw-bold text-center" style="width: 15%; font-size: 0.95rem;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="displayedPatients.length === 0">
+              <td colspan="6" class="text-center py-5">
+                <i class="fas fa-user-slash text-muted fs-1 mb-3 d-block"></i>
+                <p class="text-muted mb-0">No patient records found</p>
+                <p class="text-muted small">Try adjusting your search criteria</p>
+              </td>
+            </tr>
+            <tr *ngFor="let patient of displayedPatients; let odd=odd" [ngClass]="{'table-light': odd}">
+              <td class="py-2 align-middle text-center">
+                <span class="badge bg-maroon-light text-maroon patient-id-badge" [ngClass]="{'bg-secondary': !isStandardIdFormat(patient.id)}">
+                  {{ formatPatientId(patient.id) }}
+                </span>
+              </td>
+              <td class="py-2 align-middle fw-medium" style="font-size: 0.9rem;">{{ patient.firstName }} {{ patient.lastName }}</td>
+              <td class="py-2 align-middle text-center" style="font-size: 0.9rem;">
+                <div class="d-flex flex-column align-items-center gap-1">
+                  <span class="age-badge">{{ patient.age }} yrs</span>
+                  <span class="gender-text text-muted small">{{ patient.gender }}</span>
+                </div>
+              </td>
+              <td class="py-2 align-middle text-center" style="font-size: 0.9rem;">
+                <div class="d-flex align-items-center justify-content-center gap-1">
+                  <i class="fas fa-phone-alt text-primary small"></i>
+                  <span>{{ patient.mobileNumber }}</span>
+                </div>
+              </td>
+              <td class="py-2 align-middle text-center" style="font-size: 0.9rem;">
+                <div class="d-flex align-items-center justify-content-center gap-1">
+                  <i class="far fa-calendar-alt text-secondary small"></i>
+                  <span>{{ patient.registrationDate | date:'dd/MM/yyyy' }}</span>
+                </div>
+              </td>
+              <td class="py-2 align-middle text-center">
+                <div class="d-flex justify-content-center gap-1">
+                  <button class="btn btn-sm btn-outline-primary action-btn" title="Edit Patient" 
+                          [routerLink]="['/patients/registration', patient.id]">
+                    <i class="fas fa-user-edit"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-info action-btn" title="Medical History"
+                          [routerLink]="['/patients/medical-history', patient.id]">
+                    <i class="fas fa-notes-medical"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-success action-btn" title="Visit History"
+                          [routerLink]="['/patients/visit-history', patient.id]">
+                    <i class="fas fa-history"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger action-btn" title="Delete Patient"
+                          (click)="deletePatient(patient.id || '')">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination controls -->
+      <div class="card-footer bg-white py-3 d-flex justify-content-between align-items-center" *ngIf="filteredPatients.length > 0">
+        <div class="small text-muted">
+          Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, filteredPatients.length) }} of {{ filteredPatients.length }} entries
+        </div>
+        <nav aria-label="Page navigation">
+          <ul class="pagination mb-0">
+            <li class="page-item" [class.disabled]="currentPage === 1">
+              <button (click)="prevPage()" [disabled]="currentPage === 1" class="page-link">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+            </li>
+            <li class="page-item" *ngFor="let page of getPagesArray().slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2))" [class.active]="currentPage === page">
+              <button class="page-link" (click)="goToPage(page)">{{ page }}</button>
+            </li>
+            <li class="page-item" [class.disabled]="currentPage === totalPages">
+              <button (click)="nextPage()" [disabled]="currentPage === totalPages" class="page-link">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>

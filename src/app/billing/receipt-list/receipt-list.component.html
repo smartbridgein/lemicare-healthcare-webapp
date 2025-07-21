@@ -1,0 +1,230 @@
+<div class="container-fluid px-4 mt-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold fs-3 mb-1">Receipt Management</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0 fs-6">
+                    <li class="breadcrumb-item"><a [routerLink]="['/billing']" class="text-decoration-none" style="color: #6b1d14;">Billing Dashboard</a></li>
+                    <li class="breadcrumb-item active">Receipts</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a [routerLink]="['/billing/receipts/new']" class="btn shadow"
+                style="background-color: #6b1d14; color: white; font-weight: 500; padding: 0.5rem 1rem; border: none; border-radius: 4px;">
+                <i class="far fa-receipt me-2"></i>New Receipt
+            </a>
+        </div>
+    </div>
+
+    <!-- Receipts Summary -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border h-100" style="border-color: #6b1d14 !important; border-left-width: 5px !important;">
+                <div class="card-header py-3" style="background-color: #f8f9fc;">
+                    <h6 class="m-0 fw-bold" style="color: #6b1d14;">TOTAL RECEIPTS</h6>
+                </div>
+                <div class="card-body py-4" style="background-color: #fdfdfe;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-4 p-3 rounded-circle" style="background-color: rgba(107, 29, 20, 0.1);">
+                            <i class="far fa-receipt fs-2" style="color: #6b1d14;"></i>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold mb-0 display-6">{{ receipts.length }}</h2>
+                            <p class="text-muted mb-0">All Payment Records</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border h-100" style="border-color: #e6c157 !important; border-left-width: 5px !important;">
+                <div class="card-header py-3" style="background-color: #f8f9fc;">
+                    <h6 class="m-0 fw-bold" style="color: #e6c157;">CASH PAYMENTS</h6>
+                </div>
+                <div class="card-body py-4" style="background-color: #fdfdfe;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-4 p-3 rounded-circle" style="background-color: rgba(230, 193, 87, 0.1);">
+                            <i class="fas fa-money-bill-alt fs-2" style="color: #e6c157;"></i>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold mb-0 display-6" style="color: #e6c157;">{{ countByPaymentMode('CASH') }}</h2>
+                            <p class="text-muted mb-0">Cash Transactions</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border h-100" style="border-color: #6b1d14 !important; border-left-width: 5px !important;">
+                <div class="card-header py-3" style="background-color: #f8f9fc;">
+                    <h6 class="m-0 fw-bold" style="color: #6b1d14;">CARD PAYMENTS</h6>
+                </div>
+                <div class="card-body py-4" style="background-color: #fdfdfe;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-4 p-3 rounded-circle" style="background-color: rgba(107, 29, 20, 0.1);">
+                            <i class="far fa-credit-card fs-2" style="color: #6b1d14;"></i>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold mb-0 display-6" style="color: #6b1d14;">{{ countByPaymentMode('CARD') }}</h2>
+                            <p class="text-muted mb-0">Card Transactions</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border h-100" style="border-color: #666666 !important; border-left-width: 5px !important;">
+                <div class="card-header py-3" style="background-color: #f8f9fc;">
+                    <h6 class="m-0 fw-bold" style="color: #666666;">UPI PAYMENTS</h6>
+                </div>
+                <div class="card-body py-4" style="background-color: #fdfdfe;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-4 p-3 rounded-circle" style="background-color: rgba(102, 102, 102, 0.1);">
+                            <i class="fas fa-mobile-alt fs-2" style="color: #666666;"></i>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold mb-0 display-6" style="color: #666666;">{{ countByPaymentMode('UPI') }}</h2>
+                            <p class="text-muted mb-0">UPI Transactions</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="mb-4">
+        <div class="input-group shadow-sm">
+            <span class="input-group-text bg-white border-end-0">
+                <i class="far fa-search" style="color: #6b1d14;"></i>
+            </span>
+            <input type="text" class="form-control border-start-0 ps-0" 
+                placeholder="Search by patient name, receipt number, invoice number or payment mode..." 
+                [(ngModel)]="searchTerm" 
+                (input)="onSearchChange()">
+            <button class="btn border-start-0" 
+                type="button" 
+                *ngIf="searchTerm" 
+                (click)="searchTerm = ''; onSearchChange()"
+                style="color: #6b1d14; border-color: #ced4da; background-color: white;">
+                <i class="far fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Receipts Table -->
+    <div class="card border mb-4" style="border-color: #6b1d14 !important; border-top-width: 3px !important;">
+        <div class="card-header d-flex align-items-center justify-content-between py-3" style="background-color: #f8f9fc;">
+            <h5 class="mb-0 fw-bold text-dark">
+                <i class="far fa-receipt me-2" style="color: #6b1d14;"></i>Receipts List
+            </h5>
+            <div>
+                <span class="badge px-3 py-2" style="background-color: rgba(107, 29, 20, 0.1); border: 1px solid #6b1d14; color: #6b1d14;">
+                    Total: {{ filteredReceipts.length }} receipts
+                </span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div *ngIf="loading" class="text-center py-5">
+                <div class="spinner-border spinner-border-sm text-maroon" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted small">Loading receipts...</p>
+            </div>
+            
+            <div *ngIf="!loading && filteredReceipts.length === 0" class="text-center py-5">
+                <i class="far fa-receipt fa-3x mb-3 text-muted opacity-50"></i>
+                <h5 class="fw-normal mb-2">No receipts found</h5>
+                <p class="text-muted mb-4 small">No receipts match your search criteria or no receipts exist in the system yet.</p>
+                <a [routerLink]="['/billing/receipts/new']" class="btn btn-sm btn-maroon">
+                    <i class="far fa-plus me-2"></i> Create Receipt
+                </a>
+            </div>
+            
+            <div class="table-responsive" *ngIf="!loading && filteredReceipts.length > 0">
+                <table class="table table-bordered table-striped mb-0">
+                    <thead>
+                        <tr class="bg-light">
+                            <th class="py-3 text-dark fw-bold border-bottom-2 text-nowrap">Receipt #</th>
+                            <th class="py-3 text-dark fw-bold border-bottom-2">Patient</th>
+                            <th class="py-3 text-dark fw-bold border-bottom-2 text-nowrap">Date</th>
+                            <th class="py-3 text-dark fw-bold border-bottom-2 text-nowrap">Amount (₹)</th>
+                            <th class="py-3 text-dark fw-bold border-bottom-2 text-nowrap">Invoice #</th>
+                            <th class="py-3 text-dark fw-bold border-bottom-2">Payment Mode</th>
+                            <th class="py-3 text-dark fw-bold border-bottom-2 text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let receipt of filteredReceipts; let odd=odd" [ngClass]="{'table-light': odd}">
+                            <td class="py-3 align-middle">
+                                <a [routerLink]="['/billing/receipts', receipt.id]" class="text-decoration-none fw-bold" style="color: #6b1d14;">{{ receipt.receiptId }}</a>
+                            </td>
+                            <td class="py-3 align-middle fw-medium">{{ receipt.patientName }}</td>
+                            <td class="py-3 align-middle">{{ receipt.date | date: 'dd/MM/yyyy' }}</td>
+                            <td class="py-3 align-middle fw-medium text-end pe-4">₹{{ receipt.amount | number: '1.2-2' }}</td>
+                            <td class="py-3 align-middle">
+                                <a *ngIf="receipt.invoiceId" [routerLink]="['/billing/invoices', receipt.invoiceId]" class="text-decoration-none" style="color: #6b1d14;">{{ receipt.invoiceId }}</a>
+                                <span *ngIf="!receipt.invoiceId" class="text-muted small">-</span>
+                            </td>
+                            <td class="py-3 align-middle">
+                                <span class="badge" 
+                                    [style.background-color]="receipt.modeOfPayment === 'CASH' ? '#e6c157' : 
+                                                            receipt.modeOfPayment === 'CARD' ? '#6b1d14' : 
+                                                            receipt.modeOfPayment === 'ONLINE' ? '#e6c157' : '#666666'"
+                                    [style.color]="(receipt.modeOfPayment === 'CASH' || receipt.modeOfPayment === 'ONLINE') ? '#333333' : '#ffffff'"
+                                    style="padding: 6px 12px; border-radius: 4px; font-weight: 500; font-family: 'Roboto', Arial, sans-serif;">
+                                    <i class="me-1" 
+                                       [ngClass]="{
+                                           'fas fa-money-bill-alt': receipt.modeOfPayment === 'CASH',
+                                           'far fa-credit-card': receipt.modeOfPayment === 'CARD',
+                                           'fas fa-mobile-alt': receipt.modeOfPayment === 'UPI',
+                                           'fas fa-globe': receipt.modeOfPayment === 'ONLINE',
+                                           'far fa-money-check': receipt.modeOfPayment === 'CHEQUE',
+                                           'fas fa-university': receipt.modeOfPayment === 'BANK_TRANSFER'
+                                       }"></i>
+                                    <span class="payment-mode-text">{{ receipt.modeOfPayment === 'CASH' ? 'Cash' :
+                                       receipt.modeOfPayment === 'CARD' ? 'Card' :
+                                       receipt.modeOfPayment === 'UPI' ? 'UPI' :
+                                       receipt.modeOfPayment === 'ONLINE' ? 'Online' :
+                                       receipt.modeOfPayment === 'CHEQUE' ? 'Cheque' :
+                                       receipt.modeOfPayment === 'BANK_TRANSFER' ? 'Bank Transfer' :
+                                       receipt.modeOfPayment }}</span>
+                                </span>
+                            </td>
+                            <td class="py-3 align-middle text-end">
+                                <div class="btn-group shadow-sm">
+                                    <button class="btn btn-sm" 
+                                        [routerLink]="['/billing/receipts', receipt.id]" 
+                                        title="View Receipt Details"
+                                        style="background-color: #e6c157; color: #333333; border: 1px solid #d9b142;">
+                                        <i class="far fa-eye"></i>
+                                    </button>
+                                    
+                                    <button class="btn btn-sm" 
+                                        (click)="deleteReceipt(receipt.id)" 
+                                        title="Delete Receipt"
+                                        style="background-color: #6b1d14; color: #ffffff; border: 1px solid #5a1912;">
+                                        <i class="far fa-trash-alt"></i>
+                                    </button>
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-active fw-bold">
+                            <td colspan="3" class="text-end">Total:</td>
+                            <td>{{ calculateTotalAmount() | number: '1.2-2' }}</td>
+                            <td colspan="4"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

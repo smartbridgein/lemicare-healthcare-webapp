@@ -1,0 +1,298 @@
+/* Simple, clean styles that exactly match the screenshots */
+
+/* Main container */
+.reports-dashboard {
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header styles */
+.dashboard-header {
+  background-color: #6b1d14;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+}
+
+.header-title {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.btn-return {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  padding: 5px 15px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+/* Dashboard content */
+.dashboard-content {
+  padding: 20px;
+  flex: 1;
+}
+
+/* Intro panel */
+.intro-panel {
+  background-color: white;
+  border-radius: 5px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.intro-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.intro-panel-header h2 {
+  color: #6b1d14;
+  font-size: 20px;
+  margin: 0;
+  font-weight: 500;
+}
+
+.last-updated-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.last-updated-info span {
+  color: #666;
+  font-size: 14px;
+}
+
+.btn-refresh {
+  background-color: #f0f8ff;
+  color: #4285f4;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 15px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.intro-desc {
+  color: #666;
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Tab navigation */
+.report-tabs {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.tab-btn {
+  background: none;
+  border: 1px solid #ccc;
+  border-bottom: none;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  padding: 8px 15px;
+  cursor: pointer;
+  font-size: 14px;
+  position: relative;
+  top: 1px;
+}
+
+.tab-btn.active {
+  background-color: white;
+  border-bottom: 1px solid white;
+  font-weight: 500;
+  color: #333;
+}
+
+/* Tab content headers */
+.tab-content-header {
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.tab-content-header h3 {
+  font-size: 18px;
+  margin: 0 0 5px 0;
+  color: #333;
+}
+
+.tab-content-header p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+/* Report sections */
+.report-section {
+  margin-bottom: 30px;
+}
+
+.report-section h4 {
+  margin: 0 0 5px 0;
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
+}
+
+.section-desc {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 10px 0;
+}
+
+/* Advanced Sales Reports */
+.advanced-sales {
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.advanced-sales h4 {
+  background-color: #0d6efd;
+  color: white;
+  margin: 0;
+  padding: 10px 15px;
+  font-size: 16px;
+  font-weight: normal;
+}
+
+/* Report form */
+.report-form {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+}
+
+.form-field {
+  flex: 1;
+}
+
+.form-field label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.date-input {
+  width: 100%;
+  padding: 6px 10px;
+  padding-right: 30px;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar3" viewBox="0 0 16 16"><path d="M14 0H2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zM1 3.857C1 3.384 1.448 3 2 3h12c.552 0 1 .384 1 .857v10.286c0 .473-.448.857-1 .857H2c-.552 0-1-.384-1-.857V3.857z"/><path d="M6.5 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-9 3a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm3 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg>');
+  background-position: right 10px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+}
+
+.btn-generate {
+  background-color: #0d6efd;
+  color: white;
+  border: none;
+  padding: 6px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  align-self: flex-end;
+  margin-top: 24px;
+  font-size: 14px;
+}
+
+/* Report results */
+.report-result {
+  padding: 15px;
+}
+
+.report-result h5 {
+  margin: 0 0 15px 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.export-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.btn-export {
+  background-color: white;
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-export.pdf {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-export.excel {
+  color: #28a745;
+  border-color: #28a745;
+}
+
+.report-data {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  min-height: 200px;
+  margin-bottom: 15px;
+}
+
+/* Footer */
+footer {
+  margin-top: auto;
+  text-align: center;
+  padding: 10px;
+  border-top: 1px solid #ddd;
+  color: #666;
+  font-size: 13px;
+  background-color: #f2f2f2;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .intro-panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .form-row {
+    flex-direction: column;
+  }
+  
+  .btn-generate {
+    margin-top: 10px;
+    width: 100%;
+  }
+}

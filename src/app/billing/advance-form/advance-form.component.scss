@@ -1,0 +1,37 @@
+.card {
+  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+  margin-bottom: 1rem;
+}
+
+.card-header {
+  font-weight: 600;
+  background-color: #f8f9fc;
+}
+
+.search-results {
+  position: absolute;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.list-group-item {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.list-group-item:hover {
+  background-color: #f0f7ff;
+}
+
+.form-control:disabled, .form-control[readonly] {
+  background-color: #f8f9fc;
+}
+
+.alert-info {
+  background-color: #e3f2fd;
+  border-color: #b2dbff;
+  color: #0c63e4;
+}

@@ -1,0 +1,9 @@
+.chart-container {
+  height: 400px;
+}
+
+:host ::ng-deep {
+  .legend-labels {
+    width: auto !important;
+  }
+}

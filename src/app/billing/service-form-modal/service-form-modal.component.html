@@ -1,0 +1,68 @@
+<!-- Service Creation Modal -->
+<div #modal class="modal fade" tabindex="-1" aria-labelledby="createServiceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="createServiceModalLabel" style="font-family: 'Roboto', sans-serif; font-size: 24px; color: #333; font-weight: 500;">Create New Services</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <form [formGroup]="serviceForm" (ngSubmit)="onSubmit()">
+          <!-- Group Field -->
+          <div class="mb-4">
+            <label for="group" class="form-label mb-2" style="font-weight: 500; font-size: 16px; color: #333;">Group</label>
+            <select id="group" class="form-select form-control-lg" formControlName="group" 
+              style="border-radius: 8px; padding: 12px; font-size: 16px; border: 1px solid rgba(0,0,0,0.1);">
+              <option *ngFor="let group of groups" [value]="group.id">{{ group.name }}</option>
+            </select>
+          </div>
+          
+          <!-- Service Name Field -->
+          <div class="mb-4">
+            <label for="serviceName" class="form-label mb-2" style="font-weight: 500; font-size: 16px; color: #333;">Service Name</label>
+            <input type="text" id="serviceName" class="form-control form-control-lg" 
+              formControlName="name" placeholder="Service Name" 
+              style="border-radius: 8px; padding: 12px; font-size: 16px; border: 1px solid rgba(0,0,0,0.1);">
+            <div *ngIf="serviceForm.get('name')?.invalid && serviceForm.get('name')?.touched" class="text-danger mt-1">
+              Service name is required
+            </div>
+          </div>
+          
+          <!-- Description Field -->
+          <div class="mb-4">
+            <label for="description" class="form-label mb-2" style="font-weight: 500; font-size: 16px; color: #333;">Description</label>
+            <input type="text" id="description" class="form-control form-control-lg" 
+              formControlName="description" placeholder="Description" 
+              style="border-radius: 8px; padding: 12px; font-size: 16px; border: 1px solid rgba(0,0,0,0.1);">
+          </div>
+          
+          <!-- Rate Field -->
+          <div class="mb-4">
+            <label for="rate" class="form-label mb-2" style="font-weight: 500; font-size: 16px; color: #333;">Rate</label>
+            <input type="number" id="rate" class="form-control form-control-lg" 
+              formControlName="rate" placeholder="Rate" min="0" 
+              style="border-radius: 8px; padding: 12px; font-size: 16px; border: 1px solid rgba(0,0,0,0.1);">
+            <div *ngIf="serviceForm.get('rate')?.invalid && serviceForm.get('rate')?.touched" class="text-danger mt-1">
+              Rate must be a positive number
+            </div>
+          </div>
+          
+          <!-- Error Message Display -->
+          <div *ngIf="errorMessage" class="alert alert-danger mt-3">
+            {{ errorMessage }}
+          </div>
+          
+          <!-- Submit Button -->
+          <div class="text-center mt-4">
+            <button type="submit" class="btn btn-lg px-5 py-3" 
+              style="background-color: #7B68EE; color: white; border-radius: 50px; font-weight: 500; font-size: 18px; width: 100%;"
+              [disabled]="isSubmitting">
+              <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Add Service <i class="fas fa-check ms-2"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

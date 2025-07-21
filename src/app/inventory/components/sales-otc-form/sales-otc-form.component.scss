@@ -1,0 +1,698 @@
+.sales-otc-form-container {
+  font-family: 'Roboto', sans-serif;
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100%;
+  color: #333;
+
+  .page-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 30px;
+
+    .back-button {
+      a {
+        display: flex;
+        align-items: center;
+        color: #6b1d14;
+        text-decoration: none;
+        font-weight: 500;
+
+        i {
+          margin-right: 8px;
+        }
+      }
+    }
+    
+    .header-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333333;
+    }
+  }
+
+  .otc-form-wrapper {
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    padding: 15px 25px;
+
+    form {
+      .customer-details {
+        margin-bottom: 25px;
+        
+        .form-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 15px;
+          margin-bottom: 12px;
+          
+          .form-group {
+            font-family: 'Roboto', sans-serif;
+            flex: 1 1 200px;
+            display: flex;
+            flex-direction: column;
+            
+            // Specific sizing for gender dropdown
+            &:has(#gender) {
+              flex: 0 1 180px;
+            }
+            
+            // Special handling for checkbox group
+            &.checkbox-group {
+              flex: 0 0 120px;
+            }
+            
+            .invisible {
+              visibility: hidden;
+              height: 19px; // Same as regular label height
+            }
+            
+            label {
+              display: block;
+              margin-bottom: 5px;
+              font-weight: 500;
+              color: #555;
+              font-size: 13px;
+            }
+            
+            input, select {
+              width: 100%;
+              padding: 8px 10px;
+              border: 1px solid #ddd;
+              border-radius: 4px;
+              font-size: 14px;
+              height: 38px;
+              
+              &:focus {
+                outline: none;
+                border-color: #6b1d14;
+                box-shadow: 0 0 0 2px rgba(107, 29, 20, 0.1);
+              }
+              
+              &.is-invalid {
+                border-color: #dc3545;
+              }
+              
+              &[type="date"] {
+                padding-right: 10px;
+              }
+              
+              &[type="checkbox"] {
+                width: 16px;
+                height: 16px;
+                margin-right: 6px;
+                vertical-align: middle;
+                cursor: pointer;
+              }
+            }
+            
+            .checkbox-container {
+              display: flex;
+              align-items: center;
+              margin-top: 6px;
+              
+              label {
+                display: inline-block;
+                margin-bottom: 0;
+                cursor: pointer;
+              }
+              
+              &.custom-checkbox {
+                position: relative;
+                padding-left: 4px;
+                
+                .custom-control-input {
+                  position: absolute;
+                  opacity: 0;
+                  cursor: pointer;
+                  height: 0;
+                  width: 0;
+                  
+                  &:checked ~ .custom-control-label:before {
+                    background-color: #6b1d14;
+                    border-color: #6b1d14;
+                  }
+                  
+                  &:checked ~ .custom-control-label:after {
+                    opacity: 1;
+                  }
+                }
+                
+                .custom-control-label {
+                  position: relative;
+                  padding-left: 28px;
+                  cursor: pointer;
+                  user-select: none;
+                  font-size: 14px;
+                  line-height: 24px;
+                  
+                  &:before {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    top: 2px;
+                    width: 18px;
+                    height: 18px;
+                    border: 2px solid #aaa;
+                    background-color: #fff;
+                    border-radius: 3px;
+                    transition: all 0.2s ease;
+                  }
+                  
+                  &:after {
+                    content: '';
+                    position: absolute;
+                    left: 6px;
+                    top: 6px;
+                    width: 6px;
+                    height: 10px;
+                    border: solid white;
+                    border-width: 0 2px 2px 0;
+                    transform: rotate(45deg);
+                    opacity: 0;
+                    transition: all 0.2s ease;
+                  }
+                }
+              }
+            }
+            
+            // Reset button styling
+            &.reset-button-group {
+              flex: 0 0 120px;
+              
+              .reset-btn {
+                height: 38px;
+                padding: 0 15px;
+                background-color: #6b1d14;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                transition: background-color 0.2s;
+                
+                i {
+                  margin-right: 5px;
+                  font-size: 12px;
+                }
+                
+                &:hover {
+                  background-color: darken(#6b1d14, 10%);
+                }
+              }
+            }
+            
+            .invalid-feedback {
+              color: #f5365c;
+              font-size: 12px;
+              margin-top: 5px;
+            }
+          }
+        }
+      }
+      
+      .sale-items-container {
+        margin-bottom: 25px;
+        
+        h3 {
+          font-size: 16px;
+          margin: 0 0 15px 0;
+          color: #333333;
+        }
+        
+        .sale-items-table {
+            font-family: 'Roboto', sans-serif;
+            width: 100%;
+            overflow-x: auto;
+            display: block; // Ensures horizontal scrolling works on small screens
+          
+          table {
+            width: 100%;
+            table-layout: fixed; // Fixed layout ensures columns maintain width
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 1200px; // Ensures proper horizontal scrolling on small screens
+          
+            th, td {
+              padding: 8px 10px;
+              text-align: left;
+              border-bottom: 1px solid #eee;
+              font-size: 14px;
+              overflow: hidden;
+            }
+            
+            th {
+              background-color: #f9f9f9;
+              color: #444;
+              font-weight: 500;
+              font-size: 13px;
+              white-space: nowrap;
+              height: 40px;
+              text-align: center;
+              vertical-align: middle;
+              padding: 8px 4px;
+              position: sticky;
+              top: 0;
+              z-index: 2;
+            }
+            
+            // Set specific widths for each column
+            th:nth-child(1), td:nth-child(1) { width: 15%; } // Medicine Name
+            th:nth-child(2), td:nth-child(2) { width: 8%; } // Generic
+            th:nth-child(3), td:nth-child(3) { width: 7%; } // MFG
+            th:nth-child(4), td:nth-child(4) { width: 8%; } // Batch
+            th:nth-child(5), td:nth-child(5) { width: 9%; } // Exp. Date
+            th:nth-child(6), td:nth-child(6) { width: 6%; } // Unit Cost
+            th:nth-child(7), td:nth-child(7) { width: 6%; } // Unit MRP
+            th:nth-child(8), td:nth-child(8) { width: 5%; } // Qty
+            th:nth-child(9), td:nth-child(9) { width: 5%; } // Dis (%)
+            th:nth-child(10), td:nth-child(10) { width: 6%; } // CGST (%)
+            th:nth-child(11), td:nth-child(11) { width: 6%; } // SGST (%)
+            th:nth-child(12), td:nth-child(12) { width: 7%; } // Taxable Amount
+            th:nth-child(13), td:nth-child(13) { width: 7%; } // Total Amount
+            th:nth-child(14), td:nth-child(14) { width: 5%; } // Actions
+            
+            td {
+              vertical-align: middle;
+              
+              input {
+                width: 100%;
+                padding: 6px 8px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                font-size: 13px;
+                min-width: 100%; // Ensures inputs take up full cell width
+                box-sizing: border-box; // Ensures padding doesn't affect total width
+                height: 32px; // Fixed height for all inputs
+                
+                &.form-control-sm {
+                  padding: 4px 6px;
+                  font-size: 13px;
+                }
+                
+                // Right align numeric inputs
+                &[type="number"] {
+                  text-align: right;
+                  -moz-appearance: textfield; // Remove up/down arrows in Firefox
+                }
+                
+                &[type="number"]::-webkit-outer-spin-button,
+                &[type="number"]::-webkit-inner-spin-button {
+                  -webkit-appearance: none;
+                  margin: 0;
+                }
+                
+                &:focus {
+                  outline: none;
+                  border-color: #6b1d14;
+                }
+                
+                &:read-only {
+                  background-color: #f8f9fa;
+                }
+                
+                &.is-invalid {
+                  border-color: #f5365c;
+                }
+              }
+              
+              .medicine-search {
+                position: relative;
+                
+                .medicine-results {
+                  position: absolute;
+                  top: 100%;
+                  left: 0;
+                  right: 0;
+                  background-color: white;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                  max-height: 200px;
+                  overflow-y: auto;
+                  z-index: 10;
+                  
+                  ul {
+                    list-style: none;
+                    padding: 0;
+                    margin: 0;
+                    
+                    li {
+                      padding: 8px 10px;
+                      cursor: pointer;
+                      
+                      &:hover {
+                        background-color: #f8f9fa;
+                      }
+                    }
+                  }
+                }
+              }
+              
+              .remove-btn {
+                background-color: #f5365c;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 22px;
+                height: 22px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                margin-left: 5px;
+                padding: 0;
+                font-size: 10px;
+                
+                &:hover {
+                  background-color: #e02955;
+                }
+              }
+            }
+            
+            tfoot td {
+              padding: 15px 0;
+              
+              .add-medicine-btn {
+                background-color: #8b0000;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 8px 12px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                font-size: 13px;
+                
+                &:hover {
+                  background-color: #a50000;
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      .payment-details-container {
+        margin-bottom: 25px;
+        display: flex;
+        justify-content: flex-end;
+        
+        .totals-column {
+          width: 450px;
+          margin-left: auto;
+          
+          .summary-card {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            font-family: 'Roboto', sans-serif;
+            
+            .summary-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 15px 20px;
+              border-bottom: 1px solid #f0f0f0;
+              
+              &:last-child {
+                border-bottom: none;
+              }
+              
+              .summary-label {
+                font-weight: 500;
+                font-size: 14px;
+                color: #495057;
+                flex: 1;
+              }
+              
+              .summary-value {
+                font-weight: 600;
+                font-size: 14px;
+                color: #212529;
+                text-align: right;
+                padding-left: 10px;
+              }
+              
+              .summary-input {
+                width: 150px;
+                text-align: right;
+                
+                input, select {
+                  width: 100%;
+                  padding: 8px 10px;
+                  border: 1px solid #ced4da;
+                  border-radius: 4px;
+                  font-size: 14px;
+                  background-color: #fff;
+                  
+                  &:focus {
+                    outline: none;
+                    border-color: #6b1d14;
+                    box-shadow: 0 0 0 0.2rem rgba(107, 29, 20, 0.15);
+                  }
+                  
+                  &[readonly] {
+                    background-color: #f8f9fa;
+                    color: #6c757d;
+                    cursor: not-allowed;
+                  }
+                }
+                
+                .discount-field {
+                  text-align: right;
+                }
+                
+                .classic-select {
+                  appearance: none;
+                  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><path fill="%23555" d="M3.5 4.5l2.5 2.5 2.5-2.5z"/></svg>');
+                  background-repeat: no-repeat;
+                  background-position: right 10px center;
+                  padding-right: 30px;
+                  cursor: pointer;
+                }
+              }
+            }
+            
+            // Specific row styles
+            .discount-row {
+              background-color: #fff;
+              
+              .discount-amount {
+                color: #dc3545;
+                font-weight: 500;
+              }
+            }
+            
+            .tax-row {
+              background-color: #f8f9fa;
+              padding: 10px 20px;
+              
+              .summary-label {
+                font-size: 13px;
+                color: #6c757d;
+              }
+              
+              .summary-value {
+                font-size: 13px;
+                font-weight: 500;
+              }
+            }
+            
+            .tax-total-row {
+              background-color: #f0f4f8;
+              
+              .summary-label {
+                font-weight: 600;
+              }
+              
+              .tax-total {
+                color: #0d6efd;
+                font-weight: 600;
+              }
+            }
+            
+            .payment-row {
+              .payment-input {
+                width: 200px;
+              }
+            }
+            
+            .reference-row {
+              .reference-input {
+                width: 250px;
+              }
+              
+              .reference-field {
+                font-family: monospace;
+                letter-spacing: 0.5px;
+              }
+            }
+            
+            .format-row {
+              background-color: #f8f9fa;
+              padding: 5px 20px 10px;
+              justify-content: flex-end;
+              
+              .format-text {
+                font-size: 11px;
+                color: #6c757d;
+                font-style: italic;
+              }
+            }
+            
+            .grand-total-row {
+              background-color: #6b1d14;
+              padding: 18px 20px;
+              
+              .grand-total-label {
+                color: white;
+                font-size: 18px;
+                font-weight: 600;
+              }
+              
+              .grand-total-value {
+                color: white;
+                font-size: 18px;
+                font-weight: 700;
+              }
+            }
+          }
+        }
+      }
+      
+      // Form action buttons
+      .form-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: flex-end;
+        margin-top: 30px;
+        
+        button {
+          padding: 12px 25px;
+          font-size: 14px;
+          font-weight: 500;
+          border-radius: 5px;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+          
+          i {
+            margin-right: 6px;
+          }
+          
+          &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          }
+          
+          &:active {
+            transform: translateY(0);
+            box-shadow: none;
+          }
+        }
+        
+        .cancel-btn {
+          background-color: #f8f9fa;
+          color: #495057;
+          border: 1px solid #ced4da;
+          
+          &:hover {
+            background-color: #e9ecef;
+          }
+        }
+        
+        .save-btn {
+          background-color: #fd7e14;
+          color: white;
+          
+          &:hover {
+            background-color: #e96b02;
+          }
+        }
+        
+        .submit-btn {
+          background-color: #6b1d14;
+          color: white;
+          
+          &:hover {
+            background-color: #56170f;
+          }
+        }
+      }
+          
+          // Grand total is now part of the summary-card component
+      
+      .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        padding-top: 20px;
+        
+        .reset-btn {
+          background-color: #fff;
+          color: #6c757d;
+          border: 1px solid #dee2e6;
+          border-radius: 4px;
+          padding: 8px 12px;
+          cursor: pointer;
+          font-weight: 400;
+          font-size: 13px;
+          
+          &:hover {
+            background-color: #f8f9fa;
+          }
+        }
+        
+        .save-btn {
+          background-color: #fb6340;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          padding: 10px 20px;
+          cursor: pointer;
+          font-weight: 500;
+          
+          &:hover {
+            background-color: #fa5028;
+          }
+        }
+        
+        .submit-btn {
+          background-color: #28a745;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          padding: 8px 14px;
+          cursor: pointer;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 13px;
+          
+          &:hover {
+            background-color: #218838;
+          }
+          
+          &:disabled {
+            background-color: #8de4c0;
+            cursor: not-allowed;
+          }
+        }
+      }
+    }
+  }
+}

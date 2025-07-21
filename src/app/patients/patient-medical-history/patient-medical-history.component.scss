@@ -1,0 +1,707 @@
+// Brand color variables
+$maroon-primary: #6b1d14;
+$maroon-dark: #4a0f09;
+$maroon-light: #8c2c21;
+$yellow-accent: #e6c157;
+$yellow-light: #f3d98b;
+$gray-light: #f5f5f5;
+$gray-medium: #666666;
+$gray-dark: #333333;
+
+.medical-history-container {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: $gray-light;
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  
+  .header {
+    background: $maroon-primary;
+    color: white;
+    padding: 1.25rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba($maroon-dark, 0.25);
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    border-left: 4px solid $yellow-accent;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: white;
+    }
+    
+    .subtitle {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1rem;
+      margin-top: 0.5rem;
+      font-weight: 400;
+    }
+    
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: white;
+      text-decoration: none;
+      font-size: 0.9rem;
+      background: rgba($yellow-accent, 0.2);
+      padding: 0.5rem 0.8rem;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      border: 1px solid rgba($yellow-light, 0.2);
+      
+      &:hover {
+        background: rgba($yellow-accent, 0.3);
+      }
+      
+      i {
+        font-size: 0.9rem;
+      }
+    }
+  }
+  
+  .loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    margin: 2rem 0;
+    
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba($yellow-light, 0.3);
+      border-top: 4px solid $maroon-primary;
+      border-radius: 50%;
+      animation: spin 1.2s linear infinite;
+      margin-bottom: 1.5rem;
+    }
+    
+    p {
+      color: $gray-medium;
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin: 0;
+      letter-spacing: 0.5px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  }
+  
+  .error-message {
+    background-color: rgba($maroon-primary, 0.1);
+    color: $maroon-dark;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    border-left: 3px solid $maroon-primary;
+  }
+  
+  .success-message {
+    background-color: rgba($yellow-accent, 0.1);
+    color: darken($yellow-accent, 25%);
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    border-top: 3px solid $yellow-accent;
+  }
+  
+  .patient-info-card {
+    background: white;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e8eaed;
+    border-top: 3px solid $maroon-primary;
+    
+    .patient-info {
+      flex: 1;
+      
+      h2 {
+        margin: 0 0 1.5rem 0;
+        font-size: 1.8rem;
+        color: #2c3e50;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        
+        &::before {
+          content: '👤';
+          font-size: 1.5rem;
+        }
+      }
+      
+      .patient-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        
+        .detail-item {
+          padding: 1rem;
+          background: linear-gradient(135deg, $gray-light 0%, darken($gray-light, 4%) 100%);
+          border-radius: 12px;
+          border-left: 3px solid $maroon-primary;
+          transition: all 0.3s ease;
+          
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+          }
+          
+          .label {
+            display: block;
+            font-weight: 600;
+            color: $gray-medium;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          
+          .value {
+            display: block;
+            color: $maroon-primary;
+            font-size: 1.1rem;
+            font-weight: 600;
+          }
+        }
+      }
+    }
+    
+    .action-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-end;
+      min-width: 120px;
+      
+      .action-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        color: white;
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: 500;
+        padding: 0.4rem 0.6rem;
+        width: 100%;
+        text-align: center;
+        background: $maroon-primary;
+        border-radius: 3px;
+        transition: background 0.2s ease;
+        
+        &:hover {
+          background: $maroon-dark;
+          text-decoration: none;
+        }
+        
+        &:nth-child(2) {
+          background: $maroon-light;
+          
+          &:hover {
+            background: $maroon-primary;
+          }
+        }
+        
+        i {
+          font-size: 0.75rem;
+        }
+      }
+    }
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      
+      .patient-info {
+        width: 100%;
+      }
+      
+      .action-links {
+        margin-top: 1rem;
+        width: 100%;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
+        
+        .action-link {
+          width: auto;
+          min-width: 120px;
+        }
+      }
+    }
+  }
+  
+  .medical-history-form {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    font-size: 1rem;
+    border: 1px solid #e8eaed;
+    position: relative;
+    overflow: hidden;
+    
+    .two-column-layout {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 1rem;
+      
+      .column {
+        flex: 1;
+        min-width: 0; /* Prevents overflow issues in flex items */
+        
+        .form-section {
+          margin-bottom: 0; /* Remove bottom margin for sections within columns */
+        }
+      }
+      
+      @media (max-width: 992px) {
+        flex-direction: column;
+        
+        .column .form-section {
+          margin-bottom: 1rem; /* Add margin back for mobile view */
+        }
+      }
+    }
+    
+    .full-width-section {
+      clear: both; /* Ensure it starts below the columns */
+      border-top: 1px solid $maroon-light;
+      padding-top: 1rem;
+    }
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, $maroon-primary 0%, $maroon-dark 50%, $yellow-accent 100%);
+    }
+    
+    .form-section {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid #e8e8e8;
+      
+      &:last-child {
+        border-bottom: none;
+        margin-bottom: 1rem;
+      }
+      
+      h3 {
+        margin: 0 0 1.25rem 0;
+        font-size: 1.2rem;
+        color: $maroon-primary;
+        font-weight: 600;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba($maroon-light, 0.3);
+      }
+      
+      .form-group {
+        margin-bottom: 1.25rem;
+        
+        label {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-weight: 500;
+          color: $gray-dark;
+          font-size: 0.85rem;
+        }
+        
+        &.full-width {
+          width: 100%;
+        }
+        
+        textarea, input {
+          padding: 0.5rem 0.75rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 4px;
+          width: 100%;
+          font-size: 0.9rem;
+          font-family: 'Inter', 'Segoe UI', sans-serif;
+          background: white;
+          transition: border 0.2s ease;
+          
+          &:focus {
+            outline: none;
+            border-color: $maroon-primary;
+            box-shadow: 0 0 0 2px rgba($maroon-primary, 0.15);
+          }
+        }
+        
+        textarea {
+          resize: vertical;
+          min-height: 120px;
+          line-height: 1.6;
+        }
+        
+        .error-text {
+          color: $maroon-dark;
+          font-size: 0.85rem;
+          margin-top: 0.5rem;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          
+          &::before {
+            content: '⚠️';
+            font-size: 0.9rem;
+          }
+        }
+      }
+      
+      .form-array-container {
+        margin-bottom: 1.5rem;
+        padding: 0.75rem 1rem;
+        background: #f8f8f8;
+        border-radius: 4px;
+        border: 1px solid #e0e0e0;
+        
+        .form-array-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.75rem;
+          
+          h4 {
+            margin: 0;
+            color: $maroon-primary;
+            font-size: 1rem;
+            font-weight: 500;
+          }
+          
+          .add-btn {
+            background: $maroon-primary;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 0.4rem 0.6rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            transition: background 0.2s ease;
+            
+            &:hover {
+              background: $maroon-dark;
+            }
+          }
+        }
+        
+        .form-array-item {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: 0.5rem;
+          padding: 0;
+          border: none;
+          background: transparent;
+          
+          input {
+            flex-grow: 1;
+            margin: 0;
+          }
+          
+          .remove-btn {
+            background: $maroon-primary;
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease;
+            
+            &:hover {
+              background: $maroon-dark;
+            }
+          }
+        }
+        
+        .surgery-item {
+          background: #f8f8f8;
+          border-radius: 4px;
+          padding: 0.75rem;
+          margin-bottom: 0.75rem;
+          border: 1px solid #e0e0e0;
+          border-left: 3px solid $maroon-primary;
+          
+          .surgery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            
+            h5 {
+              margin: 0;
+              font-size: 0.9rem;
+              color: $maroon-primary;
+              font-weight: 500;
+            }
+          }
+          
+          .surgery-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            
+            .form-group.full-width {
+              grid-column: 1 / -1;
+            }
+            
+            @media (max-width: 576px) {
+              grid-template-columns: 1fr;
+            }
+          }
+        }
+        
+        .empty-array-message {
+          color: $gray-dark;
+          padding: 0.75rem;
+          font-style: italic;
+          text-align: center;
+          font-size: 0.85rem;
+          background: #f8f8f8;
+          border-radius: 4px;
+          border: 1px dashed #dee2e6;
+          
+          .text-btn {
+            background: none;
+            border: none;
+            color: $maroon-primary;
+            cursor: pointer;
+            padding: 0;
+            text-decoration: underline;
+            font-weight: 500;
+            
+            &:hover {
+              color: $maroon-dark;
+            }
+          }
+        }
+      }
+    }
+    
+    .form-actions {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e8eaed;
+      
+      button {
+        padding: 0.5rem 1.25rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 0.9rem;
+        font-family: 'Inter', 'Segoe UI', sans-serif;
+        transition: background-color 0.2s ease;
+        min-width: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+        
+        &.btn-save {
+          background: $maroon-primary;
+          color: white;
+          border: 1px solid $maroon-dark;
+          border-left: 3px solid $yellow-accent;
+          
+          &:hover {
+            background: $maroon-dark;
+          }
+          
+          &:disabled {
+            background: #9ca3af;
+            border-color: #8a8a8a;
+            border-left: 1px solid #8a8a8a;
+            cursor: not-allowed;
+          }
+        }
+        
+        &.btn-cancel {
+          background: white;
+          color: $gray-dark;
+          border: 1px solid #d1d5db;
+          
+          &:hover {
+            background: #f5f5f5;
+            border-color: #c1c1c1;
+          }
+        }
+      }
+      
+      @media (max-width: 768px) {
+        flex-direction: column;
+        gap: 1rem;
+        
+        button {
+          width: 100%;
+        }
+      }
+    }
+  }
+  
+  // Responsive Design
+  @media (max-width: 1200px) {
+    padding: 1.5rem;
+    
+    .medical-history-form {
+      padding: 2rem;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    
+    .header {
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .back-btn {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+      }
+    }
+    
+    .patient-info-card {
+      padding: 1.5rem;
+      flex-direction: column;
+      align-items: flex-start;
+      
+      .patient-info {
+        width: 100%;
+        
+        h2 {
+          font-size: 1.5rem;
+        }
+        
+        .patient-details {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+      }
+      
+      .action-links {
+        margin-left: 0;
+        margin-top: 1.5rem;
+        flex-direction: row;
+        width: 100%;
+        
+        .action-link {
+          flex: 1;
+          font-size: 0.85rem;
+          padding: 0.6rem 1rem;
+        }
+      }
+    }
+    
+    .medical-history-form {
+      padding: 1.5rem;
+      
+      .form-section {
+        margin-bottom: 2rem;
+        
+        h3 {
+          font-size: 1.4rem;
+        }
+        
+        .form-array-container {
+          padding: 1rem;
+          
+          .form-array-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+            
+            .add-btn {
+              width: 100%;
+              justify-content: center;
+            }
+          }
+          
+          .form-array-item {
+            flex-direction: column;
+            gap: 1rem;
+            
+            input {
+              width: 100%;
+            }
+            
+            .remove-btn {
+              align-self: flex-end;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+    
+    .header {
+      padding: 1rem;
+      
+      h1 {
+        font-size: 1.5rem;
+      }
+    }
+    
+    .patient-info-card {
+      padding: 1rem;
+      
+      .patient-info {
+        h2 {
+          font-size: 1.3rem;
+        }
+      }
+    }
+    
+    .medical-history-form {
+      padding: 1rem;
+      
+      .form-section {
+        h3 {
+          font-size: 1.2rem;
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,194 @@
+<div class="container-fluid px-4 mt-4">
+  <!-- Header Section -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="fw-bold fs-3 mb-1" style="color: #333;">Advance Payment Management</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0 fs-6">
+          <li class="breadcrumb-item"><a [routerLink]="['/billing']" class="text-decoration-none" style="color: #6b1d14;">Billing Dashboard</a></li>
+          <li class="breadcrumb-item active">Advance Payments</li>
+        </ol>
+      </nav>
+    </div>
+    <div>
+      <a [routerLink]="['/billing/advances/new']" class="btn shadow" style="background-color: #6b1d14; color: white;">
+        <i class="far fa-credit-card me-2"></i>New Advance Payment
+      </a>
+    </div>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="mb-4">
+    <div class="input-group shadow-sm">
+      <span class="input-group-text bg-white border-end-0">
+        <i class="far fa-search" style="color: #6b1d14;"></i>
+      </span>
+      <input 
+        type="text" 
+        class="form-control border-start-0 ps-0" 
+        placeholder="Search by patient name, ID, or advance ID..." 
+        [(ngModel)]="searchTerm"
+        (input)="applyFilter()">
+      <button 
+        class="btn border-start-0" 
+        type="button" 
+        *ngIf="searchTerm" 
+        (click)="searchTerm = ''; applyFilter()"
+        style="color: #6b1d14; border-color: #ced4da;">
+        <i class="far fa-times"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Status Cards -->
+  <div class="row mb-4">
+    <!-- Total Advances Card -->
+    <div class="col-md-4 mb-3">
+      <div class="card h-100" style="border-left: 4px solid #6b1d14; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="text-uppercase mb-0" style="color: #6b1d14;">TOTAL ADVANCES</h5>
+              <h2 class="mt-2 mb-1 fw-bold">{{ filteredAdvances.length }}</h2>
+              <p class="text-muted small mb-0">All Advance Records</p>
+            </div>
+            <div style="background-color: rgba(107, 29, 20, 0.1); padding: 15px; border-radius: 5px;">
+              <i class="far fa-credit-card fa-2x" style="color: #6b1d14;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Today's Advances Card -->
+    <div class="col-md-4 mb-3">
+      <div class="card h-100" style="border-left: 4px solid #3d63cf; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="text-uppercase mb-0" style="color: #e6c157;">TODAY'S ADVANCES</h5>
+              <h2 class="mt-2 mb-1 fw-bold">0</h2>
+              <p class="text-muted small mb-0">Added Today</p>
+            </div>
+            <div style="background-color: rgba(230, 193, 87, 0.1); padding: 15px; border-radius: 5px;">
+              <i class="far fa-calendar-check fa-2x" style="color: #e6c157;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Amount Card -->
+    <div class="col-md-4 mb-3">
+      <div class="card h-100" style="border-left: 4px solid #1cc88a; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="text-uppercase mb-0" style="color: #1cc88a;">TOTAL AMOUNT</h5>
+              <h2 class="mt-2 mb-1 fw-bold">₹{{ calculateTotalAmount() }}</h2>
+              <p class="text-muted small mb-0">Total Advance Value</p>
+            </div>
+            <div style="background-color: rgba(28, 200, 138, 0.1); padding: 15px; border-radius: 5px;">
+              <i class="fas fa-rupee-sign fa-2x" style="color: #1cc88a;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spinner -->
+  <div class="text-center py-5" *ngIf="loading">
+    <div class="spinner-border spinner-border-sm" role="status" style="color: #6b1d14; border-color: rgba(107, 29, 20, 0.1); border-top-color: #6b1d14;">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2 text-muted">Loading advance payments...</p>
+  </div>
+
+  <!-- No advances message -->
+  <div class="card border mb-4" style="border-color: #6b1d14 !important; border-top-width: 3px !important;" *ngIf="!loading && filteredAdvances.length === 0">
+    <div class="card-header py-3" style="background-color: #f8f9fc;">
+      <h5 class="mb-0 fw-bold text-dark">
+        <i class="far fa-credit-card me-2" style="color: #6b1d14;"></i>Advance Payments
+      </h5>
+    </div>
+    <div class="card-body text-center p-5">
+      <i class="far fa-credit-card fa-4x mb-3 opacity-50" style="color: #6b1d14;"></i>
+      <h4 class="text-dark mb-3">No Advance Payments Found</h4>
+      <p class="text-muted mb-4">There are no advance payments in the system yet.</p>
+      <a class="btn shadow" style="background-color: #6b1d14; color: white;" [routerLink]="['/billing/advances/new']">
+        <i class="far fa-plus me-2"></i>Create Advance Payment
+      </a>
+    </div>
+  </div>
+
+  <!-- Advance Payments Table -->
+  <div class="card border mb-4" style="border-color: #6b1d14 !important; border-top-width: 3px !important;" *ngIf="!loading && filteredAdvances.length > 0">
+    <div class="card-header py-3" style="background-color: #f8f9fc;">
+      <div class="d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold fw-bold" style="color: #6b1d14;">
+          <i class="far fa-credit-card me-2" style="color: #6b1d14;"></i>Advance Payment Records
+        </h6>
+        <span class="badge text-white" style="background-color: #6b1d14; font-size: 0.8rem; padding: 5px 10px; border-radius: 30px;">
+          {{ filteredAdvances.length }} payment{{ filteredAdvances.length !== 1 ? 's' : '' }}
+        </span>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped mb-0">
+          <thead>
+            <tr style="background-color: #f8f9fc;">
+              <th class="fw-bold" style="color: #6b1d14;">Advance ID</th>
+              <th class="fw-bold" style="color: #6b1d14;">Patient</th>
+              <th class="fw-bold text-center" style="color: #6b1d14;">Date</th>
+              <th class="fw-bold text-end" style="color: #6b1d14;">Amount (₹)</th>
+              <th class="fw-bold text-center" style="color: #6b1d14;">Payment Mode</th>
+              <th class="fw-bold" style="color: #6b1d14;">Notes</th>
+              <th class="fw-bold text-end" style="color: #6b1d14;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let advance of filteredAdvances; let odd=odd" [ngClass]="{'table-light': odd}">
+              <td class="py-3 align-middle">
+                <a [routerLink]="['/billing/advances', advance.id]" class="text-decoration-none fw-bold" style="color: #6b1d14;">{{advance.advanceId}}</a>
+              </td>
+              <td class="py-3 align-middle fw-medium">{{advance.patientName}}</td>
+              <td class="py-3 align-middle text-center">{{advance.date | date:'dd/MM/yyyy'}}</td>
+              <td class="py-3 align-middle fw-bold text-end pe-4">₹{{advance.amount | number:'1.2-2'}}</td>
+              <td class="py-3 align-middle text-center">
+                <span class="badge py-2" 
+                  style="padding-left: 15px; padding-right: 15px; border-radius: 30px;"
+                  [ngStyle]="{
+                    'background-color': advance.modeOfPayment === 'CASH' ? '#1cc88a' : '#e6c157',
+                    'color': advance.modeOfPayment === 'CASH' ? 'white' : '#333'
+                  }">
+                  {{advance.modeOfPayment}}
+                </span>
+              </td>
+              <td class="py-3 align-middle">
+                <span class="text-muted">{{advance.notes || '-'}}</span>
+              </td>
+              <td class="py-3 align-middle text-end">
+                <div class="btn-group shadow-sm">
+                  <button class="btn btn-sm" 
+                    style="background-color: #6b1d14; color: white; border: 1px solid #6b1d14;"
+                    [routerLink]="['/billing/advances', advance.id]">
+                    <i class="far fa-eye"></i>
+                    <span class="visually-hidden">View</span>
+                  </button>
+                  <button class="btn btn-sm" 
+                    style="background-color: white; border: 1px solid #6b1d14; color: #6b1d14;"
+                    (click)="deleteAdvance(advance.id)">
+                    <i class="far fa-trash-alt"></i>
+                    <span class="visually-hidden">Delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

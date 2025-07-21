@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <!-- Background elements -->
+  <ellipse cx="400" cy="450" rx="350" ry="40" fill="#f0f0ff" opacity="0.5"/>
+  
+  <!-- Doctor character -->
+  <g id="doctor">
+    <!-- Body -->
+    <rect x="280" y="200" width="100" height="180" rx="20" fill="#5EBAD9"/>
+    
+    <!-- Head -->
+    <circle cx="330" cy="160" r="50" fill="#FFD8B5"/>
+    
+    <!-- Hair -->
+    <path d="M330 110 C290 110 280 150 290 170 C300 180 320 185 340 180 C360 175 370 160 365 140 C360 120 350 110 330 110" fill="#594A42"/>
+    
+    <!-- Face -->
+    <circle cx="315" cy="150" r="5" fill="#333"/>
+    <circle cx="345" cy="150" r="5" fill="#333"/>
+    <path d="M320 170 C325 175 335 175 340 170" stroke="#333" stroke-width="2" fill="none"/>
+    
+    <!-- Stethoscope -->
+    <path d="M350 200 C360 220 370 240 350 260" stroke="#333" stroke-width="3" fill="none"/>
+    <circle cx="350" cy="260" r="8" fill="#333"/>
+    
+    <!-- Medical cross symbol -->
+    <rect x="320" y="220" width="20" height="40" rx="2" fill="#fff"/>
+    <rect x="310" y="230" width="40" height="20" rx="2" fill="#fff"/>
+  </g>
+  
+  <!-- Patient character -->
+  <g id="patient">
+    <!-- Body -->
+    <rect x="420" y="220" width="110" height="160" rx="20" fill="#FFA07A"/>
+    
+    <!-- Head -->
+    <circle cx="475" cy="180" r="45" fill="#FFD8B5"/>
+    
+    <!-- Hair -->
+    <path d="M475 135 C450 135 430 150 435 175 C440 190 455 195 475 195 C495 195 510 185 515 165 C520 145 500 135 475 135" fill="#8B4513"/>
+    
+    <!-- Face -->
+    <circle cx="460" cy="170" r="5" fill="#333"/>
+    <circle cx="490" cy="170" r="5" fill="#333"/>
+    <path d="M465 185 C470 190 480 190 485 185" stroke="#333" stroke-width="2" fill="none"/>
+    
+    <!-- Arm -->
+    <path d="M420 250 C400 270 390 290 370 300" stroke="#FFD8B5" stroke-width="20" fill="none" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Medical devices and elements -->
+  <g id="medical-elements">
+    <!-- Heart monitor line -->
+    <path d="M150 100 C160 100 170 100 180 100 L190 80 L200 120 L210 80 L220 100 C230 100 240 100 250 100" stroke="#FF5252" stroke-width="3" fill="none"/>
+    
+    <!-- Pill -->
+    <ellipse cx="580" cy="130" rx="30" ry="15" fill="#FF9800"/>
+    <ellipse cx="580" cy="130" rx="30" ry="15" fill="none" stroke="#E65100" stroke-width="2"/>
+    <line x1="580" y1="115" x2="580" y2="145" stroke="#E65100" stroke-width="2"/>
+    
+    <!-- Clipboard -->
+    <rect x="600" y="200" width="70" height="90" rx="5" fill="#EBEBEB"/>
+    <rect x="610" y="220" width="50" height="5" fill="#ccc"/>
+    <rect x="610" y="235" width="50" height="5" fill="#ccc"/>
+    <rect x="610" y="250" width="50" height="5" fill="#ccc"/>
+    <rect x="610" y="265" width="30" height="5" fill="#ccc"/>
+  </g>
+  
+  <!-- Decorative elements -->
+  <g id="decorations">
+    <!-- Plants -->
+    <path d="M120 450 C120 400 160 380 180 400 C200 420 180 450 180 450" fill="#4CAF50"/>
+    <path d="M140 450 C140 410 100 390 80 410 C60 430 80 450 80 450" fill="#2E7D32"/>
+    <rect x="100" y="450" width="60" height="20" rx="5" fill="#795548"/>
+    
+    <!-- Decorative circles -->
+    <circle cx="650" cy="100" r="20" fill="#9C27B0" opacity="0.5"/>
+    <circle cx="680" cy="120" r="15" fill="#3F51B5" opacity="0.5"/>
+    <circle cx="640" cy="130" r="10" fill="#4CAF50" opacity="0.5"/>
+  </g>
+</svg>

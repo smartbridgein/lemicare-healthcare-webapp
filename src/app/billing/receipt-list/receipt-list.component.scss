@@ -1,0 +1,439 @@
+/* Theme Color Variables */
+$maroon: #6b1d14;
+$yellow: #e6c157;
+$gray: #666666;
+$black: #333333;
+$lightgray: #f8f9fc;
+
+/* Classic Page Title & Header Styles */
+.page-title {
+  font-family: 'Roboto', Arial, sans-serif;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+  border-bottom: 2px solid #7d6f56;
+  padding-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.fw-bold {
+  font-family: 'Roboto', Arial, sans-serif;
+}
+
+.classic-breadcrumb {
+  display: flex;
+  list-style: none;
+  margin: 0 0 1rem 0;
+  padding: 0;
+  font-family: 'Roboto', Arial, sans-serif;
+  color: #666;
+
+  .breadcrumb-item {
+    font-size: 0.9rem;
+    
+    & + .breadcrumb-item::before {
+      content: "/";
+      padding: 0 0.5rem;
+      color: #999;
+    }
+    
+    a {
+      color: #7d6f56;
+      text-decoration: none;
+      
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+    
+    &.active {
+      color: #333;
+    }
+  }
+}
+
+.breadcrumb {
+  font-family: 'Roboto', Arial, sans-serif;
+  
+  .breadcrumb-item a {
+    color: #7d6f56;
+    text-decoration: none;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.btn-classic {
+  background-color: #7d6f56;
+  border: 1px solid #6a5e49;
+  color: #fff;
+  font-family: 'Roboto', Arial, sans-serif;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  
+  &:hover {
+    background-color: #6a5e49;
+    color: #fff;
+  }
+  
+  i {
+    margin-right: 0.5rem;
+  }
+}
+
+.btn-success {
+  background-color: #1cc88a;
+  border-color: #169c6b;
+  font-family: 'Roboto', Arial, sans-serif;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  
+  &:hover {
+    background-color: #169c6b;
+  }
+}
+
+/* Classic Summary Card Styling */
+.card {
+  border: 1px solid #e0e0e0;
+  border-radius: 0.25rem;
+  font-family: 'Roboto', Arial, sans-serif;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  margin-bottom: 1rem;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  background-color: #f8f9fc;
+  border-bottom: 1px solid #e3e6f0;
+  font-family: 'Roboto', Arial, sans-serif;
+}
+
+.summary-card-title {
+  margin: 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: #333;
+  font-family: 'Roboto', Arial, sans-serif;
+}
+
+/* Classic Search Bar Styling */
+.input-group {
+  border: 1px solid #d1d3e2;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  
+  .input-group-text {
+    background-color: #f8f8f8;
+    border: none;
+    border-right: 1px solid #d1d3e2;
+    color: #1cc88a;
+    padding: 0.5rem 1rem;
+  }
+  
+  .form-control {
+    border: none;
+    padding: 0.5rem 1rem;
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 0.95rem;
+    color: #333;
+    
+    &::placeholder {
+      font-style: italic;
+      color: #999;
+    }
+    
+    &:focus {
+      box-shadow: none;
+      border-color: #d1d3e2;
+    }
+  }
+  
+  .btn-outline-success {
+    background: transparent;
+    border: none;
+    color: #1cc88a;
+    padding: 0 1rem;
+    
+    &:hover {
+      color: #169c6b;
+      background-color: transparent;
+    }
+  }
+}
+
+/* Classic Table Styling */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  color: #333;
+  font-family: 'Roboto', Arial, sans-serif;
+  
+  th, td {
+    padding: 1rem 1.25rem;
+    border: 1px solid #e0e0e0;
+    vertical-align: middle;
+  }
+  
+  th {
+    background-color: #f8f9fc;
+    font-weight: 600;
+    color: #333;
+    font-size: 1rem;
+    border-bottom: 2px solid #d1d3e2;
+    text-align: left;
+  }
+  
+  tbody tr {
+    transition: background-color 0.2s;
+    
+    &:hover {
+      background-color: rgba($maroon, 0.05);
+    }
+  }
+  
+  .table-light {
+    background-color: #f9f9f9;
+  }
+  
+  a {
+    color: $maroon;
+    font-weight: 600;
+    text-decoration: none;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+/* Payment Mode Badge styling
+.status-badge {
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Roboto', Arial, sans-serif;
+  
+  i {
+    margin-right: 0.5rem;
+  }
+  
+  &.status-paid {
+    background-color: rgba($maroon, 0.1);
+    color: $maroon;
+    border: 1px solid $maroon;
+  }
+  
+  &.status-partial {
+    background-color: rgba($yellow, 0.1);
+    color: darken($yellow, 15%);
+    border: 1px solid $yellow;
+  }
+  
+  &.status-unpaid {
+    background-color: rgba($gray, 0.1);
+    color: $gray;
+    border: 1px solid $gray;
+  }
+}
+
+// Enhanced payment mode badge styling
+.payment-badge {
+  font-family: 'Roboto', Arial, sans-serif;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  
+  i {
+    margin-right: 0.35rem;
+    font-size: 0.9rem;
+  }
+  
+  &.badge-cash {
+    background-color: $yellow;
+    color: $black;
+    border: 1px solid darken($yellow, 10%);
+  }
+  
+  &.badge-card {
+    background-color: $maroon;
+    color: white;
+    border: 1px solid darken($maroon, 10%);
+  }
+  
+  &.badge-upi {
+    background-color: #6c757d;
+    color: white;
+    border: 1px solid darken(#6c757d, 10%);
+  }
+  
+  &.badge-online {
+    background-color: #ffc107;
+    color: #212529;
+    border: 1px solid darken(#ffc107, 10%);
+  }
+  
+  &.badge-cheque {
+    background-color: #6c757d;
+    color: white;
+    border: 1px solid darken(#6c757d, 10%);
+  }
+}
+
+.badge {
+  font-family: 'Roboto', Arial, sans-serif;
+  font-weight: 500;
+  padding: 6px 10px;
+}
+
+.bg-yellow-subtle {
+  background-color: $yellow !important;
+  color: $black !important;
+  border: 1px solid darken($yellow, 10%) !important;
+}
+
+.bg-maroon-subtle {
+  background-color: $maroon !important;
+  color: white !important;
+  border: 1px solid darken($maroon, 10%) !important;
+}
+
+.bg-gray-subtle {
+  background-color: $gray !important;
+  color: white !important;
+  border: 1px solid darken($gray, 10%) !important;
+}
+
+// Action buttons styling
+.action-btn-group {
+  .btn {
+    padding: 0.35rem 0.65rem;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    
+    &:hover {
+      transform: translateY(-2px);
+    }
+    
+    &.btn-view {
+      background-color: $yellow;
+      color: $black;
+      border: 1px solid darken($yellow, 10%);
+      
+      &:hover, &:focus {
+        background-color: darken($yellow, 5%);
+      }
+    }
+    
+    &.btn-delete {
+      background-color: $maroon;
+      color: white;
+      border: 1px solid darken($maroon, 10%);
+      
+      &:hover, &:focus {
+        background-color: darken($maroon, 5%);
+      }
+    }
+  }
+}
+
+// New receipt button
+.new-receipt-btn {
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  background-color: $maroon;
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+  
+  &:hover, &:focus {
+    background-color: darken($maroon, 8%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  i {
+    font-size: 0.9rem;
+  }
+}
+
+/* Action Buttons */
+.btn-group {
+  .btn {
+    padding: 0.25rem 0.5rem;
+    font-family: 'Roboto', Arial, sans-serif;
+    border-color: #d1d3e2;
+    
+    &:hover {
+      background-color: #f8f9fc;
+    }
+    
+    i {
+      font-size: 0.9rem;
+    }
+  }
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+/* Empty State Styling */
+.empty-state {
+  padding: 3rem 1rem;
+  
+  i {
+    color: #1cc88a;
+  }
+  
+  h5 {
+    font-family: 'Roboto', Arial, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.75rem;
+  }
+  
+  p {
+    font-family: 'Roboto', Arial, sans-serif;
+    color: #666;
+    max-width: 400px;
+    margin: 0 auto 2rem;
+    font-style: italic;
+  }
+}
+
+/* Loading State */
+.spinner-border {
+  border: 3px solid rgba($maroon, 0.1);
+  border-top: 3px solid $maroon;
+  
+  &.text-maroon {
+    border: 3px solid rgba($maroon, 0.1);
+    border-top: 3px solid $maroon;
+  }
+  
+  &.text-yellow {
+    border: 3px solid rgba($yellow, 0.1);
+    border-top: 3px solid $yellow;
+  }
+}
+

@@ -1,0 +1,273 @@
+<div class="purchases-container" style="font-family: 'Roboto', sans-serif;">
+  
+  <div class="purchase-invoice-container">
+    <h2 class="section-title" style="color: #6b1d14; font-family: 'Roboto', sans-serif; font-weight: 500;">Purchase Invoice Master</h2>
+    
+    <div class="search-add-bar">
+      <!-- Date filter dropdown -->
+      <div class="filter-box">
+        <select [(ngModel)]="selectedDateFilter" (change)="onDateFilterChange()" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc; margin-right: 10px;">
+          <option *ngFor="let option of dateFilterOptions" [value]="option.value">{{ option.label }}</option>
+        </select>
+      </div>
+      
+      <div class="search-box">
+        <input 
+          type="text" 
+          placeholder="Search Name or Mobile number" 
+          [(ngModel)]="searchTerm"
+          (input)="search()"
+        >
+        <i class="fas fa-search"></i>
+      </div>
+      
+      <div class="add-button">
+        <button [routerLink]="['/inventory/purchases/new']" style="background-color: #6b1d14; color: white; font-family: 'Roboto', sans-serif; border: none; padding: 8px 16px; border-radius: 4px;">
+          <i class="fas fa-plus"></i> Add New Purchase Invoice
+        </button>
+      </div>
+    </div>
+    
+    <div class="purchases-table">
+      <table>
+        <thead>
+          <tr class="bg-light">
+            <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Invoice ID</th>
+            <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; min-width: 190px; width: 190px;">Supplier ID</th>
+            <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Supplier Name</th>
+            <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Contact No.</th>
+            <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Date</th>
+            <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Amount</th>
+            <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Action</th>
+          </tr>
+        </thead>
+        <tbody *ngIf="!loading && filteredPurchases.length > 0">
+          <tr *ngFor="let purchase of filteredPurchases">
+            <td>{{ purchase.referenceId || formatPurchaseId(purchase.id || purchase.purchaseId) }}</td>
+            <td class="supplier-id-cell">{{ formatSupplierId(purchase.supplierId) }}</td>
+            <td>{{ getSupplierName(purchase.supplierId) }}</td>
+            <td>{{ getSupplierContact(purchase.supplierId) }}</td>
+            <td>{{ formatTimestampDate(purchase.invoiceDate) }}</td>
+            <td>{{ purchase.totalAmount | number:'1.2-2' }}</td>
+            <td class="actions-cell">
+              <button class="action-btn view-btn" (click)="viewPurchaseDetails(purchase)" title="View details" style="background-color: #6b1d14; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-family: 'Roboto', sans-serif;">
+                <i class="fas fa-eye"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+        <tbody *ngIf="loading">
+          <tr>
+            <td colspan="7" class="loading-message">Loading purchases...</td>
+          </tr>
+        </tbody>
+        <tbody *ngIf="!loading && filteredPurchases.length === 0">
+          <tr>
+            <td colspan="7" class="no-data-message">No purchases found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="pagination" *ngIf="filteredPurchases.length > 0">
+      <span class="page-info">Showing 1 to {{ filteredPurchases.length }} of {{ filteredPurchases.length }} entries</span>
+      <div class="page-controls">
+        <select>
+          <option>50</option>
+          <option>100</option>
+          <option>200</option>
+        </select>
+        <button class="page-btn" disabled><i class="fas fa-chevron-left"></i> Previous</button>
+        <button class="page-number active">1</button>
+        <button class="page-btn" disabled>Next <i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Purchase Details Modal -->
+  <div class="modal" [class.show]="showPurchaseModal" [style.display]="showPurchaseModal ? 'block' : 'none'" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header" style="background-color: #f8f9fc; font-family: 'Roboto', sans-serif;">
+          <h5 class="modal-title" style="color: #333; font-family: 'Roboto', sans-serif;">
+            <i class="fas fa-file-invoice me-2" style="color: #6b1d14;"></i>
+            Purchase Details
+          </h5>
+          <button type="button" class="btn-close" (click)="closePurchaseModal()"></button>
+        </div>
+        <div class="modal-body" *ngIf="selectedPurchase" style="font-family: 'Roboto', sans-serif;">
+          <div class="purchase-info-header">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="info-group">
+                  <label style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Purchase ID:</label>
+                  <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">{{ formatPurchaseId(selectedPurchase.id || selectedPurchase.purchaseId) }}</span>
+                </div>
+                <div class="info-group">
+                  <label style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Reference ID:</label>
+                  <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">{{ selectedPurchase.referenceId || 'N/A' }}</span>
+                </div>
+                <div class="info-group">
+                  <label style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Invoice Date:</label>
+                  <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">{{ formatTimestampDate(selectedPurchase.invoiceDate) }}</span>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="info-group">
+                  <label style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Supplier ID:</label>
+                  <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">{{ formatSupplierId(selectedPurchase.supplierId) }}</span>
+                </div>
+                <div class="info-group">
+                  <label style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Supplier Name:</label>
+                  <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">{{ getSupplierName(selectedPurchase.supplierId) }}</span>
+                </div>
+                <div class="info-group">
+                  <label style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Contact:</label>
+                  <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">{{ getSupplierContact(selectedPurchase.supplierId) }}</span>
+                </div>
+                <div class="info-group">
+                  <label style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Created At:</label>
+                  <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">{{ formatTimestampDate(selectedPurchase.createdAt) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <h6 class="section-title mt-4 mb-3" style="color: #6b1d14; font-family: 'Roboto', sans-serif; font-weight: 500;">Items</h6>
+          
+          <div class="purchase-items-table">
+            <table class="table">
+              <thead>
+                <tr class="bg-light">
+                  <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Medicine</th>
+                  <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Batch No</th>
+                  <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Expiry</th>
+                  <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Pack Qty</th>
+                  <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Free Qty</th>
+                  <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Items/Pack</th>
+                  <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Total Qty</th>
+                  <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Cost/Pack</th>
+                  <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Discount %</th>
+                  <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Discount Amt</th>
+                  <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Taxable Amt</th>
+                  <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Tax Components</th>
+                  <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Tax Amt</th>
+                  <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">Total Amt</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of selectedPurchase.items">
+                  <td>{{ getMedicineName(item.medicineId) }}</td>
+                  <td>{{ item.batchNo }}</td>
+                  <td>{{ formatTimestampDate(item.expiryDate) }}</td>
+                  <td>{{ item.packQuantity !== undefined && item.packQuantity !== null ? item.packQuantity : 0 }}</td>
+                  <td>{{ item.freePackQuantity !== undefined && item.freePackQuantity !== null ? item.freePackQuantity : 0 }}</td>
+                  <td>{{ item.itemsPerPack !== undefined && item.itemsPerPack !== null ? item.itemsPerPack : 1 }}</td>
+                  <td>{{ calculateTotalQuantity(item) }}</td>
+                  <td>₹{{ (item.purchaseCostPerPack || 0) | number:'1.2-2' }}</td>
+                  <td>{{ (item.discountPercentage || 0) }}%</td>
+                  <td>₹{{ (item.lineItemDiscountAmount || 0) | number:'1.2-2' }}</td>
+                  <td>₹{{ (item.lineItemTaxableAmount || 0) | number:'1.2-2' }}</td>
+                  <td>
+                    <div *ngIf="item.taxComponents?.length" class="tax-breakdown">
+                      <div *ngFor="let tax of item.taxComponents" class="tax-component">
+                        <span class="tax-name">{{ tax.name }}:</span>
+                        <span class="tax-rate">{{ tax.rate }}%</span>
+                        <span class="tax-amount">
+                          (₹{{ calculateComponentTaxAmount(tax, item) | number:'1.2-2' }})
+                        </span>
+                      </div>
+                    </div>
+                    <span *ngIf="!item.taxComponents?.length">{{ item.taxRateApplied || 0 }}%</span>
+                  </td>
+                  <td>₹{{ (item.lineItemTaxAmount || 0) | number:'1.2-2' }}</td>
+                  <td>₹{{ (item.lineItemTotalAmount || 0) | number:'1.2-2' }}</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="9" class="text-end"><strong>Subtotals:</strong></td>
+                  <td>₹{{ selectedPurchase.totalDiscountAmount | number:'1.2-2' }}</td>
+                  <td>₹{{ selectedPurchase.totalTaxableAmount | number:'1.2-2' }}</td>
+                  <td>₹{{ selectedPurchase.totalTaxAmount | number:'1.2-2' }}</td>
+                  <td>₹{{ selectedPurchase.totalAmount | number:'1.2-2' }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          
+          <div class="purchase-summary mt-4">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="info-group">
+                  <label style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">GST Type:</label>
+                  <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">{{ selectedPurchase.gstType || 'Not specified' }}</span>
+                </div>
+                <div class="info-group">
+                  <label style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Created By:</label>
+                  <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">{{ selectedPurchase.createdBy || 'Not available' }}</span>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="amount-summary">
+                  <div class="summary-row">
+                    <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">Taxable Amount:</span>
+                    <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">₹{{ selectedPurchase.totalTaxableAmount | number:'1.2-2' }}</span>
+                  </div>
+                  <div class="summary-row">
+                    <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">Discount Amount:</span>
+                    <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">₹{{ selectedPurchase.totalDiscountAmount | number:'1.2-2' }}</span>
+                  </div>
+                  
+                  <!-- Detailed Tax Breakdown -->
+                  <div class="tax-breakdown-section">
+                    <h6 class="tax-breakdown-title" style="color: #6b1d14; font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px;">Tax Breakdown:</h6>
+                    
+                    <!-- Always display CGST and SGST for consistency -->
+                    <div class="summary-row tax-detail-row">
+                      <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">CGST:</span>
+                      <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">₹{{ getComponentTaxAmount('CGST') | number:'1.2-2' }}</span>
+                    </div>
+                    
+                    <div class="summary-row tax-detail-row">
+                      <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">SGST:</span>
+                      <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">₹{{ getComponentTaxAmount('SGST') | number:'1.2-2' }}</span>
+                    </div>
+                    
+                    <!-- Calculate and display IGST total if present -->
+                    <div class="summary-row tax-detail-row" *ngIf="hasTaxComponent('IGST')">
+                      <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">IGST:</span>
+                      <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">₹{{ getComponentTaxAmount('IGST') | number:'1.2-2' }}</span>
+                    </div>
+                    
+                    <!-- Calculate and display CESS total if present -->
+                    <div class="summary-row tax-detail-row" *ngIf="hasTaxComponent('CESS')">
+                      <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">CESS:</span>
+                      <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">₹{{ getComponentTaxAmount('CESS') | number:'1.2-2' }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="summary-row tax-total">
+                    <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">Total Tax Amount:</span>
+                    <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">₹{{ selectedPurchase.totalTaxAmount | number:'1.2-2' }}</span>
+                  </div>
+                  
+                  <div class="summary-row grand-total">
+                    <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">Total Amount:</span>
+                    <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">₹{{ selectedPurchase.totalAmount | number:'1.2-2' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="background-color: #f8f9fc; border-top: 1px solid #d1d3e2; font-family: 'Roboto', sans-serif;">
+          <button type="button" class="btn" style="background-color: #d1d3e2; color: #333; font-family: 'Roboto', sans-serif; font-size: 14px;" (click)="closePurchaseModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show" *ngIf="showPurchaseModal"></div>
+  
+  <!-- Delete confirmation modal removed as delete functionality is disabled -->
+</div>

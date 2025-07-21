@@ -1,0 +1,53 @@
+/* Styling for view mode */
+.form-control:disabled, .form-control[readonly],
+.form-control-sm:disabled, .form-control-sm[readonly] {
+  background-color: #f8f9fa;
+  opacity: 1;
+  cursor: default;
+  border-color: #e9ecef;
+  color: #495057;
+}
+
+.view-mode .form-control,
+.view-mode .form-control-sm,
+.view-mode select,
+.view-mode input,
+.view-mode textarea,
+.view-mode .btn:not(.btn-back):not(.btn-print) {
+  pointer-events: none;
+  background-color: #f8f9fa;
+  border-color: #e9ecef;
+}
+
+.view-mode .action-buttons .btn-primary,
+.view-mode .action-buttons .btn-danger,
+.view-mode .add-item-button,
+.view-mode .remove-item-button {
+  display: none;
+}
+
+.view-mode .btn-print {
+  display: inline-block;
+}
+
+/* Enhance generic & mfg readability in view mode */
+.view-mode .generic-info {
+  padding: 6px 0;
+}
+
+/* Improve header in view mode */
+.view-mode .page-header {
+  border-bottom: 2px solid #6b1d14;
+  margin-bottom: 1rem;
+}
+
+.view-mode-badge {
+  background-color: #f8f9fa;
+  border: 1px solid #6b1d14;
+  color: #6b1d14;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-left: 10px;
+}

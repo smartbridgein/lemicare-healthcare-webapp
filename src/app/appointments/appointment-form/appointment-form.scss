@@ -1,0 +1,498 @@
+// Variables
+$primary-color: #6b1d14;
+$secondary-color: #e9ecef;
+$border-color: #d1d3e2;
+$font-family: 'Roboto', sans-serif;
+$text-color: #333;
+$error-color: #dc3545;
+$success-color: #1cc88a;
+$muted-color: #6c757d;
+
+// Classic form styles
+.classic-form {
+  // Card styles
+  .card {
+    border-radius: 0.375rem;
+    border: 1px solid #ebedf2;
+    box-shadow: 0 0.1rem 0.75rem 0 rgba(58, 59, 69, 0.08);
+    overflow: hidden;
+    
+    .card-header {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba($primary-color, 0.1);
+      background-color: #f8f9fc;
+    }
+    
+    .card-body {
+      padding: 1.25rem;
+    }
+  }
+
+  // Form sections
+  .form-section {
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba($border-color, 0.35);
+    
+    &:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    
+    .section-title {
+      margin-bottom: 0.75rem;
+      
+      h5 {
+        margin-bottom: 0;
+        font-size: 0.95rem;
+        color: #333;
+        font-weight: 600;
+        font-family: $font-family;
+        
+        i {
+          color: $primary-color;
+          margin-right: 0.35rem;
+        }
+      }
+    }
+  }
+
+  // Form inputs and labels
+  .form-label {
+    font-family: $font-family;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    font-size: 0.8rem;
+    color: #444;
+  }
+
+  .form-control {
+    border-color: $border-color;
+    padding: 0.4rem 0.6rem;
+    font-family: $font-family;
+    font-size: 0.85rem;
+    border-radius: 0.2rem;
+    height: auto;
+    
+    &:focus {
+      border-color: rgba($primary-color, 0.5);
+      box-shadow: 0 0 0 0.1rem rgba($primary-color, 0.15);
+    }
+    
+    &:disabled,
+    &[readonly] {
+      background-color: #f8f9fa;
+      color: #495057;
+    }
+  }
+
+  .form-control-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+  
+  .form-select {
+    border-color: $border-color;
+    padding: 0.4rem 0.6rem;
+    font-family: $font-family;
+    font-size: 0.85rem;
+    border-radius: 0.2rem;
+    height: auto;
+    
+    &:focus {
+      border-color: rgba($primary-color, 0.5);
+      box-shadow: 0 0 0 0.1rem rgba($primary-color, 0.15);
+    }
+  }
+
+  // Input groups
+  .input-group-text {
+    background-color: #f8f9fa;
+    border-color: $border-color;
+    color: #6c757d;
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    
+    i {
+      color: $primary-color;
+    }
+  }
+
+  .input-group-sm > .input-group-text {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  // Date and time inputs
+  input[type="date"],
+  input[type="time"] {
+    cursor: pointer;
+    padding-right: 0.5rem;
+    min-height: 38px;
+  }
+  
+  textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  // Search results styling
+  .list-group-item {
+    padding: 0.5rem 0.75rem;
+    border-color: #ebedf2;
+    
+    &.active, &:active {
+      background-color: rgba($primary-color, 0.1);
+      color: #333;
+      border-color: rgba($primary-color, 0.2);
+    }
+    
+    .badge {
+      background-color: $primary-color;
+      color: white;
+      font-family: $font-family;
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+    }
+  }
+  
+  // Search results list
+  .search-results {
+    border: 1px solid $border-color;
+    border-radius: 0.25rem;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Date input container
+.date-input-container, .select-container {
+  position: relative;
+  
+  .input-icon {
+    position: absolute;
+    top: 50%;
+    left: 0.75rem;
+    transform: translateY(-50%);
+    color: $primary-color;
+    pointer-events: none;
+  }
+}
+
+// Form labels
+.form-label {
+  font-weight: 600;
+  color: $text-color;
+  margin-bottom: 0.25rem;
+}
+
+// Textarea styling
+.notes-textarea {
+  min-height: 100px;
+  padding: 0.75rem;
+  
+  &:focus {
+    box-shadow: 0 0 0 0.2rem rgba($primary-color, 0.15);
+    border-color: rgba($primary-color, 0.5);
+  }
+}
+
+// Appointment type radio buttons
+.appointment-type-container {
+  display: flex;
+  gap: 2rem;
+  padding: 1rem 0;
+  
+  .form-check {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-radius: 0.375rem;
+    border: 1px solid $border-color;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    &.active {
+      background-color: rgba($primary-color, 0.1);
+      border-color: $primary-color;
+      
+      .form-check-input:checked {
+        background-color: $primary-color;
+        border-color: $primary-color;
+      }
+      
+      .form-check-label {
+        color: $primary-color;
+        font-weight: 600;
+      }
+    }
+    
+    .form-check-input {
+      margin-right: 0.75rem;
+      
+      &:checked {
+        background-color: $primary-color;
+        border-color: $primary-color;
+      }
+    }
+    
+    .form-check-label {
+      display: flex;
+      align-items: center;
+      font-size: 1rem;
+      
+      i {
+        margin-right: 0.5rem;
+        color: $primary-color;
+      }
+    }
+  }
+}
+
+// Compact appointment type for top-right placement
+.appointment-type-compact {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border: 1px solid rgba($border-color, 0.15);
+  border-radius: 0.375rem;
+  background-color: #f8f5f5;
+  width: 100%;
+  max-width: 250px;
+  margin-top: 0.25rem;
+  
+  .form-check {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba($border-color, 0.1);
+    margin: 0;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    &.active {
+      background-color: rgba($primary-color, 0.1);
+      
+      .form-check-input:checked {
+        background-color: $primary-color;
+        border-color: $primary-color;
+      }
+      
+      .form-check-label {
+        color: $primary-color;
+        font-weight: 500;
+      }
+    }
+    
+    .form-check-input {
+      margin-right: 0.5rem;
+      margin-top: 0;
+      transform: scale(0.9);
+      
+      &:checked {
+        background-color: $primary-color;
+        border-color: $primary-color;
+      }
+    }
+    
+    .form-check-label {
+      display: flex;
+      align-items: center;
+      font-size: 0.85rem;
+      margin-bottom: 0;
+      
+      i {
+        margin-right: 0.35rem;
+        color: $primary-color;
+        font-size: 0.85rem;
+      }
+    }
+  }
+}
+
+// Adjust the section title for appointment type
+.col-md-4 .section-title h5 {
+  font-size: 0.9rem !important;
+  margin-bottom: 0.25rem !important;
+}
+
+// Buttons
+.btn {
+  font-family: $font-family;
+  font-weight: 500;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+  
+  &[type="submit"] {
+    background-color: $primary-color;
+    color: white;
+    
+    &:hover:not(:disabled) {
+      background-color: darken($primary-color, 10%);
+    }
+    
+    &:disabled {
+      background-color: rgba($primary-color, 0.65);
+      cursor: not-allowed;
+    }
+  }
+  
+  &.btn-outline-secondary {
+    color: $text-color;
+    border-color: $border-color;
+    
+    &:hover {
+      background-color: rgba($text-color, 0.05);
+      color: $text-color;
+    }
+  }
+  
+  .spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+// Patient search results
+.list-group {
+  position: absolute;
+  width: 100%;
+  z-index: 1000;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  
+  .list-group-item {
+    padding: 0.75rem;
+    transition: background-color 0.1s ease;
+    
+    &:hover {
+      background-color: rgba($primary-color, 0.05);
+    }
+    
+    .badge {
+      background-color: $primary-color;
+    }
+    
+    .fw-bold {
+      font-size: 1rem;
+    }
+    
+    .small {
+      color: $muted-color;
+    }
+  }
+  
+  .bg-light {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+}
+
+// Validation messages
+.text-danger {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  
+  &.small {
+    font-family: $font-family;
+  }
+}
+
+// Card styling
+.card {
+  border: none;
+  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+  border-radius: 0.35rem;
+  margin-bottom: 1.5rem;
+  
+  .card-header {
+    padding: 1rem 1.25rem;
+    background-color: rgba($primary-color, 0.03);
+    border-bottom: 1px solid rgba($border-color, 0.5);
+    
+    h4 {
+      margin: 0;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      
+      i {
+        margin-right: 0.5rem;
+        color: $primary-color;
+      }
+    }
+  }
+  
+  .card-body {
+    padding: 1.5rem;
+  }
+}
+
+// Alert styling
+.alert {
+  border-radius: 0.35rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid transparent;
+  font-family: $font-family;
+  
+  &.alert-success {
+    background-color: rgba($success-color, 0.1);
+    border-color: rgba($success-color, 0.2);
+    color: $success-color;
+  }
+  
+  &.alert-danger {
+    background-color: rgba($error-color, 0.1);
+    border-color: rgba($error-color, 0.2);
+    color: $error-color;
+  }
+  
+  .btn-close {
+    padding: 1.25rem;
+  }
+}
+
+// Header and breadcrumb
+.breadcrumb {
+  background-color: transparent;
+  padding: 0.25rem 0;
+  margin: 0;
+  
+  .breadcrumb-item {
+    a {
+      color: $primary-color;
+      text-decoration: none;
+      
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+    
+    &.active {
+      color: $muted-color;
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 767.98px) {
+  .appointment-type-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .form-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+  }
+  
+  .card .card-body {
+    padding: 1rem;
+  }
+}

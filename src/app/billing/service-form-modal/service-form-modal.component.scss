@@ -1,0 +1,86 @@
+// Service Form Modal styles
+:host {
+  font-family: 'Roboto', sans-serif;
+}
+
+.modal-dialog {
+  max-width: 450px;
+}
+
+.modal-content {
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  border: none;
+}
+
+.modal-header {
+  padding: 20px 24px 0;
+  
+  .modal-title {
+    font-weight: 500;
+  }
+  
+  .btn-close {
+    font-size: 1rem;
+    opacity: 0.6;
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+.form-label {
+  color: #444;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.form-control, .form-select {
+  border-radius: 8px;
+  padding: 12px;
+  height: auto;
+  font-size: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(123, 104, 238, 0.25);
+    border-color: #7B68EE;
+  }
+  
+  &::placeholder {
+    color: #aaa;
+    opacity: 0.7;
+  }
+}
+
+button[type="submit"] {
+  background-color: #7B68EE;
+  color: white;
+  border-radius: 50px;
+  font-weight: 500;
+  font-size: 18px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(123, 104, 238, 0.2);
+  
+  &:hover:not(:disabled) {
+    background-color: #6a5acd;
+    box-shadow: 0 6px 10px rgba(123, 104, 238, 0.3);
+    transform: translateY(-2px);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(123, 104, 238, 0.2);
+  }
+  
+  &:disabled {
+    background-color: #b3aaef;
+    cursor: not-allowed;
+  }
+}
+
+.text-danger {
+  font-size: 14px;
+  margin-top: 5px;
+}

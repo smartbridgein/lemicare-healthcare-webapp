@@ -1,0 +1,213 @@
+<!-- Dashboard Content -->
+<div class="dashboard-content">
+  <!-- Stat Cards -->
+  <div class="stats-row">
+    <div class="stat-card patients-card">
+      <div class="stat-content">
+        <div class="stat-header">Patients Today</div>
+        <div class="stat-value" [ngClass]="{'loading': loadingStats}">
+          {{ loadingStats ? '...' : patientCountToday }}
+        </div>
+        <div class="stat-footer">
+          <i class="fas fa-user-plus"></i>
+          <span>Today's appointments</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card revenue-card">
+      <div class="stat-content">
+        <div class="stat-header">Revenue</div>
+        <div class="stat-value" [ngClass]="{'loading': loadingStats}">
+          ₹{{ loadingStats ? '...' : (revenueToday | number:'1.0-0') }}
+        </div>
+        <div class="stat-footer">
+          <i class="fas fa-chart-line"></i>
+          <span>Today's collections</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card pending-card">
+      <div class="stat-content">
+        <div class="stat-header">Pending Bills</div>
+        <div class="stat-value" [ngClass]="{'loading': loadingStats}">
+          {{ loadingStats ? '...' : pendingBillsCount }}
+        </div>
+        <div class="stat-footer">
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>Need attention</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="stat-card inventory-card">
+      <div class="stat-content">
+        <div class="stat-header">Low Stock Items</div>
+        <div class="stat-value" [ngClass]="{'loading': loadingStats}">
+          {{ loadingStats ? '...' : lowStockItemsCount }}
+        </div>
+        <div class="stat-footer warning">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Needs reordering</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tables Row -->
+  <div class="tables-row">
+    <div class="patients-table">
+      <div class="table-header">
+        <h3>Recent Patients</h3>
+        <div class="header-actions">
+          <button class="refresh-btn" (click)="loadRecentPatients()" [disabled]="loadingRecent">
+            <i class="fas fa-sync-alt" [ngClass]="{'fa-spin': loadingRecent}"></i>
+          </button>
+          <a [routerLink]="['/patients']" class="view-all">View All</a>
+        </div>
+      </div>
+      <div class="table-container classic">
+        <table class="table classic-table">
+          <thead>
+            <tr>
+              <th>Patient</th>
+              <th>Contact</th>
+              <th>Registered</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="loadingRecent">
+              <td colspan="4" class="text-center">
+                <i class="fas fa-spinner fa-spin"></i> Loading patients...
+              </td>
+            </tr>
+            <tr *ngIf="!loadingRecent && recentPatients.length === 0">
+              <td colspan="4" class="text-center">
+                No patients found
+              </td>
+            </tr>
+            <tr *ngFor="let patient of recentPatients" class="patient-row">
+              <td class="patient-info">
+                <div class="patient-name">{{ patient.firstName }} {{ patient.middleName ? patient.middleName + ' ' : '' }}{{ patient.lastName }}</div>
+                <div class="patient-id">{{ patient.patientId }}</div>
+              </td>
+              <td class="contact-info">
+                <div class="phone"><i class="fas fa-phone-alt"></i> {{ patient.mobileNumber }}</div>
+                <div class="email" *ngIf="patient.emailId"><i class="fas fa-envelope"></i> {{ patient.emailId }}</div>
+              </td>
+              <td>{{ patient.registrationDate | date:'dd MMM yyyy' }}</td>
+              <td>
+                <div class="action-buttons">
+                  <a [routerLink]="['/patients', patient.patientId]" class="btn-action view" title="View Patient Details">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  <a [routerLink]="['/appointments/new']" [queryParams]="{patientId: patient.patientId}" class="btn-action edit" title="Schedule Appointment">
+                    <i class="fas fa-calendar-plus"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination-controls" *ngIf="totalRecentPatients > pageSize">
+        <button class="page-btn" (click)="goToPrevPage('recent')" [disabled]="currentRecentPage === 0 || loadingRecent">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <span class="page-info">Page {{ currentRecentPage + 1 }}</span>
+        <button class="page-btn" (click)="goToNextPage('recent')" [disabled]="(currentRecentPage + 1) * pageSize >= totalRecentPatients || loadingRecent">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="appointments-panel">
+      <div class="table-header">
+        <h3>Scheduled Appointments</h3>
+        <div class="panel-actions">
+          <button class="action-btn" (click)="loadUpcomingAppointments()" [disabled]="loadingUpcoming">
+            <i class="fas fa-sync-alt" [ngClass]="{'fa-spin': loadingUpcoming}"></i>
+          </button>
+          <a [routerLink]="['/appointments']" [queryParams]="{view: 'today'}" class="action-btn">
+            <i class="fas fa-external-link-alt"></i>
+          </a>
+        </div>
+      </div>
+      <div class="appointments-list">
+        <!-- Loading indicator -->
+        <div class="loading-container" *ngIf="loadingUpcoming">
+          <i class="fas fa-spinner fa-spin"></i>
+          <span>Loading appointments...</span>
+        </div>
+        
+        <!-- Empty state -->
+        <div class="empty-state" *ngIf="!loadingUpcoming && upcomingAppointments.length === 0">
+          <i class="fas fa-calendar-day"></i>
+          <span>No scheduled appointments</span>
+        </div>
+        
+        <!-- Appointment cards with classic style -->
+        <div class="appointment-card classic" *ngFor="let appointment of upcomingAppointments">
+          <div class="appointment-header">
+            <div class="appointment-time">
+              <i class="fas fa-clock"></i>
+              {{ appointment.appointmentDateTime | date:'MMM d, yyyy' }} at {{ appointment.appointmentDateTime | date:'h:mm a' }}
+            </div>
+            <div class="appointment-status" [ngClass]="{'status-scheduled': appointment.status === 'SCHEDULED', 'status-engaged': appointment.status === 'ENGAGED', 'status-rescheduled': appointment.status === 'RESCHEDULED'}">
+              {{ appointment.status === 'SCHEDULED' ? 'Scheduled' : appointment.status === 'ENGAGED' ? 'In Progress' : 'Rescheduled' }}
+            </div>
+          </div>
+          <div class="appointment-body">
+            <div class="patient-info">
+              <div class="patient-name">
+                <i class="fas fa-user-circle"></i>
+                <span>{{ getPatientName(appointment.patientId) }}</span>
+              </div>
+              <div class="appointment-category">
+                <span class="category-badge" [ngClass]="{'vip': appointment.category === 'VIP', 'priority': appointment.category === 'Priority', 'regular': appointment.category === 'Regular', 'consultation': appointment.category === 'Consultation'}">
+                  {{ appointment.category }}
+                </span>
+                <span class="subcategory">{{ appointment.subCategory }}</span>
+              </div>
+            </div>
+            <div class="doctor-info" *ngIf="appointment.doctorId">
+              <i class="fas fa-user-md"></i>
+              <span>Dr. {{ appointment.doctorId.split('-').slice(-1)[0] }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Pagination controls -->
+      <div class="pagination-controls" *ngIf="totalUpcomingAppointments > pageSize">
+        <button class="page-btn" (click)="goToPrevPage('upcoming')" [disabled]="currentUpcomingPage === 0 || loadingUpcoming">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <span class="page-info">Page {{ currentUpcomingPage + 1 }}</span>
+        <button class="page-btn" (click)="goToNextPage('upcoming')" [disabled]="(currentUpcomingPage + 1) * pageSize >= totalUpcomingAppointments || loadingUpcoming">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Patients in Queue section removed -->
+
+  <!-- Inventory Alerts Row -->
+  <div class="inventory-alerts-row">
+    <h3 class="section-title">Inventory Alerts Dashboard</h3>
+    <div class="alert-panels">
+      <!-- Expiring Medicines Report -->
+      <div class="alert-panel">
+        <app-expiring-medicines-report></app-expiring-medicines-report>
+      </div>
+      
+      <!-- Low Stock Medicines Report -->
+      <div class="alert-panel">
+        <app-low-stock-medicines-report></app-low-stock-medicines-report>
+      </div>
+    </div>
+  </div>
+</div>

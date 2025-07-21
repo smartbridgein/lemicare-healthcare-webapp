@@ -1,0 +1,272 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { InventoryService } from '../../../services/inventory.service';
+import { TaxProfile, TaxComponent } from '../../../models/inventory.models';
+import { NgbModal, NgbModalRef, NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { faPencilAlt, faPlus, faTimes, faTrash } from '@fortawesome/free-solid-svg-icons';
+
+@Component({
+  selector: 'app-tax-profile-master',
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, NgbModule, FontAwesomeModule],
+  templateUrl: './tax-profile-master.html',
+  styleUrl: './tax-profile-master.scss'
+})
+export class TaxProfileMasterComponent implements OnInit {
+  // Icons
+  faEdit = faPencilAlt;
+  faAdd = faPlus;
+  faRemove = faTimes;
+  faDelete = faTrash;
+  
+  // Data
+  taxProfiles: TaxProfile[] = [];
+  activeTaxProfiles: TaxProfile[] = [];
+  loading = false;
+  
+  // Modal
+  modalRef?: NgbModalRef;
+  taxProfileForm!: FormGroup;
+  isEditing = false;
+  currentProfileId?: string;
+
+  constructor(
+    private inventoryService: InventoryService,
+    private modalService: NgbModal,
+    private fb: FormBuilder
+  ) {}
+
+  ngOnInit(): void {
+    this.loadTaxProfiles();
+    this.initTaxProfileForm();
+  }
+
+  // Initialize form for creating/editing tax profiles
+  initTaxProfileForm(): void {
+    this.taxProfileForm = this.fb.group({
+      profileName: ['', [Validators.required]],
+      totalRate: [0, [Validators.required, Validators.min(0)]],
+      components: this.fb.array([])
+    });
+  }
+
+  // Get components form array
+  get components(): FormArray {
+    return this.taxProfileForm.get('components') as FormArray;
+  }
+
+  // Add component to the form
+  addComponent(): void {
+    this.components.push(
+      this.fb.group({
+        componentName: ['', Validators.required],
+        rate: [0, [Validators.required, Validators.min(0)]]
+      })
+    );
+    this.updateTotalRate();
+  }
+
+  // Remove component from the form
+  removeComponent(index: number): void {
+    this.components.removeAt(index);
+    this.updateTotalRate();
+  }
+
+  // Update total rate based on components
+  updateTotalRate(): void {
+    const componentsArray = this.components.value;
+    const total = componentsArray.reduce((sum: number, component: any) => 
+      sum + (+component.rate || 0), 0);
+    this.taxProfileForm.patchValue({ totalRate: total });
+  }
+
+  // Load all tax profiles
+  loadTaxProfiles(): void {
+    this.loading = true;
+    this.inventoryService.getTaxProfiles(true, true).subscribe({
+      next: (profiles) => {
+        this.taxProfiles = profiles;
+        // Filter out profiles with status === 'INACTIVE'
+        this.activeTaxProfiles = profiles.filter(profile => profile.status !== 'INACTIVE');
+        this.loading = false;
+        console.log('Tax profiles loaded:', profiles);
+        console.log('Active tax profiles:', this.activeTaxProfiles);
+      },
+      error: (error) => {
+        console.error('Error loading tax profiles:', error);
+        this.loading = false;
+      }
+    });
+  }
+
+  // Open create/edit modal
+  openTaxProfileModal(modal: any, profile?: TaxProfile): void {
+    // Reset form and state
+    this.initTaxProfileForm();
+    this.components.clear();
+    
+    if (profile) {
+      // Edit mode
+      this.isEditing = true;
+      this.currentProfileId = profile.id;
+      
+      this.taxProfileForm.patchValue({
+        profileName: profile.profileName,
+        totalRate: profile.totalRate
+      });
+      
+      // Add existing components
+      if (profile.components && profile.components.length > 0) {
+        profile.components.forEach(component => {
+          this.components.push(
+            this.fb.group({
+              componentName: [component.componentName, Validators.required],
+              rate: [component.rate, [Validators.required, Validators.min(0)]]
+            })
+          );
+        });
+      }
+    } else {
+      // Create mode
+      this.isEditing = false;
+      this.currentProfileId = undefined;
+      
+      // Add default components (CGST, SGST)
+      this.addDefaultComponents();
+    }
+    
+    this.modalRef = this.modalService.open(modal, { size: 'lg', backdrop: 'static' });
+  }
+  
+  // Add default tax components (CGST and SGST)
+  addDefaultComponents(): void {
+    // Add CGST with default rate 4.0
+    this.components.push(
+      this.fb.group({
+        componentName: ['CGST', Validators.required],
+        rate: [4.0, [Validators.required, Validators.min(0)]]
+      })
+    );
+    
+    // Add SGST with default rate 4.0
+    this.components.push(
+      this.fb.group({
+        componentName: ['SGST', Validators.required],
+        rate: [4.0, [Validators.required, Validators.min(0)]]
+      })
+    );
+    
+    // Update total rate based on components
+    this.updateTotalRate();
+  }
+
+  // Save tax profile
+  saveTaxProfile(): void {
+    if (this.taxProfileForm.invalid) {
+      // Mark all fields as touched to show validation errors
+      this.taxProfileForm.markAllAsTouched();
+      return;
+    }
+    
+    const formValue = this.taxProfileForm.value;
+    const taxProfileData = {
+      profileName: formValue.profileName,
+      totalRate: parseFloat(formValue.totalRate),
+      components: formValue.components.map((comp: any) => {
+        // Ensure component names are properly set
+        let componentName = comp.componentName;
+        if (!componentName) {
+          // If empty, use a placeholder based on index
+          componentName = `Component ${this.components.controls.indexOf(comp) + 1}`;
+        }
+        
+        return {
+          componentName: componentName,
+          rate: parseFloat(comp.rate) || 0
+        };
+      })
+    };
+    
+    console.log('Submitting tax profile data:', taxProfileData);
+    
+    if (this.isEditing && this.currentProfileId) {
+      // Update existing tax profile
+      this.updateTaxProfile(taxProfileData);
+    } else {
+      // Create new tax profile
+      this.inventoryService.createTaxProfile(taxProfileData).subscribe({
+        next: (response) => {
+          console.log('Tax profile saved successfully:', response);
+          this.modalRef?.close();
+          this.loadTaxProfiles(); // Refresh the list
+        },
+        error: (error) => {
+          console.error('Error saving tax profile:', error);
+          // Show error message
+          alert('Failed to save tax profile. Please try again.');
+        }
+      });
+    }
+  }
+
+  // Update existing tax profile
+  updateTaxProfile(taxProfileData: any): void {
+    if (!this.currentProfileId) {
+      console.error('No profile ID for update');
+      return;
+    }
+
+    this.inventoryService.updateTaxProfile(this.currentProfileId, taxProfileData).subscribe({
+      next: (response) => {
+        console.log('Tax profile updated successfully:', response);
+        this.modalRef?.close();
+        this.loadTaxProfiles(); // Refresh the list
+      },
+      error: (error) => {
+        console.error('Error updating tax profile:', error);
+        // Show error message
+        alert('Failed to update tax profile. Please try again.');
+      }
+    });
+  }
+  
+  // Delete tax profile
+  deleteTaxProfile(id: string): void {
+    if (!id) {
+      console.error('No profile ID provided for deletion');
+      return;
+    }
+    
+    if (confirm('Are you sure you want to delete this tax profile? This cannot be undone.')) {
+      // Show loading state
+      this.loading = true;
+      
+      this.inventoryService.deleteTaxProfile(id).subscribe({
+        next: () => {
+          console.log('Tax profile deleted successfully');
+          // Show success message
+          alert('Tax profile deleted successfully.');
+          this.loadTaxProfiles(); // Refresh the list
+        },
+        error: (error) => {
+          console.error('Error deleting tax profile:', error);
+          this.loading = false;
+          
+          // Check for specific error conditions
+          if (error.status === 409 || (error.error && error.error.message && error.error.message.includes('in use'))) {
+            // Conflict - tax profile is in use
+            alert('Unable to delete this tax profile as it is currently in use by medicines or other records.');
+          } else if (error.status === 403) {
+            // Forbidden - user doesn't have permission
+            alert('You do not have permission to delete this tax profile.');
+          } else {
+            // Generic error message
+            alert('Failed to delete tax profile. ' + (error.error?.message || 'Please try again.'));
+          }
+        }
+      });
+    }
+  }
+}

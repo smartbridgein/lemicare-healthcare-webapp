@@ -1,0 +1,121 @@
+<div class="reports-dashboard">
+  <!-- Dashboard Header -->
+  <header class="dashboard-header">
+    <div class="header-title">Inventory Reports</div>
+    
+  </header>
+
+  <!-- Main Content -->
+  <main class="dashboard-content">
+    <!-- Intro Panel -->
+    <div class="intro-panel">
+      <div class="intro-panel-header">
+        <h2><i class="bi bi-bar-chart-fill"></i> Inventory Reports Dashboard</h2>
+        <div class="last-updated-info">
+          <span>Last updated: {{ lastRefreshed }}</span>
+          <button class="btn-refresh" (click)="refreshReports()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+          </button>
+        </div>
+      </div>
+      <p class="intro-desc">View and manage your inventory reports. Generate analytical insights and export reports as needed.</p>
+    </div>
+
+    <!-- Report Tabs -->
+    <div class="report-tabs">
+      <button class="tab-btn" [class.active]="activeTab === 'basic'" (click)="setActiveTab('basic')">
+        Standard Reports
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'advanced'" (click)="setActiveTab('advanced')">
+        Advanced Analytics
+      </button>
+    </div>
+
+    <!-- Tab Content - Standard Reports -->
+    <div *ngIf="activeTab === 'basic'">
+      <div class="tab-content-header">
+        <h3>Standard Reports</h3>
+        <p>Essential inventory reports with real-time data</p>
+      </div>
+
+      <!-- Stock by Category Report -->
+      <div class="report-section">
+        <h4>Stock by Category</h4>
+        <p class="section-desc">Overview of current inventory levels by category</p>
+        <app-stock-by-category-report></app-stock-by-category-report>
+      </div>
+
+      <!-- Daily Sales Report -->
+      <div class="report-section">
+        <h4>Daily Sales Summary</h4>
+        <p class="section-desc">Daily sales totals and trends</p>
+        <app-daily-sales-report></app-daily-sales-report>
+      </div>
+    </div>
+
+    <!-- Tab Content - Advanced Analytics -->
+    <div *ngIf="activeTab === 'advanced'">
+      <div class="tab-content-header">
+        <h3>Advanced Analytics</h3>
+        <p>Custom analytics and detailed reports for deeper insights</p>
+      </div>
+
+      <!-- Advanced Sales Report -->
+      <div class="advanced-sales">
+        <h4>Advanced Sales Reports</h4>
+        
+        <!-- Report Form -->
+        <div class="report-form">
+          <div class="form-row">
+            <div class="form-field">
+              <label>Report Period</label>
+              <select class="form-input">
+                <option>Last Week</option>
+                <option>Last Month</option>
+                <option>Last Quarter</option>
+                <option>Custom Range</option>
+              </select>
+            </div>
+            
+            <div class="form-field">
+              <label>Start Date</label>
+              <input type="date" class="date-input">
+            </div>
+            
+            <div class="form-field">
+              <label>End Date</label>
+              <input type="date" class="date-input">
+            </div>
+            
+            <button class="btn-generate">
+              Generate Report
+            </button>
+          </div>
+        </div>
+        
+        <!-- Report Results -->
+        <div class="report-result">
+          <h5>Advanced Sales Analysis</h5>
+          
+          <div class="export-buttons">
+            <button class="btn-export pdf">
+              <i class="bi bi-file-pdf"></i> Export as PDF
+            </button>
+            <button class="btn-export excel">
+              <i class="bi bi-file-excel"></i> Export as Excel
+            </button>
+          </div>
+          
+          <div class="report-data">
+            <!-- Report content will appear here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2023 CosmicDoc Healthcare Systems</p>
+  </footer>
+</div>

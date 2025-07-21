@@ -1,0 +1,237 @@
+.settings-container {
+  padding: 20px;
+  font-family: 'Roboto', sans-serif;
+  
+  .page-header {
+    margin-bottom: 30px;
+    
+    h1 {
+      font-size: 24px;
+      margin-bottom: 5px;
+      color: #333333;
+      font-weight: 500;
+    }
+    
+    p {
+      color: #555555;
+      font-size: 14px;
+    }
+  }
+  
+  // Theme colors
+  $primary-color: #6b1d14; // Maroon color
+  $secondary-color: #e6c157; // Yellow accent
+  $text-dark: #333333; // Dark gray for text
+  $light-bg: #f9e9e7; // Light maroon background
+  $border-color: #ddd;
+
+  .settings-content {
+    display: flex;
+    gap: 25px;
+    
+    .settings-sidebar {
+      width: 250px;
+      flex-shrink: 0;
+      
+      .nav-tabs {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        background-color: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        
+        li {
+          padding: 15px;
+          cursor: pointer;
+          border-left: 3px solid transparent;
+          display: flex;
+          align-items: center;
+          transition: all 0.2s ease;
+          color: $text-dark;
+          
+          i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+            color: rgba($primary-color, 0.75);
+          }
+          
+          &:hover {
+            background-color: rgba($primary-color, 0.05);
+          }
+          
+          &.active {
+            background-color: rgba($primary-color, 0.1);
+            border-left-color: $primary-color;
+            color: $primary-color;
+            font-weight: 500;
+            
+            i {
+              color: $primary-color;
+            }
+          }
+          
+          &:not(:last-child) {
+            border-bottom: 1px solid $border-color;
+          }
+        }
+      }
+    }
+    
+    .settings-main {
+      flex-grow: 1;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 25px;
+      
+      .settings-panel {
+        h2 {
+          font-size: 20px;
+          margin-bottom: 20px;
+          color: $primary-color;
+          padding-bottom: 10px;
+          border-bottom: 1px solid rgba($primary-color, 0.2);
+          font-family: 'Roboto', sans-serif;
+          font-weight: 500;
+        }
+        
+        .form-group {
+          margin-bottom: 20px;
+          
+          label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: $text-dark;
+            font-family: 'Roboto', sans-serif;
+          }
+          
+          .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid $border-color;
+            border-radius: 4px;
+            font-family: 'Roboto', sans-serif;
+            
+            &:focus {
+              outline: none;
+              border-color: $primary-color;
+              box-shadow: 0 0 0 2px rgba($primary-color, 0.25);
+            }
+          }
+        }
+        
+        .user-list {
+          .user-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background-color: rgba($light-bg, 0.5);
+            border: 1px solid rgba($primary-color, 0.1);
+            font-family: 'Roboto', sans-serif;
+            transition: all 0.2s ease-in-out;
+            
+            &:hover {
+              box-shadow: 0 2px 8px rgba($primary-color, 0.1);
+              transform: translateY(-1px);
+            }
+            
+            .user-avatar {
+              width: 45px;
+              height: 45px;
+              border-radius: 50%;
+              background-color: rgba($primary-color, 0.1);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin-right: 15px;
+              
+              i {
+                font-size: 20px;
+                color: $primary-color;
+              }
+            }
+            
+            .user-details {
+              flex-grow: 1;
+              
+              h4 {
+                margin: 0 0 5px 0;
+                font-size: 16px;
+                color: $text-dark;
+                font-weight: 500;
+              }
+              
+              p {
+                margin: 0;
+                color: #555555;
+                font-size: 14px;
+              }
+            }
+            
+            .user-actions {
+              margin-left: 10px;
+            }
+          }
+        }
+        
+        .btn {
+          padding: 10px 20px;
+          border-radius: 4px;
+          font-weight: 500;
+          cursor: pointer;
+          font-family: 'Roboto', sans-serif;
+          transition: all 0.2s ease;
+          
+          &.btn-primary {
+            background-color: $primary-color;
+            color: #fff;
+            border: none;
+            
+            &:hover {
+              background-color: darken($primary-color, 8%);
+              transform: translateY(-1px);
+              box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            }
+          }
+          
+          &.btn-outline-primary {
+            background-color: transparent;
+            border: 1px solid $primary-color;
+            color: $primary-color;
+            
+            &:hover {
+              background-color: rgba($primary-color, 0.1);
+              transform: translateY(-1px);
+            }
+          }
+          
+          &.btn-secondary {
+            background-color: $secondary-color;
+            color: $text-dark;
+            border: none;
+            
+            &:hover {
+              background-color: darken($secondary-color, 5%);
+              transform: translateY(-1px);
+            }
+          }
+          
+          &.btn-sm {
+            padding: 5px 10px;
+            font-size: 14px;
+          }
+          
+          &.mt-3 {
+            margin-top: 15px;
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,133 @@
+.search-results {
+  position: absolute;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1050;
+  box-shadow: 0 4px 8px rgba(0,0,0,.1);
+  border: 1px solid #ddd;
+  border-radius: 0.25rem;
+  margin-top: 2px;
+  background-color: white;
+}
+
+.search-results .list-group {
+  margin-bottom: 0;
+}
+
+.search-results .list-group-item {
+  cursor: pointer;
+  border-left: none;
+  border-right: none;
+  padding: 0.5rem 0.75rem;
+}
+
+.search-results .list-group-item:first-child {
+  border-top: none;
+}
+
+.search-results .list-group-item:last-child {
+  border-bottom: none;
+}
+
+.search-results .list-group-item:hover {
+  background-color: #f8f9fa;
+}
+
+.position-relative {
+  position: relative;
+}
+
+.form-control:focus {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  border-color: #86b7fe;
+}
+
+/* Payment Mode Button Styles */
+.btn-payment-mode {
+  font-weight: 500;
+  border-width: 2px;
+  margin-bottom: 8px;
+  min-width: 110px;
+  color: #212529 !important;
+  transition: all 0.2s ease;
+}
+
+.btn-payment-mode.active,
+.btn-payment-mode:hover {
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-payment-mode.cash { 
+  border-color: #198754; 
+  color: #198754 !important; 
+  background-color: rgba(25, 135, 84, 0.1);
+}
+
+.btn-payment-mode.cash.active,
+.btn-payment-mode.cash:hover { 
+  background-color: #198754; 
+  color: #fff !important;
+}
+
+.btn-payment-mode.card { 
+  border-color: #0d6efd; 
+  color: #0d6efd !important;
+  background-color: rgba(13, 110, 253, 0.1);
+}
+
+.btn-payment-mode.card.active,
+.btn-payment-mode.card:hover { 
+  background-color: #0d6efd; 
+  color: #fff !important;
+}
+
+.btn-payment-mode.online { 
+  border-color: #ffc107; 
+  color: #212529 !important;
+  background-color: rgba(255, 193, 7, 0.2);
+}
+
+.btn-payment-mode.online.active,
+.btn-payment-mode.online:hover { 
+  background-color: #ffc107; 
+  color: #212529 !important;
+}
+
+.btn-payment-mode.upi { 
+  border-color: #0dcaf0; 
+  color: #0dcaf0 !important;
+  background-color: rgba(13, 202, 240, 0.1);
+}
+
+.btn-payment-mode.upi.active,
+.btn-payment-mode.upi:hover { 
+  background-color: #0dcaf0; 
+  color: #fff !important;
+}
+
+.btn-payment-mode.cheque { 
+  border-color: #6c757d; 
+  color: #6c757d !important;
+  background-color: rgba(108, 117, 125, 0.1);
+}
+
+.btn-payment-mode.cheque.active,
+.btn-payment-mode.cheque:hover { 
+  background-color: #6c757d; 
+  color: #fff !important;
+}
+
+.btn-payment-mode.bank-transfer { 
+  border-color: #6f42c1; 
+  color: #6f42c1 !important;
+  background-color: rgba(111, 66, 193, 0.1);
+}
+
+.btn-payment-mode.bank-transfer.active,
+.btn-payment-mode.bank-transfer:hover { 
+  background-color: #6f42c1; 
+  color: #fff !important;
+}

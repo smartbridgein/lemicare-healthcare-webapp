@@ -1,0 +1,68 @@
+<div class="success-modal" *ngIf="visible">
+  <div class="success-modal-overlay" (click)="closeModal('close')"></div>
+  
+  <div class="success-modal-dialog">
+    <!-- Header with title and close button -->
+    <div class="success-modal-header">
+      <h4 class="success-modal-title">Appointment Confirmation</h4>
+      <button class="success-modal-close" (click)="closeModal('close')">×</button>
+    </div>
+    
+    <!-- Modal content -->
+    <div class="success-modal-body">
+      <!-- Success checkmark -->
+      <div class="success-icon-container">
+        <div class="success-icon">
+          <i class="bi bi-check-lg"></i>
+        </div>
+      </div>
+      
+      <!-- Success message -->
+      <div class="success-message">
+        <h4>Appointment Booked Successfully!</h4>
+      </div>
+      
+      <!-- Patient info -->
+      <div class="info-card">
+        <h5 class="info-card-title">
+          <i class="bi bi-person text-primary"></i> Patient
+        </h5>
+        <div class="info-card-content">
+          <p>{{patientName}}</p>
+        </div>
+      </div>
+      
+      <!-- Appointment details -->
+      <div class="info-card">
+        <h5 class="info-card-title">
+          <i class="bi bi-calendar-check text-primary"></i> Appointment Details
+        </h5>
+        <div class="info-card-content">
+          <table class="details-table">
+            <tr>
+              <td><i class="bi bi-calendar-date"></i> Date:</td>
+              <td>{{ appointmentDate | date:'EEE, MMM d, y' }}</td>
+            </tr>
+            <tr>
+              <td><i class="bi bi-clock"></i> Time:</td>
+              <td>{{ appointmentTime }}</td>
+            </tr>
+            <tr>
+              <td><i class="bi bi-person-badge"></i> Doctor:</td>
+              <td>{{ doctorName }}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Footer with buttons -->
+    <div class="success-modal-footer">
+      <button class="btn-secondary" (click)="closeModal('close')">Close</button>
+      <button class="btn-primary" (click)="closeModal('view')">
+        <i class="bi bi-calendar2-week"></i> View Appointments
+      </button>
+    </div>
+  </div>
+</div>
+

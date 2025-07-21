@@ -1,0 +1,96 @@
+<div class="inventory-dashboard">
+  <h1 class="page-title">Pharmacy Dashboard</h1>
+
+  <!-- Summary Cards -->
+  <div class="summary-cards">
+    <div class="card purchase-card">
+      <div class="card-content">
+        <h2 class="count">{{ purchases }}</h2>
+        <p class="label">Purchase Invoice</p>
+      </div>
+      <button class="add-button" [routerLink]="['/inventory/purchases/new']">
+        <i class="fas fa-plus"></i> Add
+      </button>
+    </div>
+
+    <div class="card purchase-return-card">
+      <div class="card-content">
+        <h2 class="count">{{ purchaseReturns }}</h2>
+        <p class="label">Purchase Return</p>
+      </div>
+      <button class="add-button" [routerLink]="['/inventory/returns']">
+        <i class="fas fa-plus"></i> Add
+      </button>
+    </div>
+
+    <div class="card sale-card">
+      <div class="card-content">
+        <h2 class="count">{{ sales }}</h2>
+        <p class="label">Sale Invoice</p>
+      </div>
+      <button class="add-button" [routerLink]="['/inventory/sales/new']">
+        <i class="fas fa-plus"></i> Add
+      </button>
+    </div>
+
+    <div class="card sale-return-card">
+      <div class="card-content">
+        <h2 class="count">{{ saleReturns }}</h2>
+        <p class="label">Sale Return</p>
+      </div>
+      <button class="add-button" [routerLink]="['/inventory/returns']">
+        <i class="fas fa-plus"></i> Add
+      </button>
+    </div>
+  </div>
+
+  <!-- Pharmacy Analytics Chart -->
+  <div class="pharmacy-analytics">
+    <h2>Pharmacy</h2>
+    <div class="chart-container">
+      <!-- In a real app, we'd use a chart library like Chart.js or ngx-charts here -->
+      <div class="placeholder-chart">
+        <p *ngIf="loading">Loading chart data...</p>
+        <p *ngIf="!loading">Chart showing transaction trends throughout the year</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Access Icons -->
+  <div class="quick-access-icons">
+    <div class="icon-card" [routerLink]="['/inventory/purchases']">
+      <div class="icon-circle">
+        <i class="fas fa-shopping-cart"></i>
+      </div>
+      <p>Purchase</p>
+    </div>
+
+    <div class="icon-card" [routerLink]="['/inventory/sales']">
+      <div class="icon-circle">
+        <i class="fas fa-cash-register"></i>
+      </div>
+      <p>Sales</p>
+    </div>
+
+    <div class="icon-card" [routerLink]="['/inventory/medicines']">
+      <div class="icon-circle">
+        <i class="fas fa-box"></i>
+      </div>
+      <p>Stock</p>
+    </div>
+
+    <div class="icon-card" [routerLink]="['/inventory/reports']">
+      <div class="icon-circle">
+        <i class="fas fa-chart-bar"></i>
+      </div>
+      <p>Reports</p>
+    </div>
+
+    <div class="icon-card" [routerLink]="['/inventory/suppliers']">
+      <div class="icon-circle">
+        <i class="fas fa-clipboard-list"></i>
+      </div>
+      <p>Masters</p>
+    </div>
+  </div>
+</div>

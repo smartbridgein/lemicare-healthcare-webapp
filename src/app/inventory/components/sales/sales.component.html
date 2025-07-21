@@ -1,0 +1,131 @@
+<div class="sales-container">
+  <div class="page-header">
+    <div class="back-button">
+      <a [routerLink]="['/inventory']">
+        <i class="fas fa-arrow-left"></i> Sales
+      </a>
+    </div>
+    
+    
+  </div>
+  
+  <div class="sales-list-container">
+    <h2 class="section-title">Sales Transactions</h2>
+    
+    <div class="filters-bar">
+      <div class="search-box">
+        <input 
+          type="text" 
+          placeholder="Search by ID, patient name or phone" 
+          [(ngModel)]="searchTerm"
+          (input)="search()"
+        >
+        <i class="fas fa-search"></i>
+      </div>
+      
+      <div class="filter-options">
+        <div class="date-filter">
+          <input 
+            type="date" 
+            [(ngModel)]="filterDate"
+            (change)="search()"
+            placeholder="Filter by date"
+          >
+        </div>
+        
+        <div class="type-filter">
+          <select [(ngModel)]="filterType" (change)="search()">
+            <option value="all">All Types</option>
+            <option value="otc">OTC</option>
+            <option value="prescription">Prescription</option>
+          </select>
+        </div>
+        
+        <button class="reset-btn" (click)="resetFilters()">
+          Reset
+        </button>
+      </div>
+      
+      <div class="add-buttons">
+        <button [routerLink]="['/inventory/sales/prescription/new']" class="btn-prescription">
+          <i class="fas fa-prescription"></i> Prescription
+        </button>
+        <button [routerLink]="['/inventory/sales/otc/new']" class="btn-otc">
+          <i class="fas fa-pills"></i> OTC
+        </button>
+      </div>
+    </div>
+    
+    <div class="sales-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Invoice ID</th>
+            <th>Patient Name</th>
+            <th>Phone Number</th>
+            <th>Date</th>
+            <th>Sale Type</th>
+            <th>Amount</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody *ngIf="!loading && filteredSales.length > 0">
+          <tr *ngFor="let sale of filteredSales">
+            <td>{{ formatSaleId(sale.saleId || sale.id) }}</td>
+            <td>{{ getPatientName(sale) }}</td>
+            <td>{{ getPatientPhone(sale) }}</td>
+            <td>{{ formatDate(sale.saleDate || sale.date) }}</td>
+            <td>
+              <span class="sale-type" [ngClass]="{'type-otc': sale.saleType === 'OTC', 'type-prescription': sale.saleType === 'PRESCRIPTION'}">
+                {{ sale.saleType }}
+              </span>
+            </td>
+            <td>{{ sale.grandTotal | number:'1.2-2' }}</td>
+            <td class="actions-column">
+              <button class="action-button view-button" (click)="viewSaleDetails(sale)">
+                <i class="fas fa-eye"></i> 
+              </button>
+              <!-- Only show edit button for OTC sales 
+              <button *ngIf="sale.saleType === 'OTC'" class="action-button edit-button" (click)="editSale(sale)">
+                <i class="fas fa-edit"></i> 
+              </button>-->
+              <button class="action-button print-button" (click)="printSaleInvoice(sale)">
+                <i class="fas fa-print"></i> 
+              </button>
+              <button class="action-button delete-button" (click)="deleteSale(sale)">
+                <i class="fas fa-trash"></i> 
+              </button>
+            </td>
+          </tr>
+        </tbody>
+        <tbody *ngIf="loading">
+          <tr>
+            <td colspan="8" class="loading-message">Loading sales...</td>
+          </tr>
+        </tbody>
+        <tbody *ngIf="!loading && filteredSales.length === 0">
+          <tr>
+            <td colspan="8" class="no-data-message">No sales found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="pagination" *ngIf="filteredSales.length > 0">
+      <span class="page-info">Showing 1 to {{ filteredSales.length }} of {{ filteredSales.length }} entries</span>
+      <div class="page-controls">
+        <select>
+          <option>50</option>
+          <option>100</option>
+          <option>200</option>
+        </select>
+        <button class="page-btn" disabled><i class="fas fa-chevron-left"></i> Previous</button>
+        <button class="page-number active">1</button>
+        <button class="page-btn" disabled>Next <i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+  </div>
+
+<!-- Sale Detail Dialog Component -->
+<app-sale-detail-dialog></app-sale-detail-dialog>
+</div>

@@ -1,0 +1,208 @@
+<div class="medical-history-container">
+  <div class="header">
+    <h1>Patient Medical History</h1>
+    <a [routerLink]="['/patients']" class="back-btn">
+      <i class="fas fa-arrow-left"></i> Back to Patient List
+    </a>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-spinner">
+    <div class="spinner"></div>
+    <p>Loading data...</p>
+  </div>
+
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="successMessage" class="success-message">
+    {{ successMessage }}
+  </div>
+
+  <div *ngIf="patient && !isLoading" class="patient-info-card">
+    <div class="patient-info">
+      <h2>{{ patient.firstName }} {{ patient.middleName ? patient.middleName + ' ' : '' }}{{ patient.lastName }}</h2>
+      <div class="patient-details">
+        <div class="detail-item">
+          <span class="label">Patient ID:</span>
+          <span class="value">{{ patient.patientId || 'N/A' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Age/Gender:</span>
+          <span class="value">{{ patient.age || '?' }} / {{ patient.gender }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Mobile:</span>
+          <span class="value">{{ patient.mobileNumber }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="action-links">
+      <a [routerLink]="['/patients/registration', patient.id]" class="action-link">
+        <i class="fas fa-edit"></i> Edit Profile
+      </a>
+      <a [routerLink]="['/patients/visit-history', patient.id]" class="action-link">
+        <i class="fas fa-clock-rotate-left"></i> Visit History
+      </a>
+    </div>
+    
+  </div>
+
+  <form [formGroup]="historyForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading" class="medical-history-form">
+    <div class="two-column-layout">
+      <!-- Left Column: Basic Medical Information -->
+      <div class="column left-column">
+        <div class="form-section">
+          <h3>Basic Medical Information</h3>
+          
+          <div class="form-group">
+            <label for="bloodGroup">Blood Group</label>
+            <select id="bloodGroup" formControlName="bloodGroup">
+              <option value="">Select Blood Group</option>
+              <option *ngFor="let group of bloodGroups" [value]="group">{{ group }}</option>
+            </select>
+          </div>
+          
+          <div class="form-array-container">
+            <div class="form-array-header">
+              <h4>Allergies</h4>
+              <button type="button" class="add-btn" (click)="addAllergy()">
+                <i class="fas fa-plus"></i> Add
+              </button>
+            </div>
+            
+            <div formArrayName="allergies">
+              <div class="form-array-item" *ngFor="let item of allergiesArray.controls; let i = index" [formGroupName]="i">
+                <input type="text" formControlName="value" placeholder="Enter allergy">
+                <button type="button" class="remove-btn" (click)="removeAllergy(i)" *ngIf="allergiesArray.length > 1">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              <div *ngIf="allergiesArray.length === 0" class="empty-array-message">
+                No allergies recorded. <button type="button" class="text-btn" (click)="addAllergy()">Add allergy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Medical Conditions & Medications -->
+      <div class="column right-column">
+        <div class="form-section">
+          <h3>Medical Conditions & Medications</h3>
+          
+          <div class="form-array-container">
+            <div class="form-array-header">
+              <h4>Chronic Diseases</h4>
+              <button type="button" class="add-btn" (click)="addChronicDisease()">
+                <i class="fas fa-plus"></i> Add
+              </button>
+            </div>
+            
+            <div formArrayName="chronicDiseases">
+              <div class="form-array-item" *ngFor="let item of chronicDiseasesArray.controls; let i = index" [formGroupName]="i">
+                <input type="text" formControlName="value" placeholder="Enter disease/condition">
+                <button type="button" class="remove-btn" (click)="removeChronicDisease(i)" *ngIf="chronicDiseasesArray.length > 1">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              <div *ngIf="chronicDiseasesArray.length === 0" class="empty-array-message">
+                No chronic diseases recorded. <button type="button" class="text-btn" (click)="addChronicDisease()">Add disease</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-array-container">
+            <div class="form-array-header">
+              <h4>Current Medications</h4>
+              <button type="button" class="add-btn" (click)="addMedication()">
+                <i class="fas fa-plus"></i> Add
+              </button>
+            </div>
+            
+            <div formArrayName="currentMedications">
+              <div class="form-array-item" *ngFor="let item of currentMedicationsArray.controls; let i = index" [formGroupName]="i">
+                <input type="text" formControlName="value" placeholder="Enter medication">
+                <button type="button" class="remove-btn" (click)="removeMedication(i)" *ngIf="currentMedicationsArray.length > 1">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              <div *ngIf="currentMedicationsArray.length === 0" class="empty-array-message">
+                No current medications recorded. <button type="button" class="text-btn" (click)="addMedication()">Add medication</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Full-width section below the columns -->
+    <div class="form-section full-width-section">
+      <h3>Surgical History</h3>
+      
+      <div class="form-array-container">
+        <div class="form-array-header">
+          <h4>Past Surgeries</h4>
+          <button type="button" class="add-btn" (click)="addSurgery()">
+            <i class="fas fa-plus"></i> Add
+          </button>
+        </div>
+        
+        <div formArrayName="pastSurgeries">
+          <div class="surgery-item" *ngFor="let surgery of pastSurgeriesArray.controls; let i = index" [formGroupName]="i">
+            <div class="surgery-header">
+              <h5>Surgery #{{ i + 1 }}</h5>
+              <button type="button" class="remove-btn" (click)="removeSurgery(i)" *ngIf="pastSurgeriesArray.length > 1">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div class="surgery-details">
+              <div class="form-group">
+                <label>Surgery Name</label>
+                <input type="text" formControlName="surgeryName" placeholder="Enter surgery name">
+              </div>
+              
+              <div class="form-group">
+                <label>Date</label>
+                <input type="date" formControlName="date" [max]="getCurrentDate()">
+                <div class="error-text" *ngIf="pastSurgeriesArray.controls[i].get('date')?.touched && pastSurgeriesArray.controls[i].get('date')?.hasError('futureDate')">
+                  Future dates are not allowed
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label>Hospital/Location</label>
+                <input type="text" formControlName="hospital" placeholder="Enter hospital or location">
+              </div>
+              
+              <div class="form-group full-width">
+                <label>Notes</label>
+                <textarea formControlName="notes" rows="2" placeholder="Enter additional notes"></textarea>
+              </div>
+            </div>
+          </div>
+          
+          <div *ngIf="pastSurgeriesArray.length === 0" class="empty-array-message">
+            No past surgeries recorded. <button type="button" class="text-btn" (click)="addSurgery()">Add surgery</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Family Medical History</h3>
+      <div class="form-group">
+        <textarea formControlName="familyHistory" rows="4" placeholder="Enter information about family medical history and hereditary conditions..."></textarea>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" [routerLink]="['/patients']" class="cancel-btn">Cancel</button>
+      <button type="submit" [disabled]="isSaving" class="save-btn">
+        <span *ngIf="!isSaving">Save Medical History</span>
+        <span *ngIf="isSaving" class="button-spinner"></span>
+      </button>
+    </div>
+  </form>
+</div>

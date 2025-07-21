@@ -1,0 +1,151 @@
+<div class="container-fluid p-3">
+  <div class="row mb-3">
+    <div class="col">
+      <h2 style="color: #6b1d14; font-family: 'Roboto', sans-serif; font-weight: bold;">Tax Profiles</h2>
+      <p style="font-family: 'Roboto', sans-serif; color: #555;">Manage tax profiles for inventory items</p>
+      
+      <!-- Active Tax Profile IDs Section -->
+      <div class="card mb-3">
+        <div class="card-header" style="background-color: #f8f9fc;">
+          <h5 style="color: #6b1d14; font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 16px;">Active Tax Profile IDs</h5>
+        </div>
+        <div class="card-body">
+          <div *ngIf="loading" class="text-center">
+            <div class="spinner-border" style="color: #6b1d14;" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          <div *ngIf="!loading && activeTaxProfiles.length === 0" class="alert alert-info">
+            No active tax profiles found.
+          </div>
+          <div *ngIf="!loading && activeTaxProfiles.length > 0" class="d-flex flex-wrap gap-2">
+            <span *ngFor="let profile of activeTaxProfiles" class="badge" 
+              style="background-color: #e6c157; color: #333; font-family: 'Roboto', sans-serif; font-size: 12px; font-weight: 500; border-radius: 4px; padding: 6px 12px;">
+              {{ profile.taxProfileId || profile.id }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-auto">
+      <button class="btn" style="background-color: #6b1d14; color: white; font-family: 'Roboto', sans-serif;" (click)="openTaxProfileModal(taxProfileModal)">
+        <fa-icon [icon]="faAdd"></fa-icon> Add New Tax Profile
+      </button>
+    </div>
+  </div>
+
+  <!-- Tax Profiles Table -->
+  <div class="card">
+    <div class="card-body">
+      <div *ngIf="loading" class="text-center p-3">
+        <div class="spinner-border" style="color: #6b1d14;" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && activeTaxProfiles.length === 0" class="text-center p-3">
+        <p>No active tax profiles found. Click 'Add New Tax Profile' to create one.</p>
+      </div>
+
+      <table *ngIf="!loading && activeTaxProfiles.length > 0" class="table table-striped table-hover">
+        <thead>
+          <tr class="bg-light">
+            <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Profile Name</th>
+            <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Total Rate (%)</th>
+            <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Components</th>
+            <th style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let profile of activeTaxProfiles">
+            <td style="font-family: 'Roboto', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ profile.profileName }}</td>
+            <td style="font-family: 'Roboto', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ profile.totalRate }}%</td>
+            <td>
+              <span *ngFor="let component of profile.components; let last = last" class="badge me-1" style="background-color: #e6c157; color: #333; font-family: 'Roboto', sans-serif; font-size: 12px; font-weight: 500; border-radius: 4px;">
+                {{ component.componentName }}: {{ component.rate }}%{{ !last ? ',' : '' }}
+              </span>
+              <span *ngIf="!profile.components || profile.components.length === 0">No components</span>
+            </td>
+            <td>
+              <button class="btn btn-sm me-1" style="border: 1px solid #6b1d14; color: #6b1d14; background-color: transparent; font-family: 'Roboto', sans-serif;" (click)="openTaxProfileModal(taxProfileModal, profile)">
+                <fa-icon [icon]="faEdit"></fa-icon>
+              </button>
+              <button class="btn btn-sm" style="border: 1px solid #dc3545; color: #dc3545; background-color: transparent; font-family: 'Roboto', sans-serif;" (click)="deleteTaxProfile(profile.id)">
+                <fa-icon [icon]="faDelete"></fa-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Tax Profile Modal -->
+<ng-template #taxProfileModal let-modal>
+  <div class="modal-header" style="background-color: #f8f9fc; font-family: 'Roboto', sans-serif;">
+    <h4 class="modal-title" style="color: #333; font-family: 'Roboto', sans-serif;">
+      <i class="fas fa-tags me-2" style="color: #6b1d14;"></i>
+      {{ isEditing ? 'Edit' : 'Add' }} Tax Profile
+    </h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body" style="font-family: 'Roboto', sans-serif;">
+    <form [formGroup]="taxProfileForm">
+      <div class="mb-3">
+        <label for="profileName" class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Profile Name</label>
+        <input type="text" id="profileName" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="profileName"
+          placeholder="e.g., GST 5%">
+        <div *ngIf="taxProfileForm.get('profileName')?.invalid && taxProfileForm.get('profileName')?.touched"
+          class="text-danger small" style="font-family: 'Roboto', sans-serif; font-size: 12px; color: #e74a3b;">
+          Profile name is required
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Tax Components</label>
+        <div formArrayName="components">
+          <div *ngFor="let component of components.controls; let i = index" class="row mb-2">
+            <div [formGroupName]="i" class="d-flex">
+              <div class="col">
+                <input type="text" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="componentName" placeholder="Component Name">
+              </div>
+              <div class="col">
+                <div class="input-group">
+                  <input type="number" min="0" step="0.01" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="rate"
+                    placeholder="Rate" (change)="updateTotalRate()">
+                  <span class="input-group-text" style="font-family: 'Roboto', sans-serif; font-size: 14px; background-color: #f8f9fc; border: 1px solid #d1d3e2;">%</span>
+                </div>
+              </div>
+              <div class="col-auto">
+                <button type="button" class="btn ms-2" style="background-color: #e74a3b; color: white; font-family: 'Roboto', sans-serif; font-size: 14px;" (click)="removeComponent(i)">
+                  <fa-icon [icon]="faRemove"></fa-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="components.length === 0" class="text-muted mb-2" style="font-family: 'Roboto', sans-serif; font-size: 13px;">
+            No tax components added
+          </div>
+
+          <button type="button" class="btn btn-sm" style="border: 1px solid #6b1d14; color: #6b1d14; background-color: transparent; font-family: 'Roboto', sans-serif;" (click)="addComponent()">
+            <fa-icon [icon]="faAdd"></fa-icon> Add Component
+          </button>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="totalRate" class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Total Rate (%)</label>
+        <input type="number" id="totalRate" min="0" step="0.01" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2; background-color: #f8f9fc;" formControlName="totalRate"
+          readonly>
+        <small class="text-muted" style="font-family: 'Roboto', sans-serif; font-size: 12px;">Total rate is automatically calculated from components</small>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer" style="background-color: #f8f9fc; border-top: 1px solid #d1d3e2; font-family: 'Roboto', sans-serif;">
+    <button type="button" class="btn" style="background-color: #d1d3e2; color: #333; font-family: 'Roboto', sans-serif; font-size: 14px;" (click)="modal.dismiss()">Cancel</button>
+    <button type="button" class="btn" style="background-color: #6b1d14; color: white; font-family: 'Roboto', sans-serif; font-size: 14px;" (click)="saveTaxProfile()"
+      [disabled]="taxProfileForm.invalid">Save</button>
+  </div>
+</ng-template>

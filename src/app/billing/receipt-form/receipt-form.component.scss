@@ -1,0 +1,182 @@
+// Theme colors
+$maroon: #6b1d14;
+$yellow: #e6c157;
+$gray: #666666;
+$black: #333333;
+$light-gray: #f8f9fc;
+
+.card {
+  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+  margin-bottom: 1rem;
+  font-family: 'Roboto', Arial, sans-serif;
+}
+
+.card-header {
+  font-weight: 600;
+  background-color: $light-gray;
+  color: $black;
+  font-family: 'Roboto', Arial, sans-serif;
+  
+  i {
+    color: $maroon;
+  }
+}
+
+.search-results {
+  position: absolute;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.list-group-item {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.list-group-item:hover {
+  background-color: rgba(230, 193, 87, 0.1);
+  border-color: $yellow;
+}
+
+.form-control:disabled, .form-control[readonly] {
+  background-color: $light-gray;
+  font-family: 'Roboto', Arial, sans-serif;
+}
+
+.form-control, .form-select, .form-label, .btn {
+  font-family: 'Roboto', Arial, sans-serif;
+}
+
+.btn-maroon {
+  background-color: $maroon;
+  color: white;
+  border-color: $maroon;
+  
+  &:hover, &:focus, &:active {
+    background-color: darken($maroon, 10%);
+    border-color: darken($maroon, 10%);
+    color: white;
+  }
+}
+
+.btn-yellow {
+  background-color: $yellow;
+  color: $black;
+  border-color: $yellow;
+  
+  &:hover, &:focus, &:active {
+    background-color: darken($yellow, 10%);
+    border-color: darken($yellow, 10%);
+    color: $black;
+  }
+}
+
+.btn-outline-maroon {
+  color: $maroon;
+  border-color: $maroon;
+  
+  &:hover, &:focus, &:active {
+    background-color: $maroon;
+    border-color: $maroon;
+    color: white;
+  }
+}
+
+.badge {
+  font-family: 'Roboto', Arial, sans-serif;
+}
+
+// Payment dropdown styling
+.payment-dropdown {
+  height: 38px;
+  background-color: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  font-family: 'Roboto', Arial, sans-serif;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  
+  &:focus {
+    border-color: $maroon;
+    box-shadow: 0 0 0 0.2rem rgba(107, 29, 20, 0.25);
+  }
+  
+  &.is-invalid {
+    border-color: #dc3545;
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    
+    &:focus {
+      box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+  }
+}
+
+// Text color classes
+.text-maroon {
+  color: $maroon !important;
+}
+
+.text-yellow {
+  color: $yellow !important;
+}
+
+.text-gray {
+  color: $gray !important;
+}
+
+// Background color classes
+.bg-maroon {
+  background-color: $maroon !important;
+}
+
+.bg-yellow {
+  background-color: $yellow !important;
+}
+
+.bg-gray {
+  background-color: $gray !important;
+}
+
+// Badge styling
+.bg-maroon-subtle {
+  background-color: rgba(107, 29, 20, 0.1) !important;
+}
+
+.bg-yellow-subtle {
+  background-color: rgba(230, 193, 87, 0.1) !important;
+}
+
+.bg-gray-subtle {
+  background-color: rgba(102, 102, 102, 0.1) !important;
+}
+
+.border-maroon {
+  border-color: $maroon !important;
+}
+
+.border-yellow {
+  border-color: $yellow !important;
+}
+
+.border-gray {
+  border-color: $gray !important;
+}
+
+.text-maroon-emphasis {
+  color: darken($maroon, 10%) !important;
+}
+
+.text-yellow-emphasis {
+  color: darken($yellow, 15%) !important;
+}
+
+.text-gray-emphasis {
+  color: darken($gray, 15%) !important;
+}

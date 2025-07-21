@@ -1,0 +1,38 @@
+.expired {
+  background-color: #dc3545;
+  color: white;
+}
+
+.expiring-soon {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.valid {
+  background-color: #198754;
+  color: white;
+}
+
+.table {
+  font-size: 0.9rem;
+}
+
+.badge {
+  padding: 0.4rem 0.6rem;
+  font-weight: 500;
+}
+
+.card-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+  padding: 0.75rem 1rem;
+}
+
+.btn-outline-primary {
+  border-color: #6a5acd;
+  color: #6a5acd;
+}
+
+.btn-outline-primary:hover {
+  background-color: #6a5acd;
+  color: white;
+}

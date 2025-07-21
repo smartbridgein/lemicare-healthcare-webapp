@@ -1,0 +1,91 @@
+/* Custom 5-column layout for status cards */
+.col-5ths {
+  position: relative;
+  width: 20%;
+  min-height: 1px;
+  flex: 0 0 20%;
+  max-width: 20%;
+}
+
+/* Make sure no padding is applied to the row containing 5ths columns */
+.row-5ths {
+  margin-right: 0;
+  margin-left: 0;
+}
+
+/* Status badge styling for better visibility */
+.badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Improve contrast for badges */
+.bg-warning.text-dark {
+  color: #5a5a5a !important;
+}
+
+/* Patient info styling */
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.text-sm.fw-bold {
+  font-weight: 600;
+  color: #333;
+}
+
+/* Patient Name and ID styling */
+.text-muted.small {
+  display: inline-block;
+  width: 45px;
+  color: #777;
+  font-size: 0.75rem;
+}
+
+/* Patient ID styling */
+.patient-id {
+  color: #495057;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Fix for table dropdown visibility */
+.appointments-table-container {
+  min-height: 400px; /* Ensures enough space for dropdowns */
+  overflow: visible; /* Prevents clipping of dropdowns */
+}
+
+/* Make sure table doesn't scroll internally */
+.appointments-table-container .table-responsive {
+  overflow-y: visible;
+}
+
+/* Ensure dropdown menus appear above other elements */
+.dropdown-menu {
+  z-index: 1050;
+}
+
+.fw-medium {
+  font-weight: 500;
+}
+
+/* ID badge styling */
+.badge.bg-light {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.4rem;
+  background-color: #f2f2f2 !important;
+  color: #555 !important;
+  border: 1px solid #ddd;
+}
+
+/* Status badge styling */
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}

@@ -1,0 +1,331 @@
+<!-- Bootstrap Modal Structure -->
+<!-- Print-only version of sale details -->
+<div class="print-only-sale-details" *ngIf="sale && printMode">
+  <div class="print-sale-detail-container">
+    <div class="section header-section">
+      <div class="clinic-info">
+        <h2>Hanan Clinic</h2>
+        <p>A Block, Gem Bhoomi & Buildings, OMR, Padur, Chennai, Tamil Nadu 603103</p>
+        <p>Phone:+91 6381048403</p>
+      </div>
+      <div class="invoice-info">
+        <div class="invoice-row">
+          <span class="label">Invoice #:</span>
+          <span class="value">{{ formatSaleId(sale.saleId || sale.id) }}</span>
+        </div>
+        <div class="invoice-row">
+          <span class="label">Date:</span>
+          <span class="value">{{ formatDate(sale.saleDate) }}</span>
+        </div>
+        <div class="invoice-row">
+          <span class="label">Sale Type:</span>
+          <span class="value"><span class="badge" [ngClass]="{'bg-primary': sale.saleType === 'OTC', 'bg-success': sale.saleType === 'Prescription'}">{{ sale.saleType || 'OTC' }}</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section patient-section">
+      <h4>Patient Information</h4>
+      <div class="info-row">
+        <span class="label">Name:</span>
+        <span class="value">{{ sale.patientName || sale.walkInCustomerName || 'Walk-in Customer' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Phone:</span>
+        <span class="value">{{ sale.phoneNumber || sale.phoneNumber || 'N/A' }}</span>
+      </div>
+     
+      <div class="info-row">
+        <span class="label">Payment Method:</span>
+        <span class="value"><span class="badge" [ngClass]="{'bg-success': sale.paymentMethod === 'CASH', 'bg-info': sale.paymentMethod === 'CARD', 'bg-warning': sale.paymentMethod === 'UPI'}">{{ sale.paymentMethod }}</span></span>
+      </div>
+    </div>
+
+    <div class="section items-section">
+      <h4>Items</h4>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Item Name</th>
+            <th>Batch</th>
+            <th>Expiry</th>
+            <th>Qty</th>
+            <th>Unit Price</th>
+            <th>Disc%</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of sale.items || sale.saleItems || []; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>
+              <span *ngIf="item.medicine?.name">{{ item.medicine.name }}</span>
+              <span *ngIf="!item.medicine?.name">{{ item.medicineName || 'Medicine ID: ' + item.medicineId }}</span>
+              <div class="small text-muted" *ngIf="item.medicine?.manufacturer">{{ item.medicine.manufacturer }}</div>
+            </td>
+            <td>{{ item.batchNo || 'N/A' }}</td>
+            <td>
+              <span *ngIf="item.expiryDate">{{ formatDate(item.expiryDate) }}</span>
+              <span *ngIf="!item.expiryDate">N/A</span>
+            </td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ (item.mrpPerItem || item.unitPrice) | number:'1.2-2' }}</td>
+            <td>{{ item.discountPercentage || item.discount || 0 }}%</td>
+            <td>{{ (item.lineItemTotalAmount || item.total) | number:'1.2-2' }}</td>
+          </tr>
+          <tr *ngIf="!sale.items || sale.items.length === 0">
+            <td colspan="8" class="no-items">No items in this sale</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section summary-section">
+      <h4>Sale Summary</h4>
+      <div class="summary-table">
+        <div class="summary-row">
+          <span class="label">Subtotal:</span>
+          <span class="value">{{ (sale.totalMrpAmount || sale.totalAmount || sale.subtotal || sale.grandTotal) | number:'1.2-2' }}</span>
+        </div>
+        
+        <!-- GST Type -->
+        <div class="summary-row" *ngIf="sale.gstType">
+          <span class="label">GST Type:</span>
+          <span class="value">{{ sale.gstType || 'INCLUSIVE' }}</span>
+        </div>
+        
+        <!-- GST Details -->
+        <div class="gst-details" *ngIf="sale.totalTaxAmount && sale.totalTaxAmount > 0">
+          <!-- CGST -->
+          <div class="summary-row" *ngIf="sale.cgstAmount || (sale.totalTaxAmount && sale.totalTaxAmount > 0)">
+            <span class="label">CGST:</span>
+            <span class="value">{{ (sale.cgstAmount || (sale.totalTaxAmount ? sale.totalTaxAmount/2 : 0)) | number:'1.2-2' }}</span>
+          </div>
+          <!-- SGST -->
+          <div class="summary-row" *ngIf="sale.sgstAmount || (sale.totalTaxAmount && sale.totalTaxAmount > 0)">
+            <span class="label">SGST:</span>
+            <span class="value">{{ (sale.sgstAmount || (sale.totalTaxAmount ? sale.totalTaxAmount/2 : 0)) | number:'1.2-2' }}</span>
+          </div>
+          <!-- Total Tax -->
+          <div class="summary-row">
+            <span class="label">Total Tax:</span>
+            <span class="value">{{ (sale.totalTaxAmount || 0) | number:'1.2-2' }}</span>
+          </div>
+        </div>
+        
+        <!-- Discounts -->
+        <div class="summary-row">
+          <span class="label">Discount:</span>
+          <span class="value">{{ (sale.totalDiscountAmount || sale.discount || 0) | number:'1.2-2' }}</span>
+        </div>
+        
+        <!-- Payment Information -->
+        <div class="summary-row" *ngIf="sale.paymentMethod">
+          <span class="label">Payment Method:</span>
+          <span class="value">{{ sale.paymentMethod }}</span>
+        </div>
+        
+        <!-- Grand Total -->
+        <div class="summary-row total">
+          <span class="label">Grand Total:</span>
+          <span class="value">{{ sale.grandTotal | number:'1.2-2' }}</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="section footer-section">
+      <p class="thank-you">Thank you for choosing Hanan Clinic!</p>
+    </div>
+  </div>
+</div>
+
+<!-- Regular modal dialog for screen display -->
+<!-- Improved Bootstrap Modal for Sale Details -->
+<div class="modal fade" id="saleDetailModal" tabindex="-1" aria-labelledby="saleDetailModalLabel" aria-hidden="true" [class.show]="isModalVisible" [style.display]="isModalVisible ? 'block' : 'none'">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="saleDetailModalLabel">Sale Details</h5>
+        <button type="button" class="btn-close" aria-label="Close" (click)="hide()"></button>
+      </div>
+      <div class="modal-body" *ngIf="sale">
+        <div class="sale-detail-container prescription-form-wrapper" [class.print-mode]="printMode">
+          <!-- Header Section -->
+          <div class="detail-header">
+            <div class="clinic-info">
+              <h2>Hanan Clinic</h2>
+        <p>A Block, Gem Bhoomi & Buildings, OMR, Padur, Chennai, Tamil Nadu 603103</p>
+        <p>Phone:+91 6381048403</p>
+            </div>
+            
+            <div class="sale-info">
+              <div class="info-row">
+                <span class="label">Invoice #:</span>
+                <span class="value">{{ formatSaleId(sale.saleId || sale.id) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Date:</span>
+                <span class="value">{{ formatDate(sale.saleDate || sale.date) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Sale Type:</span>
+                <span class="value sale-type" [class.type-otc]="sale.saleType === 'OTC'" [class.type-prescription]="sale.saleType === 'PRESCRIPTION'">
+                  {{ sale.saleType }}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Patient & Doctor Details Section (matching prescription form layout) -->
+          <div class="details-section">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Patient Name</label>
+                <div class="form-control-readonly">{{ getPatientName() }}</div>
+              </div>
+              
+              <div class="form-group">
+                <label>Mobile Number</label>
+                <div class="form-control-readonly">{{ getPatientPhone() || 'N/A' }}</div>
+              </div>
+
+              <div class="form-group">
+                <label>Patient ID</label>
+                <div class="form-control-readonly">{{ sale.patientId || 'N/A' }}</div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Doctor Name</label>
+                <div class="form-control-readonly">{{ doctorDetails?.name ? ('Dr. ' + doctorDetails.name) : 'N/A' }}</div>
+              </div>
+           
+              <div class="form-group">
+                <label>Prescription Date</label>
+                <div class="form-control-readonly">{{ formatDate(sale.prescriptionDate) || 'N/A' }}</div>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Sale Date</label>
+                <div class="form-control-readonly">{{ formatDate(sale.saleDate) || 'N/A' }}</div>
+              </div>
+              
+              <div class="form-group">
+                <label>Payment Mode</label>
+                <div class="form-control-readonly">{{ sale.paymentMethod || 'CASH' }}</div>
+              </div>
+
+              <div class="form-group">
+                <label>Transaction Reference</label>
+                <div class="form-control-readonly">{{ 'N/A' }}</div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>GST Type</label>
+                <div class="form-control-readonly">{{ sale.totalTaxAmount && sale.totalTaxAmount > 0 ? 'GST' : 'NON_GST' }}</div>
+              </div>
+              
+              <div class="form-group">
+                <label>Notes</label>
+                <div class="form-control-readonly">{{ '-' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Medicine Items Section (matching prescription form layout) -->
+          <div class="section items-section">
+            <h4>Medicine Items</h4>
+            <table class="table table-striped table-responsive">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Item Name</th>
+                  <th>Batch No</th>
+                  <th>Expiry Date</th>
+                  <th>Qty</th>
+                  <th>MRP</th>
+                  <th>Unit Price</th>
+                  <th>Disc%</th>
+                  <th>GST Profile</th>
+                  <th>Tax%</th>
+                  <th>CGST</th>
+                  <th>SGST</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of sale.items || sale.saleItems || []; let i = index">
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ item.medicine?.name || 'Medicine ID: ' + item.medicineId }}</td>
+                  <td>{{ item.batchNo || 'N/A' }}</td>
+                  <td>{{ 'N/A' }}</td>
+                  <td>{{ item.quantity }}</td>
+                  <td>{{ (item.mrpPerItem) | number:'1.2-2' }}</td>
+                  <td>{{ (item.salePrice) | number:'1.2-2' }}</td>
+                  <td>{{ item.discountPercentage || item.discount || 0 }}%</td>
+                  <td>{{ item.taxProfileId || 'N/A' }}</td>
+                  <td>{{ (item.taxRateApplied || 0) | number:'1.2-2' }}</td>
+                  <td>{{ (item.taxAmount ? item.taxAmount / 2 : 0) | number:'1.2-2' }}</td>
+                  <td>{{ (item.taxAmount ? item.taxAmount / 2 : 0) | number:'1.2-2' }}</td>
+                  <td>{{ (item.lineItemTotalAmount || item.total) | number:'1.2-2' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Sale Summary (matching prescription form layout) -->
+          <div class="section summary-section">
+            <h4>Sale Summary</h4>
+            <div class="summary-table">
+              <div class="summary-row">
+                <span class="label">Total MRP Amount:</span>
+                <span class="value">{{ (sale.totalMrpAmount || 0) | number:'1.2-2' }}</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">Net Taxable Amount:</span>
+                <span class="value">{{ (sale.totalTaxableAmount || 0) | number:'1.2-2' }}</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">Discount Amount:</span>
+                <span class="value">{{ (sale.totalDiscountAmount || 0) | number:'1.2-2' }}</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">CGST Amount:</span>
+                <span class="value">{{ (sale.totalTaxAmount ? sale.totalTaxAmount / 2 : 0) | number:'1.2-2' }}</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">SGST Amount:</span>
+                <span class="value">{{ (sale.totalTaxAmount ? sale.totalTaxAmount / 2 : 0) | number:'1.2-2' }}</span>
+              </div>
+              <div class="summary-row total">
+                <span class="label">Grand Total:</span>
+                <span class="value">{{ sale.grandTotal | number:'1.2-2' }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Notes Section - Hidden since sale has no notes property -->
+          <!-- <div class="section notes-section">
+            <h4>Notes</h4>
+            <p>Notes would go here if available</p>
+          </div> -->
+          
+          <div class="section footer-section">
+            <p class="thank-you">Thank you for choosing Hanan Clinic!</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" [class.d-none]="printMode">
+        <button type="button" class="btn btn-secondary" (click)="hide()">Close</button>
+        <button type="button" class="btn btn-primary" (click)="print()">
+          <i class="fas fa-print"></i> Print
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

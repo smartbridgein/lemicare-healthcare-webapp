@@ -1,0 +1,442 @@
+.sale-detail-container {
+  &.prescription-form-wrapper {
+    // Add prescription form wrapper specific styles
+    .details-section {
+      margin-bottom: 20px;
+
+      .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -10px 15px;
+        
+        .form-group {
+          flex: 1;
+          padding: 0 10px;
+          margin-bottom: 15px;
+          min-width: 200px;
+          
+          label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #2c3e50;
+          }
+          
+          .form-control-readonly {
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            padding: 8px 12px;
+            border-radius: 4px;
+            min-height: 38px;
+            width: 100%;
+            display: block;
+          }
+        }
+      }
+    }
+  }
+  
+  font-family: 'Roboto', sans-serif;
+  padding: 15px;
+  
+  // Print-specific styling
+  &.print-mode {
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .detail-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 15px;
+    
+    .clinic-info {
+      h3 {
+        margin: 0 0 5px 0;
+        color: #2c3e50;
+        font-size: 24px;
+      }
+      
+      p {
+        margin: 2px 0;
+        color: #7f8c8d;
+      }
+    }
+    
+    .sale-info {
+      text-align: right;
+    }
+  }
+  
+  .section {
+    margin-bottom: 30px;
+    
+    h4 {
+      border-bottom: 1px solid #eee;
+      padding-bottom: 8px;
+      color: #2c3e50;
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+  }
+  
+  .customer-section {
+    .info-columns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      
+      .info-column {
+        flex: 1;
+        min-width: 200px;
+      }
+    }
+  }
+  
+  .info-row {
+    margin-bottom: 8px;
+    line-height: 1.5;
+    
+    .label {
+      font-weight: bold;
+      color: #34495e;
+      margin-right: 8px;
+      display: inline-block;
+      min-width: 100px;
+    }
+    
+    .value {
+      color: #444;
+    }
+  }
+  
+  .items-section {
+    overflow-x: auto;
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      
+      th, td {
+        padding: 8px 10px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+      }
+      
+      th {
+        background-color: #f5f5f5;
+        font-weight: 500;
+      }
+      
+      tr:nth-child(even) {
+        background-color: #f9f9f9;
+      }
+    }
+  }
+  
+  .items-table-container {
+    overflow-x: auto;
+  }
+  
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    
+    th, td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid #e1e1e1;
+    }
+    
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    .no-items {
+      text-align: center;
+      padding: 15px;
+      color: #7f8c8d;
+    }
+  }
+  
+  // Summary section
+  .summary-section {
+    .summary-table {
+      margin-left: auto;
+      width: 300px;
+      
+      .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        
+        .label {
+          font-weight: bold;
+        }
+        
+        &.total {
+          border-top: 2px solid #e1e1e1;
+          padding-top: 10px;
+          margin-top: 5px;
+          font-weight: bold;
+          font-size: 1.1em;
+          
+          .value {
+            color: #6b1d14;
+          }
+        }
+      }
+    }
+  }
+  
+  .notes-section {
+    background-color: #f8f9fa;
+    padding: 10px 15px;
+    border-radius: 4px;
+    
+    p {
+      margin: 0;
+      color: #555;
+    }
+  }
+  
+  .footer-section {
+    margin-top: 30px;
+    text-align: center;
+    
+    .thank-you {
+      color: #2c3e50;
+      font-size: 1.1em;
+      font-style: italic;
+    }
+  }
+}
+
+// Status indicators
+.sale-type, .payment-method {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  
+  &.type-otc {
+    background-color: #f9e9e7;
+    color: #6b1d14;
+  }
+  
+  &.type-prescription {
+    background-color: #e8f5e9;
+    color: #388e3c;
+  }
+  
+  &.method-cash {
+    background-color: #f1f8e9;
+    color: #689f38;
+  }
+  
+  &.method-card {
+    background-color: #f9e9e7;
+    color: #6b1d14;
+  }
+  
+  &.method-upi {
+    background-color: #fff3e0;
+    color: #ff9800;
+  }
+}
+
+// Print styles
+@media print {
+  /* Hide everything except our dedicated print view */
+  body * {
+    visibility: hidden;
+    display: none;
+  }
+  
+  /* Show only our print-only element */
+  .print-only-sale-details, .print-only-sale-details * {
+    visibility: visible !important;
+    display: block;
+    opacity: 1 !important;
+  }
+  
+  /* Reset table elements to display as table */
+  .print-only-sale-details table {
+    display: table !important;
+  }
+  
+  .print-only-sale-details thead {
+    display: table-header-group !important;
+  }
+  
+  .print-only-sale-details tbody {
+    display: table-row-group !important;
+  }
+  
+  .print-only-sale-details tr {
+    display: table-row !important;
+  }
+  
+  .print-only-sale-details th,
+  .print-only-sale-details td {
+    display: table-cell !important;
+  }
+  
+  /* Position the print-only element at the top left */
+  .print-only-sale-details {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    background-color: white !important;
+  }
+  
+  /* Format the print layout nicely */
+  .print-sale-detail-container {
+    width: 100% !important;
+    max-width: 800px !important;
+    margin: 0 auto !important;
+    padding: 20px !important;
+    font-family: 'Arial', sans-serif !important;
+    color: #000 !important;
+  }
+  
+  /* Header section with clinic info and invoice details */
+  .print-sale-detail-container .header-section {
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-bottom: 20px !important;
+    padding-bottom: 15px !important;
+    border-bottom: 1px solid #ddd !important;
+  }
+  
+  /* Clinic information styling */
+  .print-sale-detail-container .clinic-info h2 {
+    margin: 0 0 10px 0 !important;
+    font-size: 22px !important;
+    font-weight: bold !important;
+  }
+  
+  .print-sale-detail-container .clinic-info p {
+    margin: 0 !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* Section styling */
+  .print-sale-detail-container .section {
+    margin-bottom: 20px !important;
+  }
+  
+  .print-sale-detail-container h4 {
+    margin: 0 0 10px 0 !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+  }
+  
+  /* Patient info styling */
+  .print-sale-detail-container .info-row {
+    display: flex !important;
+    margin-bottom: 5px !important;
+  }
+  
+  .print-sale-detail-container .label {
+    width: 120px !important;
+    font-weight: bold !important;
+    font-size: 14px !important;
+  }
+  
+  .print-sale-detail-container .value {
+    font-size: 14px !important;
+  }
+  
+  /* Items table styling */
+  .print-sale-detail-container .items-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-bottom: 20px !important;
+  }
+  
+  .print-sale-detail-container .items-table th,
+  .print-sale-detail-container .items-table td {
+    padding: 8px !important;
+    text-align: left !important;
+    font-size: 12px !important;
+    border: 1px solid #ddd !important;
+  }
+  
+  .print-sale-detail-container .items-table th {
+    background-color: #f8f9fa !important;
+    font-weight: bold !important;
+  }
+  
+  /* Summary section styling */
+  .print-sale-detail-container .summary-table {
+    width: 300px !important;
+    margin-left: auto !important;
+  }
+  
+  .print-sale-detail-container .summary-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    padding: 5px 0 !important;
+    border-bottom: 1px solid #eee !important;
+  }
+  
+  .print-sale-detail-container .summary-row.total {
+    font-weight: bold !important;
+    border-top: 2px solid #ddd !important;
+    padding-top: 8px !important;
+  }
+  
+  /* Footer styling */
+  .print-sale-detail-container .footer-section {
+    text-align: center !important;
+    margin-top: 40px !important;
+  }
+  
+  .print-sale-detail-container .thank-you {
+    font-style: italic !important;
+    font-size: 14px !important;
+  }
+  
+  /* Badge styling */
+  .print-sale-detail-container .badge {
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-size: 12px !important;
+  }
+  
+  .print-sale-detail-container .bg-primary {
+    background-color: #007bff !important;
+    color: white !important;
+  }
+  
+  .print-sale-detail-container .bg-success {
+    background-color: #28a745 !important;
+    color: white !important;
+  }
+  
+  .print-sale-detail-container .bg-info {
+    background-color: #17a2b8 !important;
+    color: white !important;
+  }
+  
+  .print-sale-detail-container .bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+  }
+}
+
+/* Hide the print-only element when not printing */
+.print-only-sale-details {
+  display: none;
+}

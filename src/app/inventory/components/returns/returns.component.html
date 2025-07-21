@@ -1,0 +1,147 @@
+<div class="returns-container">
+  <div class="page-header">
+    <div class="back-button">
+      <a [routerLink]="['/inventory']">
+        <i class="fas fa-arrow-left"></i> Returns
+      </a>
+    </div>
+    
+    <div class="actions">
+      <div class="dropdown">
+        <button class="dropdown-btn">New Return <i class="fas fa-caret-down"></i></button>
+        <div class="dropdown-content">
+          <a [routerLink]="['/inventory/returns/sales/new']">Sales Return</a>
+          <a [routerLink]="['/inventory/returns/purchase/new']">Purchase Return</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="returns-list-container">
+    <h2 class="section-title">Returns Management</h2>
+    
+    <div class="tabs">
+      <button 
+        [class.active]="activeTab === 'ALL'" 
+        (click)="changeTab('ALL')"
+      >
+        All Returns
+      </button>
+      <button 
+        [class.active]="activeTab === 'SALES'" 
+        (click)="changeTab('SALES')"
+      >
+        Sales Returns
+      </button>
+      <button 
+        [class.active]="activeTab === 'PURCHASE'" 
+        (click)="changeTab('PURCHASE')"
+      >
+        Purchase Returns
+      </button>
+    </div>
+    
+    <div class="filters-bar">
+      <div class="search-box">
+        <input 
+          type="text" 
+          placeholder="Search by ID, reference ID or customer/supplier" 
+          [(ngModel)]="searchTerm"
+          (input)="search()"
+        >
+        <i class="fas fa-search"></i>
+      </div>
+      
+      <div class="filter-options">
+        <div class="date-filter">
+          <input 
+            type="date" 
+            [(ngModel)]="filterDate"
+            (change)="search()"
+            placeholder="Filter by date"
+          >
+        </div>
+        
+        <div class="status-filter">
+          <select [(ngModel)]="filterStatus" (change)="search()">
+            <option value="all">All Status</option>
+            <option value="COMPLETED">Completed</option>
+            <option value="PENDING">Pending</option>
+            <option value="PROCESSING">Processing</option>
+          </select>
+        </div>
+        
+        <button class="reset-btn" (click)="resetFilters()">
+          Reset
+        </button>
+      </div>
+    </div>
+    
+    <div class="returns-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Return ID</th>
+            <th>Type</th>
+            <th>Reference ID</th>
+            <th>Date</th>
+            <th>Customer/Supplier</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody *ngIf="!loading && filteredReturns.length > 0">
+          <tr *ngFor="let returnItem of filteredReturns">
+            <td>{{ returnItem.id }}</td>
+            <td>{{ returnItem.type }}</td>
+            <td>{{ returnItem.referenceId }}</td>
+            <td>{{ formatDate(returnItem.date) }}</td>
+            <td>{{ returnItem.customerOrSupplier }}</td>
+            <td>₹{{ returnItem.amount | number:'1.2-2' }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="getStatusClass(returnItem.status)">
+                {{ returnItem.status }}
+              </span>
+            </td>
+            <td class="actions-cell">
+              <button class="action-btn view-btn" title="View" [routerLink]="['/inventory/returns', returnItem.id]">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="action-btn edit-btn" title="Edit" [routerLink]="['/inventory/returns', returnItem.id, 'edit']">
+                <i class="fas fa-pen"></i>
+              </button>
+              <button class="action-btn delete-btn" title="Delete" (click)="deleteReturn(returnItem.id)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+        <tbody *ngIf="loading">
+          <tr>
+            <td colspan="8" class="loading-message">Loading returns...</td>
+          </tr>
+        </tbody>
+        <tbody *ngIf="!loading && filteredReturns.length === 0">
+          <tr>
+            <td colspan="8" class="no-data-message">No returns found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="pagination" *ngIf="filteredReturns.length > 0">
+      <span class="page-info">Showing 1 to {{ filteredReturns.length }} of {{ filteredReturns.length }} entries</span>
+      <div class="page-controls">
+        <select>
+          <option>50</option>
+          <option>100</option>
+          <option>200</option>
+        </select>
+        <button class="page-btn" disabled><i class="fas fa-chevron-left"></i> Previous</button>
+        <button class="page-number active">1</button>
+        <button class="page-btn" disabled>Next <i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+  </div>
+</div>

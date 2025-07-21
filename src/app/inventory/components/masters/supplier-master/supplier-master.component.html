@@ -1,0 +1,324 @@
+<div class="p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="fw-bold mb-1" style="color: #6b1d14; font-family: 'Roboto', sans-serif;">Supplier Master</h3>
+      <p class="text-muted small mb-0" style="font-family: 'Roboto', sans-serif;">
+        Total: {{ filteredSuppliers.length }} | 
+        <span class="badge me-1" style="background-color: #1cc88a; color: white; font-family: 'Roboto', sans-serif; font-size: 12px;">{{ getActiveSupplierCount() }} Active</span>
+        <span class="badge me-1" style="background-color: #e74a3b; color: white; font-family: 'Roboto', sans-serif; font-size: 12px;">{{ getInactiveSupplierCount() }} Inactive</span>
+      </p>
+    </div>
+    <div class="d-flex">
+      <div class="input-group me-3" style="width: 300px;">
+        <input type="text" class="form-control shadow-sm" placeholder="Search name or mobile..." 
+               [(ngModel)]="searchTerm" (input)="searchSuppliers()">
+        <span class="input-group-text bg-white">
+          <i class="fas fa-search text-primary"></i>
+        </span>
+      </div>
+      <button class="btn btn-outline-secondary me-2" (click)="toggleInactiveFilter()">
+        <i class="fas" [ngClass]="{'fa-eye': showInactiveSuppliers, 'fa-eye-slash': !showInactiveSuppliers}"></i>
+        {{ showInactiveSuppliers ? 'Show All' : 'Show Active Only' }}
+      </button>
+      <button class="btn shadow-sm me-2" style="background-color: #6b1d14; color: white; font-family: 'Roboto', sans-serif;" (click)="openAddModal()">
+        <i class="fas fa-plus-circle me-2"></i> Add New Supplier
+      </button>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0" style="border-collapse: separate; border-spacing: 0;">
+          <thead>
+            <tr class="bg-light">
+              <th class="fw-medium py-3" style="width: 5%; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem;">No.</th>
+              <th class="fw-medium py-3" style="width: 180px; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem;">Supplier ID</th>
+              <th class="fw-medium py-3" style="width: 20%; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Supplier Name</th>
+              <th class="fw-medium py-3" style="width: 10%; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">GST No.</th>
+              <th class="fw-medium py-3" style="width: 15%; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Contact No.</th>
+              <th class="fw-medium py-3" style="width: 10%; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Status</th>
+              <th class="fw-medium py-3 text-center" style="width: 15%; color: #333; font-family: 'Roboto', sans-serif; font-size: 0.875rem;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="loading">
+              <td colspan="7" class="text-center py-4">
+                <span class="spinner-border spinner-border-sm me-2" style="color: #6b1d14;" role="status"></span>
+                <span>Loading suppliers...</span>
+              </td>
+            </tr>
+            <tr *ngIf="!loading && filteredSuppliers.length === 0">
+              <td colspan="8" class="text-center py-4">
+                <i class="fas fa-info-circle text-muted me-2"></i>No suppliers found
+              </td>
+            </tr>
+            <tr *ngFor="let supplier of filteredSuppliers; let i = index" [ngClass]="{'text-danger': supplier.status === 'INACTIVE'}">
+              <td class="align-middle">{{ i + 1 }}</td>
+              <td class="align-middle">{{ getFormattedSupplierId(supplier.id) }}</td>
+              <td class="align-middle" [ngClass]="{'fw-bold': supplier.status === 'INACTIVE'}">{{ supplier.name }}</td>
+              <td class="align-middle">{{ supplier.gstNumber || supplier.gstin || '-' }}</td>
+              <td class="align-middle">
+                <i class="fas fa-phone-alt" [ngClass]="{'text-primary': supplier.status !== 'INACTIVE', 'text-danger': supplier.status === 'INACTIVE'}" class="small me-2"></i>
+                {{ supplier.contactNumber || supplier.mobileNumber || '-' }}
+              </td>
+               
+              <td class="align-middle">
+                <span class="badge fw-medium" [ngClass]="{
+                  'bg-success': supplier.status === 'ACTIVE',
+                  'bg-danger': supplier.status === 'INACTIVE',
+                  'bg-warning': !supplier.status
+                }">
+                  {{ supplier.status || 'ACTIVE' }}
+                </span>
+              </td>
+              <td class="align-middle text-center">
+                <div class="d-flex justify-content-center gap-2">
+                 
+                  <button class="btn btn-sm btn-outline-primary px-2 py-1" title="Edit Supplier" (click)="openEditModal(supplier)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-sm" 
+                    [ngClass]="{
+                      'btn-success': supplier.status === 'ACTIVE', 
+                      'btn-danger': supplier.status === 'INACTIVE',
+                      'btn-warning': !supplier.status
+                    }" 
+                    [title]="supplier.status === 'ACTIVE' ? 'Deactivate Supplier' : 'Activate Supplier'" 
+                    (click)="toggleSupplierStatus(supplier)">
+                    <span *ngIf="supplier.status === 'ACTIVE'">
+                      <i class="fas fa-toggle-on text-white"></i>
+                    </span>
+                    <span *ngIf="supplier.status === 'INACTIVE'">
+                      <i class="fas fa-toggle-off text-white"></i>
+                    </span>
+                    <span *ngIf="supplier.status !== 'ACTIVE' && supplier.status !== 'INACTIVE'">
+                      <i class="fas fa-toggle-on"></i>
+                    </span>
+                  </button>
+                 
+                  <button class="btn btn-sm px-2 py-1" title="View Supplier Overview" 
+                    style="background: linear-gradient(to right, #6b1d14, #8c2c21); color: white; border: none;" 
+                    (click)="viewSupplierOverview(supplier)">
+                    <i class="fas fa-eye me-1"></i> 
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Supplier Modal -->
+<div class="modal" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header" style="background-color: #f8f9fc; font-family: 'Roboto', sans-serif;">
+        <h5 class="modal-title fw-bold" style="color: #333; font-family: 'Roboto', sans-serif;">
+          <i class="fas {{ isEditMode ? 'fa-edit' : 'fa-plus-circle' }} me-2" style="color: #6b1d14;"></i>
+          {{ isEditMode ? 'Edit Supplier' : 'Add New Supplier' }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body" style="font-family: 'Roboto', sans-serif;">
+        <!-- Error message alert -->
+        <div *ngIf="formError" class="alert alert-danger mb-3" role="alert">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          {{ formError }}
+        </div>
+        <form [formGroup]="supplierForm" (ngSubmit)="submitForm()">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Supplier Name *</label>
+              <input type="text" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="name" 
+                [class.is-invalid]="supplierForm.get('name')?.invalid && supplierForm.get('name')?.touched">
+              <div *ngIf="supplierForm.get('name')?.invalid && supplierForm.get('name')?.touched" class="invalid-feedback" style="font-family: 'Roboto', sans-serif; font-size: 12px; color: #e74a3b;">
+                Supplier name is required
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Supplier Id</label>
+              <input type="text" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="supplierId" [disabled]="true">
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">GST No *</label>
+              <input type="text" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="gstNumber"
+                [class.is-invalid]="supplierForm.get('gstNumber')?.invalid && supplierForm.get('gstNumber')?.touched">
+              <div *ngIf="supplierForm.get('gstNumber')?.invalid && supplierForm.get('gstNumber')?.touched" class="invalid-feedback" style="font-family: 'Roboto', sans-serif; font-size: 12px; color: #e74a3b;">
+                GST Number is required
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Contact No *</label>
+              <input type="text" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="contactNumber"
+                [class.is-invalid]="supplierForm.get('contactNumber')?.invalid && supplierForm.get('contactNumber')?.touched">
+              <div *ngIf="supplierForm.get('contactNumber')?.invalid && supplierForm.get('contactNumber')?.touched" class="invalid-feedback" style="font-family: 'Roboto', sans-serif; font-size: 12px; color: #e74a3b;">
+                Please enter a valid 10-digit contact number
+              </div>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Drug License Number <small class="text-muted">(optional)</small></label>
+              <input type="text" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="drugLicenseNumber">
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Email</label>
+              <input type="email" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="email"
+                [class.is-invalid]="supplierForm.get('email')?.invalid && supplierForm.get('email')?.touched">
+              <div *ngIf="supplierForm.get('email')?.invalid && supplierForm.get('email')?.touched" class="invalid-feedback" style="font-family: 'Roboto', sans-serif; font-size: 12px; color: #e74a3b;">
+                Please enter a valid email address
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Contact Person</label>
+              <input type="text" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="contactPerson">
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Address</label>
+              <textarea class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="address" rows="3"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Status</label>
+              <select class="form-select" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="status">
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="INACTIVE">INACTIVE</option>
+              </select>
+              <small class="form-text text-muted" style="font-family: 'Roboto', sans-serif; font-size: 12px;">Inactive suppliers won't appear in purchase forms</small>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer" style="background-color: #f8f9fc; border-top: 1px solid #d1d3e2; font-family: 'Roboto', sans-serif;">
+        <button type="button" class="btn" style="background-color: #d1d3e2; color: #333; font-family: 'Roboto', sans-serif; font-size: 14px;" (click)="closeModal()">Cancel</button>
+        <button type="button" class="btn" style="background-color: #6b1d14; color: white; font-family: 'Roboto', sans-serif; font-size: 14px;" [disabled]="!isFormValid()" (click)="submitForm()">
+          <i class="bi bi-check"></i> Submit
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Purchase Details Modal -->
+<div class="modal" [class.show]="showPurchaseModal" [style.display]="showPurchaseModal ? 'block' : 'none'" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content shadow-lg" style="border-radius: 12px; overflow: hidden;">
+      <div class="modal-header" style="background: linear-gradient(to right, #6b1d14, #8c2c21); color: white; font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;">
+        <h5 class="modal-title fw-bold" style="font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;">
+          <i class="fas fa-history me-2"></i>
+          Purchase History - {{ selectedSupplier?.name }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="closePurchaseModal()"></button>
+      </div>
+      <div class="modal-body" style="font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;">
+        <div *ngIf="loadingPurchases" class="text-center py-5">
+          <div class="spinner-border" style="color: #6b1d14; width: 3rem; height: 3rem;" role="status">
+            <span class="visually-hidden">Loading purchases...</span>
+          </div>
+          <p class="mt-3">Loading purchase history...</p>
+        </div>
+        
+        <div *ngIf="!loadingPurchases && (!supplierPurchases || supplierPurchases.length === 0)" class="text-center py-5">
+          <div class="empty-state">
+            <i class="bi bi-receipt" style="font-size: 3rem; color: #8c2c2180;"></i>
+            <p class="mt-3">No purchase history found for this supplier</p>
+          </div>
+        </div>
+        
+        <!-- Purchase history table -->
+        <div *ngIf="!loadingPurchases && supplierPurchases.length > 0" class="table-responsive">
+          <table class="table table-hover purchase-table">
+            <thead>
+              <tr>
+                <th>Purchase ID</th>
+                <th>Invoice Date</th>
+                <th>Reference</th>
+                <th>Items</th>
+                <th class="text-end">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let purchase of supplierPurchases" 
+                    (click)="viewPurchaseItems(purchase)" 
+                    style="cursor: pointer;" 
+                    [class.selected-row]="selectedPurchaseItems === purchase.purchaseItems">
+                  <td class="fw-medium">
+                    <span class="badge me-1" style="background: linear-gradient(to right, #6b1d14, #8c2c21); color: white;">
+                      {{ formatPurchaseId(purchase.id || '') }}
+                    </span>
+                  </td>
+                  <td>{{ purchase.invoiceDate | date:'MMM d, yyyy' }}</td>
+                  <td>{{ purchase.referenceId || 'N/A' }}</td>
+                  <td>
+                    <span class="badge" 
+                          [style.background-color]="(purchase.purchaseItems && purchase.purchaseItems.length > 0) ? '#e6c157' : '#f3f4f6'" 
+                          [style.color]="'#6b1d14'">
+                      {{ purchase.purchaseItems?.length || 0 }} items
+                    </span>
+                  </td>
+                  <td class="text-end fw-bold">₹{{ purchase.totalAmount | number:'1.2-2' }}</td>
+                </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Purchase items section (displays when a purchase is clicked) -->
+        <div *ngIf="selectedPurchaseItems && selectedPurchaseItems.length > 0" class="purchase-items-container">
+          <h5 style="color: #6b1d14; border-bottom: 2px solid #e6c157; padding-bottom: 8px;">
+            Purchase Items 
+            <span class="badge ms-2" style="background-color: #e6c157; color: #6b1d14;">{{ selectedPurchaseItems.length }} items</span>
+          </h5>
+          <div class="table-responsive">
+            <table class="table table-sm items-table">
+              <thead>
+                <tr style="background: linear-gradient(to right, #f8f9fa, #f3d98b10);">
+                  <th style="color: #4a0f09;">Medicine</th>
+                  <th style="color: #4a0f09;">Batch No.</th>
+                  <th style="color: #4a0f09;">Expiry</th>
+                  <th style="color: #4a0f09;">Quantity</th>
+                  <th style="color: #4a0f09;">Unit Price</th>
+                  <th class="text-end" style="color: #4a0f09;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of selectedPurchaseItems">
+                  <td>
+                    <span class="fw-medium">{{ item.medicineName }}</span>
+                  </td>
+                  <td>{{ item.batchNumber || 'N/A' }}</td>
+                  <td>{{ item.expiryDate | date:'MMM yyyy' }}</td>
+                  <td>{{ item.quantity }}</td>
+                  <td>₹{{ item.unitPrice | number:'1.2-2' }}</td>
+                  <td class="text-end fw-bold">₹{{ (item.quantity * item.unitPrice) | number:'1.2-2' }}</td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr style="background-color: #f3d98b30;">
+                  <td colspan="5" class="text-end fw-bold">Total:</td>
+                  <td class="text-end fw-bold" style="color: #6b1d14;">
+                    ₹{{ getTotalAmount() | number:'1.2-2' }}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="background-color: #f8f9fc; border-top: 1px solid #d1d3e2;">
+        <button type="button" class="btn" style="background: linear-gradient(to right, #6b1d14, #8c2c21); color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.15);" (click)="closePurchaseModal()">
+          <i class="fas fa-times me-1"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade show" *ngIf="showModal || showPurchaseModal"></div>

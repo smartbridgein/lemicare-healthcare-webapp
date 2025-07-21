@@ -1,0 +1,308 @@
+/* Classic Page Title & Header Styles */
+.page-title {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+  border-bottom: 2px solid #7d6f56;
+  padding-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.fs-3, .fw-bold {
+  font-family: "Times New Roman", Times, serif;
+}
+
+.breadcrumb {
+  font-family: "Times New Roman", Times, serif;
+  
+  .breadcrumb-item a {
+    color: #7d6f56;
+    text-decoration: none;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.btn-classic {
+  background-color: #7d6f56;
+  border: 1px solid #6a5e49;
+  color: #fff;
+  font-family: "Times New Roman", Times, serif;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  
+  &:hover {
+    background-color: #6a5e49;
+    color: #fff;
+  }
+  
+  i {
+    margin-right: 0.5rem;
+  }
+}
+
+.btn-info {
+  background-color: #36b9cc;
+  border-color: #2a9aaa;
+  font-family: "Times New Roman", Times, serif;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  
+  &:hover {
+    background-color: #2a9aaa;
+  }
+}
+
+/* Classic Summary Card Styling */
+.card {
+  border: 1px solid #e0e0e0;
+  border-radius: 0.25rem;
+  height: 100%;
+  font-family: "Times New Roman", Times, serif;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  margin-bottom: 1.5rem;
+  transition: all 0.2s ease;
+  
+  .card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+    padding: 0.75rem 1.25rem;
+    
+    h6 {
+      font-family: "Times New Roman", Times, serif;
+      letter-spacing: 0.05em;
+    }
+  }
+  
+  .card-body {
+    padding: 1.25rem;
+    background-color: #fff;
+    
+    .rounded-circle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
+      height: 60px;
+    }
+    
+    .display-6 {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 2rem;
+      font-weight: 600;
+      margin: 0 0 0.25rem;
+      line-height: 1;
+    }
+    
+    .text-muted {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 0.9rem;
+      color: #666;
+    }
+  }
+}
+
+/* Classic Search Bar Styling */
+.input-group {
+  border: 1px solid #d1d3e2;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  
+  .input-group-text {
+    background-color: #f8f8f8;
+    border: none;
+    border-right: 1px solid #d1d3e2;
+    color: #36b9cc;
+    padding: 0.5rem 1rem;
+  }
+  
+  .form-control {
+    border: none;
+    padding: 0.5rem 1rem;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 0.95rem;
+    color: #333;
+    
+    &::placeholder {
+      font-style: italic;
+      color: #999;
+    }
+    
+    &:focus {
+      box-shadow: none;
+      border-color: #d1d3e2;
+    }
+  }
+  
+  .btn-outline-info {
+    background: transparent;
+    border: none;
+    color: #36b9cc;
+    padding: 0 1rem;
+    
+    &:hover {
+      color: #2a9aaa;
+      background-color: transparent;
+    }
+  }
+}
+
+/* Classic Table Styling */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  color: #333;
+  font-family: "Times New Roman", Times, serif;
+  
+  th, td {
+    padding: 1rem 1.25rem;
+    border: 1px solid #e0e0e0;
+    vertical-align: middle;
+  }
+  
+  th {
+    background-color: #f8f9fc;
+    font-weight: 600;
+    color: #333;
+    font-size: 1rem;
+    border-top: none;
+    border-bottom: 2px solid #d1d3e2;
+    text-align: left;
+  }
+  
+  tbody tr {
+    transition: background-color 0.2s;
+    
+    &:hover {
+      background-color: rgba(125, 111, 86, 0.05);
+    }
+  }
+  
+  .table-light {
+    background-color: #f9f9f9;
+  }
+  
+  a.text-info {
+    color: #36b9cc;
+    font-weight: 600;
+    text-decoration: none;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+/* Payment Mode Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: "Times New Roman", Times, serif;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.01rem;
+  
+  &.text-success {
+    color: #1cc88a !important;
+  }
+  
+  &.text-primary {
+    color: #4e73df !important;
+  }
+  
+  &.text-info {
+    color: #36b9cc !important;
+  }
+  
+  &.text-warning {
+    color: #f6c23e !important;
+  }
+  
+  &.text-secondary {
+    color: #6c757d !important;
+  }
+}
+
+/* Action Buttons */
+.btn-group {
+  .btn {
+    padding: 0.25rem 0.5rem;
+    font-family: "Times New Roman", Times, serif;
+    margin-right: 0.25rem;
+    
+    &.btn-outline-info {
+      color: #36b9cc;
+      border-color: #36b9cc;
+      
+      &:hover {
+        background-color: rgba(54, 185, 204, 0.05);
+      }
+    }
+    
+    &.btn-outline-danger {
+      color: #e74a3b;
+      border-color: #e74a3b;
+      
+      &:hover {
+        background-color: rgba(231, 74, 59, 0.05);
+      }
+    }
+  }
+}
+
+/* Empty State Styling */
+.card-body.text-center {
+  padding: 3rem 1rem;
+  
+  i.fa-4x {
+    color: #36b9cc;
+    margin-bottom: 1.5rem;
+  }
+  
+  h4 {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.75rem;
+  }
+  
+  p.text-muted {
+    font-family: "Times New Roman", Times, serif;
+    color: #666;
+    max-width: 400px;
+    margin: 0 auto 2rem;
+    font-style: italic;
+  }
+}
+
+/* Loading State */
+@keyframes spinner {
+  to { transform: rotate(360deg); }
+}
+
+.spinner-border {
+  border: 3px solid rgba(54, 185, 204, 0.1);
+  border-top: 3px solid #36b9cc;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spinner 0.8s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+.text-muted {
+  font-family: "Times New Roman", Times, serif;
+  font-style: italic;
+}

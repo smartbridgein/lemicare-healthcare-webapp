@@ -1,0 +1,300 @@
+<div class="visit-history-container">
+  <div class="header">
+    <h1>Patient Visit History</h1>
+    <a [routerLink]="['/patients']" class="back-btn">
+      <i class="fas fa-arrow-left"></i> Back to Patient List
+    </a>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-spinner">
+    <div class="spinner"></div>
+    <p>Loading data...</p>
+  </div>
+
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="successMessage" class="success-message">
+    {{ successMessage }}
+  </div>
+
+  <div *ngIf="patient && !isLoading" class="patient-info-card">
+    <div class="patient-info">
+      <h2>{{ patient.firstName }} {{ patient.middleName ? patient.middleName + ' ' : '' }}{{ patient.lastName }}</h2>
+      <div class="patient-details">
+        <div class="detail-item">
+          <span class="label">Patient ID:</span>
+          <span class="value">{{ patient.patientId || 'N/A' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Age/Gender:</span>
+          <span class="value">{{ patient.age || '?' }} / {{ patient.gender }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="label">Mobile:</span>
+          <span class="value">{{ patient.mobileNumber }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="action-links">
+      <a [routerLink]="['/patients/registration', patient.id]" class="action-link">
+        <i class="fas fa-edit"></i> Edit Profile
+      </a>
+      <a [routerLink]="['/patients/medical-history', patient.id]" class="action-link">
+        <i class="fas fa-notes-medical"></i> Medical History
+      </a>
+    </div>
+  </div>
+
+  <div class="visit-history-content" *ngIf="!isLoading">
+    <div class="visit-list-container">
+      <div class="visit-list-header">
+        <h3>Visit Records</h3>
+        
+      </div>
+      
+      <div class="visit-list">
+        <div *ngIf="visitHistory.length === 0" class="no-visits-message">
+          No visits recorded yet.
+        </div>
+        
+        <div *ngFor="let visit of visitHistory" class="visit-item" 
+            [class.selected]="selectedVisit?.id === visit.id"
+            (click)="selectVisit(visit)">
+          <div class="visit-date">
+            <span class="day">{{ visit.visitDate | date:'dd' }}</span>
+            <span class="month-year">{{ visit.visitDate | date:'MMM yyyy' }}</span>
+          </div>
+          <div class="visit-info">
+            <h4>{{ visit.diagnosis }}</h4>
+            <p class="doctor"><i class="fas fa-user-doctor"></i> {{ visit.doctorName }}</p>
+          </div>
+          <button type="button" class="edit-btn" (click)="editVisit(visit); $event.stopPropagation()">
+            <i class="fas fa-edit"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="visit-detail-container">
+      <div *ngIf="!selectedVisit && !isAddingNewVisit" class="no-visit-selected">
+        <p>Select a visit from the list or add a new visit to view details.</p>
+      </div>
+      
+      <div *ngIf="selectedVisit && !isAddingNewVisit" class="visit-details">
+        <h3>Visit Details</h3>
+        
+        <div class="detail-section">
+          <div class="detail-row">
+            <div class="detail-label">Date:</div>
+            <div class="detail-value">{{ selectedVisit.visitDate | date:'dd MMM yyyy' }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Doctor:</div>
+            <div class="detail-value">{{ selectedVisit.doctorName }}</div>
+          </div>
+        </div>
+        
+        <div class="detail-section">
+          <h4>Symptoms</h4>
+          <ul class="symptoms-list">
+            <li *ngFor="let symptom of selectedVisit.symptoms">{{ symptom }}</li>
+          </ul>
+        </div>
+        
+        <div class="detail-section">
+          <h4>Diagnosis</h4>
+          <p>{{ selectedVisit.diagnosis }}</p>
+        </div>
+        
+        <div class="detail-section">
+          <h4>Treatment</h4>
+          <p>{{ selectedVisit.treatment }}</p>
+        </div>
+        
+        <div class="detail-section" *ngIf="selectedVisit.prescriptions && selectedVisit.prescriptions.length > 0">
+          <h4>Prescriptions</h4>
+          <div class="prescription-item" *ngFor="let prescription of selectedVisit.prescriptions">
+            <div class="prescription-header">
+              <h5>{{ prescription.medicationName }}</h5>
+            </div>
+            <div class="prescription-details">
+              <div class="prescription-detail">
+                <span class="detail-label">Dosage:</span>
+                <span>{{ prescription.dosage }}</span>
+              </div>
+              <div class="prescription-detail">
+                <span class="detail-label">Frequency:</span>
+                <span>{{ prescription.frequency }}</span>
+              </div>
+              <div class="prescription-detail">
+                <span class="detail-label">Duration:</span>
+                <span>{{ prescription.duration }}</span>
+              </div>
+              <div class="prescription-detail" *ngIf="prescription.notes">
+                <span class="detail-label">Notes:</span>
+                <span>{{ prescription.notes }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="detail-section" *ngIf="selectedVisit.followUpDate">
+          <h4>Follow-up Date</h4>
+          <p>{{ selectedVisit.followUpDate | date:'dd MMM yyyy' }}</p>
+        </div>
+        
+        <div class="detail-section" *ngIf="selectedVisit.notes">
+          <h4>Notes</h4>
+          <p>{{ selectedVisit.notes }}</p>
+        </div>
+        
+        <div class="visit-actions">
+          <button type="button" class="edit-visit-btn" (click)="editVisit(selectedVisit)">
+            <i class="fas fa-edit"></i> Edit Visit
+          </button>
+        </div>
+      </div>
+      
+      <!-- Visit Form -->
+      <form *ngIf="isAddingNewVisit" [formGroup]="visitForm" (ngSubmit)="onSubmit()" class="visit-form">
+        <h3>{{ selectedVisit?.id ? 'Update Visit' : 'New Visit' }}</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="visitDate">Visit Date</label>
+            <input type="date" id="visitDate" formControlName="visitDate">
+            <div class="error-text" *ngIf="visitForm.get('visitDate')?.touched && visitForm.get('visitDate')?.invalid">
+              Visit date is required
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="doctorId">Doctor</label>
+            <select id="doctorId" formControlName="doctorId">
+              <option value="" disabled>Select a doctor</option>
+              <option *ngFor="let doctor of doctors" [value]="doctor.doctorId">{{ doctor.name }}{{ doctor.specialty ? ' (' + doctor.specialty + ')' : '' }}</option>
+            </select>
+            <div class="loading-text" *ngIf="isLoadingDoctors">Loading doctors...</div>
+            <div class="error-text" *ngIf="visitForm.get('doctorId')?.touched && visitForm.get('doctorId')?.invalid">
+              Please select a doctor
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-section">
+          <div class="form-array-header">
+            <h4>Symptoms</h4>
+            <button type="button" class="add-btn" (click)="addSymptom()">
+              <i class="fas fa-plus"></i> Add
+            </button>
+          </div>
+          
+          <div formArrayName="symptoms">
+            <div class="form-array-item" *ngFor="let item of symptomsArray.controls; let i = index" [formGroupName]="i">
+              <input type="text" formControlName="value" placeholder="Enter symptom">
+              <button type="button" class="remove-btn" (click)="removeSymptom(i)" *ngIf="symptomsArray.length > 1">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="diagnosis">Diagnosis</label>
+          <input type="text" id="diagnosis" formControlName="diagnosis">
+          <div class="error-text" *ngIf="visitForm.get('diagnosis')?.touched && visitForm.get('diagnosis')?.invalid">
+            Diagnosis is required
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="treatment">Treatment</label>
+          <textarea id="treatment" formControlName="treatment" rows="2"></textarea>
+          <div class="error-text" *ngIf="visitForm.get('treatment')?.touched && visitForm.get('treatment')?.invalid">
+            Treatment is required
+          </div>
+        </div>
+        
+        <div class="form-section">
+          <div class="form-array-header">
+            <h4>Prescriptions</h4>
+            <button type="button" class="add-btn" (click)="addPrescription()">
+              <i class="fas fa-plus"></i> Add
+            </button>
+          </div>
+          
+          <div formArrayName="prescriptions">
+            <div class="prescription-form-item" *ngFor="let prescription of prescriptionsArray.controls; let i = index" [formGroupName]="i">
+              <div class="prescription-form-header">
+                <h5>Prescription #{{ i + 1 }}</h5>
+                <button type="button" class="remove-btn" (click)="removePrescription(i)">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              
+              <div class="prescription-form-details">
+                <div class="form-group">
+                  <label>Medication</label>
+                  <input type="text" formControlName="medicationName" placeholder="Enter medication name">
+                  <div class="error-text" *ngIf="prescriptionsArray.controls[i].get('medicationName')?.touched && prescriptionsArray.controls[i].get('medicationName')?.invalid">
+                    Medication name is required
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label>Dosage</label>
+                  <input type="text" formControlName="dosage" placeholder="e.g., 500mg">
+                  <div class="error-text" *ngIf="prescriptionsArray.controls[i].get('dosage')?.touched && prescriptionsArray.controls[i].get('dosage')?.invalid">
+                    Dosage is required
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label>Frequency</label>
+                  <input type="text" formControlName="frequency" placeholder="e.g., Twice daily">
+                  <div class="error-text" *ngIf="prescriptionsArray.controls[i].get('frequency')?.touched && prescriptionsArray.controls[i].get('frequency')?.invalid">
+                    Frequency is required
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label>Duration</label>
+                  <input type="text" formControlName="duration" placeholder="e.g., 7 days">
+                  <div class="error-text" *ngIf="prescriptionsArray.controls[i].get('duration')?.touched && prescriptionsArray.controls[i].get('duration')?.invalid">
+                    Duration is required
+                  </div>
+                </div>
+                
+                <div class="form-group full-width">
+                  <label>Notes</label>
+                  <textarea formControlName="notes" rows="1" placeholder="Additional instructions"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="followUpDate">Follow-up Date</label>
+            <input type="date" id="followUpDate" formControlName="followUpDate">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="notes">Additional Notes</label>
+          <textarea id="notes" formControlName="notes" rows="2" placeholder="Any additional notes or observations..."></textarea>
+        </div>
+        
+        <div class="form-actions">
+          <button type="button" (click)="cancelNewVisit()" class="cancel-btn">Cancel</button>
+          <button type="submit" [disabled]="isSaving" class="save-btn">
+            <span *ngIf="!isSaving">{{ selectedVisit?.id ? 'Update Visit' : 'Save Visit' }}</span>
+            <span *ngIf="isSaving" class="button-spinner"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

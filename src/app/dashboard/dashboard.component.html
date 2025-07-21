@@ -1,0 +1,192 @@
+<div class="dashboard-layout">
+  <!-- Sidebar Navigation -->
+  <div class="sidebar" [ngClass]="{'collapsed': sidebarCollapsed}">
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle" (click)="toggleSidebar()">
+      <i class="fas" [ngClass]="sidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
+    </button>
+    <div class="clinic-logo">
+      <div class="clinic-branding">
+        <div class="logo-icon">
+          <i class="fas fa-clinic-medical"></i>
+        </div>
+        <div class="clinic-name">
+          <h2>Hanan Clinic</h2>
+          <span class="clinic-tagline">Healthcare Excellence</span>
+        </div>
+      </div>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <ul>
+        <li class="nav-item" routerLinkActive="active">
+          <a [routerLink]="['/dashboard']" class="nav-link">
+            <i class="fas fa-th-large"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item" [ngClass]="{'expanded': patientsExpanded}">
+          <a (click)="toggleSubmenu('patients')" class="nav-link submenu-toggle">
+            <i class="fas fa-users"></i>
+            <span>Patients</span>
+            <i class="fas ml-auto" [ngClass]="patientsExpanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+          </a>
+          <ul class="submenu" [ngClass]="{'show': patientsExpanded}">
+            <li><a [routerLink]="['/patients']" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active"><i class="fas fa-user-friends"></i> All Patients</a></li>
+            <li><a [routerLink]="['/patients/registration']" routerLinkActive="active"><i class="fas fa-user-plus"></i> New Registration</a></li>
+          </ul>
+        </li>
+        <li class="nav-item" [ngClass]="{'expanded': billingExpanded}">
+          <a (click)="toggleSubmenu('billing')" class="nav-link submenu-toggle">
+            <i class="fas fa-dollar-sign"></i>
+            <span>Billing</span>
+            <i class="fas ml-auto" [ngClass]="billingExpanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+          </a>
+          <ul class="submenu" [ngClass]="{'show': billingExpanded}">
+            <li><a [routerLink]="['/billing']" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active"><i class="fas fa-tachometer-alt"></i> Billing Dashboard</a></li>
+            <li><a [routerLink]="['/billing/invoices']" routerLinkActive="active"><i class="fas fa-file-invoice"></i> Invoices</a></li>
+            <li><a [routerLink]="['/billing/receipts']" routerLinkActive="active"><i class="fas fa-receipt"></i> Receipts</a></li>
+            <li><a [routerLink]="['/billing/advances']" routerLinkActive="active"><i class="fas fa-hand-holding-usd"></i> Advance Payments</a></li>
+            <li><a [routerLink]="['/billing/cash-memos']" routerLinkActive="active"><i class="fas fa-file-alt"></i> Cash Memos</a></li>
+          </ul>
+        </li>
+        
+        <!-- Appointments Section -->
+        <li class="nav-item" [ngClass]="{'expanded': appointmentsExpanded}">
+          <a (click)="toggleSubmenu('appointments')" class="nav-link submenu-toggle">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Appointments</span>
+            <i class="fas ml-auto" [ngClass]="appointmentsExpanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+          </a>
+          <ul class="submenu" [ngClass]="{'show': appointmentsExpanded}">
+            <li><a [routerLink]="['/appointments']" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active"><i class="fas fa-list-alt"></i> All Appointments</a></li>
+            <li><a [routerLink]="['/appointments/new']" routerLinkActive="active"><i class="fas fa-calendar-plus"></i> Book Appointment</a></li>
+          </ul>
+        </li>
+        <!-- Inventory Management Section -->
+        <li class="nav-item" [ngClass]="{'expanded': inventoryExpanded}">
+          <a (click)="toggleSubmenu('inventory')" class="nav-link submenu-toggle">
+            <i class="fas fa-boxes"></i>
+            <span>Inventory</span>
+            <i class="fas ml-auto" [ngClass]="inventoryExpanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+          </a>
+          <ul class="submenu" [ngClass]="{'show': inventoryExpanded}">
+            <li><a [routerLink]="['/inventory/masters']" routerLinkActive="active"><i class="fas fa-database"></i> Masters</a></li>
+            <li><a [routerLink]="['/inventory/purchases']" routerLinkActive="active"><i class="fas fa-shopping-cart"></i> Purchases</a></li>
+            <li><a [routerLink]="['/inventory/sales']" routerLinkActive="active"><i class="fas fa-cash-register"></i> Sales</a></li>
+            <li><a [routerLink]="['/inventory/returns']" routerLinkActive="active"><i class="fas fa-undo-alt"></i> Returns</a></li>
+            <li><a [routerLink]="['/inventory/reports']" routerLinkActive="active"><i class="fas fa-chart-line"></i> Reports</a></li>
+          </ul>
+        </li>
+        
+        <!-- Pharmacy item removed 
+        <li class="nav-item" routerLinkActive="active">
+          <a [routerLink]="['/reports']" class="nav-link">
+            <i class="fas fa-chart-bar"></i>
+            <span>Reports</span>
+          </a>
+        </li>-->
+        <li class="nav-item" routerLinkActive="active">
+          <a [routerLink]="['/settings']" class="nav-link">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+          </a>
+        </li>
+        <!-- Logout item removed -->
+      </ul>
+    </nav>
+    
+    <!-- Doctor info removed -->
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" [ngClass]="{'sidebar-collapsed': sidebarCollapsed}">
+    <!-- Header -->
+    <header class="main-header">
+      <div class="page-title">Dashboard</div>
+      <div class="header-actions">
+        <!-- Today's Appointment Count Badge -->
+        <div class="appointment-count-badge" [routerLink]="['/appointments']" [queryParams]="{view: 'today'}" title="View Today's Appointments">
+          <div class="appointment-icon">
+            <i class="fas fa-calendar-day"></i>
+          </div>
+          <div class="count-container">
+            <div *ngIf="loadingAppointments" class="loading-spinner">
+              <i class="fas fa-spinner fa-spin"></i>
+            </div>
+            <div *ngIf="!loadingAppointments" class="appointment-count">
+              {{ todaysAppointmentCount }}
+            </div>
+            <div class="count-label">Today's Appointments</div>
+          </div>
+        </div>
+        
+        <!-- Current Token Display 
+        <div class="token-display" [ngClass]="{'loading': loadingToken}">
+          <div class="token-header">
+            <i class="fas fa-ticket-alt"></i>
+            <span>Current Token</span>
+          </div>
+          
+          <div class="small text-muted px-2" *ngIf="loadingToken">
+            <i class="fas fa-spinner fa-spin"></i> Loading token data...
+          </div>
+          
+          <div class="token-body" *ngIf="!loadingToken && currentToken">
+            <div class="token-number">{{ currentToken.tokenNumber }}</div>
+            <div class="token-details">
+              <div class="token-patient">{{ currentToken.patientName || 'Patient' }}</div>
+              <div class="token-waiting">Waiting: {{ waitingTokenCount }}</div>
+              <div class="small text-muted">Status: {{ currentToken.tokenStatus }}</div>
+            </div>
+          </div>
+          
+          <div class="token-body empty" *ngIf="!loadingToken && !currentToken">
+            <div class="no-token">No active token</div>
+            <div class="token-waiting" *ngIf="waitingTokenCount > 0">{{ waitingTokenCount }} waiting</div>
+          </div>
+          
+          <div class="token-controls" *ngIf="currentToken">
+            <button class="token-btn complete" (click)="completeCurrentToken()" title="Mark as Complete">
+              <i class="fas fa-check"></i>
+            </button>
+            <button class="token-btn skip" (click)="skipCurrentToken()" title="Skip Token">
+              <i class="fas fa-forward"></i>
+            </button>
+          </div>
+          
+          <div class="loading-overlay" *ngIf="loadingToken">
+            <i class="fas fa-spinner fa-spin"></i>
+          </div>
+        </div>-->
+        
+        <div class="user-profile classic" *ngIf="user">
+          <div class="user-info">
+            <span class="welcome-text">Welcome,</span>
+            <span class="user-name">{{ user && user.name ? user.name : 'User' }}</span>
+          </div>
+          <div class="user-avatar-circle" (click)="navigateToSettings()" title="Go to Settings">
+            <i class="fas fa-user"></i>
+          </div>
+        </div>
+        <button class="logout-btn" (click)="logout()">
+          <i class="fas fa-sign-out-alt"></i>
+          Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <div class="content-container">
+      <!-- Router outlet for ALL routes - this is where child routes will be rendered -->
+      <router-outlet></router-outlet>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="main-footer">
+      <div class="powered-by text-center">
+        <p class="mb-0">Powered by <span class="fw-bold">SmartBridge Innovations</span></p>
+      </div>
+    </footer>
+  </div>
+</div>

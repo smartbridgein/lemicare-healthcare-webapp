@@ -1,0 +1,599 @@
+<div class="purchase-form-container" style="font-family: 'Roboto', sans-serif;">
+  <!-- Clean, professional header with prominent save button -->
+  <div class="page-header">
+    <div class="d-flex justify-content-between align-items-center w-100">
+      <div class="back-button">
+        <a [routerLink]="['/inventory/purchases']" style="color: #6b1d14; font-family: 'Roboto', sans-serif;">
+          <i class="fas fa-arrow-left"></i> Purchase Invoices
+        </a>
+        <span *ngIf="isViewMode" class="view-mode-badge ml-2">View Only</span>
+        <span *ngIf="isEditMode" class="view-mode-badge ml-2" style="background-color: #e8f4f8; color: #0066cc;">Edit Mode</span>
+      </div>
+      
+      <div class="action-buttons">
+        <button *ngIf="isViewMode" type="button" class="btn btn-outline-primary btn-print" (click)="printPurchase()">
+          <i class="fas fa-print"></i> Print
+        </button>
+        <button *ngIf="isViewMode" type="button" class="btn btn-primary" [routerLink]="['/inventory/purchases/edit', purchaseId]">
+          <i class="fas fa-edit"></i> Edit
+        </button>
+       
+      </div>
+    </div>
+  </div>
+  
+  <div class="purchase-form-wrapper">
+    <form [formGroup]="purchaseForm" (ngSubmit)="onSubmit()" class="purchase-form" [class.view-mode]="isViewMode">
+      <!-- Top info cards layout - Document (Left) and Supplier (Right) -->
+      <div class="row info-cards-container">
+        <!-- Document Information Card - Left Side -->
+        <div class="col-md-6">
+          <div class="info-card h-100">
+            <div class="card-header" style="background-color: #f8f9fc;">
+              <h3 style="color: #333; font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 18px;"><i class="fas fa-file-invoice" style="color: #6b1d14;"></i> Document Information</h3>
+            </div>
+            <div class="card-body">
+              <div class="form-row">
+                <div class="form-group col-md-12">
+                  <label for="invoiceDate" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Invoice Date <span class="required" style="color: #e74a3b;">*</span></label>
+                  <div class="input-with-icon">
+                    <input 
+                      id="invoiceDate"
+                      type="date" 
+                      formControlName="invoiceDate"
+                      class="form-control"
+                      [class.is-invalid]="purchaseForm.get('invoiceDate')?.invalid && purchaseForm.get('invoiceDate')?.touched"
+                    >
+                    <i class="far fa-calendar"></i>
+                  </div>
+                  <div *ngIf="purchaseForm.get('invoiceDate')?.invalid && purchaseForm.get('invoiceDate')?.touched" class="validation-message" style="font-family: 'Roboto', sans-serif; font-size: 12px; color: #e74a3b;">
+                    Invoice date is required
+                  </div>
+                </div>
+                <div class="form-group col-md-12">
+                  <label for="referenceId" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Invoice Number <span class="required" style="color: #e74a3b;">*</span></label>
+                  <input 
+                    id="referenceId"
+                    type="text" 
+                    formControlName="referenceId"
+                    class="form-control"
+                    placeholder="Enter supplier's invoice number"
+                    [class.is-invalid]="purchaseForm.get('referenceId')?.invalid && purchaseForm.get('referenceId')?.touched"
+                  >
+                  <div *ngIf="purchaseForm.get('referenceId')?.invalid && purchaseForm.get('referenceId')?.touched" class="validation-message" style="font-family: 'Roboto', sans-serif; font-size: 12px; color: #e74a3b;">
+                    Invoice number is required
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Supplier Selection Card - Right Side -->
+        <div class="col-md-6">
+          <div class="info-card supplier-card h-100">
+            <div class="card-header" style="background-color: #f8f9fc;">
+              <h3 style="color: #333; font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 18px;"><i class="fas fa-truck" style="color: #6b1d14;"></i> Supplier Information <span class="required" style="color: #e74a3b;">*</span></h3>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label for="supplierSearch" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Select Supplier <span class="required" style="color: #e74a3b;">*</span></label>
+                <div *ngIf="!selectedSupplier" class="mb-3">
+                  <input 
+                    id="supplierSearch"
+                    type="text" 
+                    class="form-control"
+                    placeholder="Type to search suppliers..."
+                    [(ngModel)]="searchSupplierTerm"
+                    [ngModelOptions]="{standalone: true}"
+                    (input)="searchSupplier()"
+                    (focus)="searchSupplier(true)"
+                    (click)="searchSupplier(true)"
+                    [class.is-invalid]="purchaseForm.get('supplierId')?.invalid && purchaseForm.get('supplierId')?.touched"
+                    autocomplete="off"
+                  >
+                </div>
+                
+                <!-- Selected Supplier Card -->
+                <div *ngIf="selectedSupplier" class="selected-supplier-card mb-3">
+                  <div class="card">
+                    <div class="card-body py-2 px-3">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <h6 class="mb-0"><i class="fas fa-building me-2"></i>{{ selectedSupplier.name }}</h6>
+                          <small class="text-muted">ID: {{ formatSupplierId(selectedSupplier.id) }}</small>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="clearSelectedSupplier()">
+                          <i class="fas fa-times"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Search Results Dropdown -->
+                <div class="dropdown-menu supplier-dropdown w-100" [class.show]="filteredSuppliers.length > 0">
+                  <a class="dropdown-item" *ngFor="let supplier of filteredSuppliers" (click)="selectSupplier(supplier)">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <span class="font-weight-bold">{{ supplier.name }}</span>
+                      <span class="badge badge-light">ID: {{ supplier.id }}</span>
+                    </div>
+                  </a>
+                  <div class="dropdown-item text-muted" *ngIf="filteredSuppliers.length === 0 && searchSupplierTerm">
+                    No suppliers found
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Selected Supplier Card - Classic Style -->
+              <div class="selected-supplier-card card mt-3" *ngIf="selectedSupplier">
+                <div class="card-body py-2">
+                  <div class="row align-items-center">
+                    <div class="col-auto">
+                      <div class="supplier-avatar bg-light rounded-circle p-2 text-center">
+                        <i class="fas fa-building text-primary"></i>
+                      </div>
+                    </div>
+                    <div class="col">
+                      <h5 class="mb-0">{{ selectedSupplier.name }}</h5>
+                      <small class="text-muted"><i class="fas fa-id-card mr-1"></i> {{ selectedSupplier.id }}</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div *ngIf="purchaseForm.get('supplierId')?.invalid && purchaseForm.get('supplierId')?.touched" class="validation-message mt-2" style="font-family: 'Roboto', sans-serif; font-size: 12px; color: #e74a3b;">
+                Please select a supplier to continue
+              </div>
+
+              <!-- GST Type - Radio Buttons Instead of Dropdown -->
+              <div class="form-group mt-3">
+                <label for="gstType" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">GST Type</label>
+                
+                <!-- Radio button group for GST type selection -->
+                <div class="gst-radio-group mt-2">
+                  <!-- EXCLUSIVE option -->
+                  <div class="form-check custom-radio mb-2">
+                    <input class="form-check-input" 
+                           type="radio" 
+                           name="gstRadio" 
+                           id="gstExclusive" 
+                           [checked]="purchaseForm.get('gst')?.value === 'EXCLUSIVE'"
+                           (change)="selectGstType('EXCLUSIVE')">
+                    <label class="form-check-label" for="gstExclusive">
+                      Exclusive
+                    </label>
+                  </div>
+                  
+                  <!-- INCLUSIVE option -->
+                  <div class="form-check custom-radio mb-2">
+                    <input class="form-check-input" 
+                           type="radio" 
+                           name="gstRadio" 
+                           id="gstInclusive" 
+                           [checked]="purchaseForm.get('gst')?.value === 'INCLUSIVE'"
+                           (change)="selectGstType('INCLUSIVE')">
+                    <label class="form-check-label" for="gstInclusive">
+                      Inclusive
+                    </label>
+                  </div>
+                  
+                  <!-- NON_GST option -->
+                  <div class="form-check custom-radio">
+                    <input class="form-check-input" 
+                           type="radio" 
+                           name="gstRadio" 
+                           id="gstNonGst" 
+                           [checked]="purchaseForm.get('gst')?.value === 'NON_GST'"
+                           (change)="selectGstType('NON_GST')">
+                    <label class="form-check-label" for="gstNonGst">
+                      Non-GST
+                    </label>
+                  </div>
+                </div>
+            
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Medicine Items Card -->
+      <div class="info-card items-card">
+        <div class="card-header items-header" style="background-color: #f8f9fc;">
+          <h3 style="color: #333; font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 18px;"><i class="fas fa-pills" style="color: #6b1d14;"></i> Medicine Items</h3>
+          <button type="button" class="btn add-btn" style="background-color: #6b1d14; color: white; border: none; font-family: 'Roboto', sans-serif; font-size: 14px; padding: 8px 16px; border-radius: 4px;" (click)="addPurchaseItem()">
+            <i class="fas fa-plus-circle"></i> Add Medicine
+          </button>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table medicine-table">
+              <thead>
+                <tr>
+                  <th class="index-cell">#</th>
+                  <th class="medicine-column">Medicine <span class="required">*</span></th>
+                  <th class="generic-mfg-column">Generic & Mfg</th>
+                  <th class="hsn-column">HSN</th>
+                  <th class="batch-column">Batch# <span class="required">*</span></th>
+                  <th class="expiry-column">Exp. Date <span class="required">*</span></th>
+                  <th class="pack-column text-center">Pack* & Free Pack</th>
+                  <th class="items-pack-column text-center">Item per Pack <span class="required">*</span></th>
+                  <th class="qty-column text-center">Qty</th>
+                  <th class="mrp-column text-right">MRP <span class="required">*</span></th>
+                  <th class="cost-column text-right">Pure Cost <span class="required">*</span></th>
+                  <th class="disc-pct-column text-center">Dis (%)</th>
+                  <th class="tax-profile-column text-center">GST (%)</th>
+                  <th class="taxable-amount-column" style="text-align: right !important;">Taxable Amount</th>
+                  <th class="total-column" style="text-align: right !important;">Total Amount</th>
+                  <th class="profit-column" style="text-align: center !important;">Profit (%)</th>
+                  <th class="action-column"></th>
+                </tr>
+              </thead>
+              <tbody formArrayName="items">
+                <tr *ngFor="let item of itemsFormArray.controls; let i = index" [formGroupName]="i" class="medicine-item-row">
+                  <td class="index-cell">{{ i + 1 }}</td>
+                  <td>
+                    <div class="medicine-select">
+                      <input
+                        type="text"
+                        class="form-control form-control-sm"
+                        placeholder="Type to search..."
+                        formControlName="medicineName"
+                        (input)="searchMedicine(i)"
+                        [class.is-invalid]="formSubmitted && item.get('medicineId')?.invalid"
+                      >
+                    </div>
+                  </td>
+                  <td class="generic-mfg-column">
+                    <div *ngIf="item.get('genericName')?.value" class="generic-info" style="line-height: 1.4; padding: 4px 0;">
+                      <div style="font-weight: 500; color: #333; font-size: 0.9rem;">{{ item.get('genericName')?.value  }}</div>
+                      <div *ngIf="item.get('manufacturer')?.value" style="color: #666; font-size: 0.85rem;">{{ item.get('manufacturer')?.value }}</div>
+                    </div>
+                  </td>
+                  <td class="hsn-column">
+                    <small *ngIf="item.get('hsn')?.value" class="hsn-code text-muted">
+                      {{ item.get('hsn')?.value }}
+                    </small>
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      class="form-control form-control-sm"
+                      placeholder="Batch#"
+                      formControlName="batchNo"
+                      [class.is-invalid]="formSubmitted && item.get('batchNo')?.invalid"
+                    >
+                  </td>
+                  <td>
+                    <input
+                      type="date"
+                      class="form-control form-control-sm"
+                      formControlName="expiryDate"
+                      [class.is-invalid]="formSubmitted && item.get('expiryDate')?.invalid"
+                    >
+                  </td>
+                  <td class="pack-column">
+                    <div class="pack-input-group">
+                      <input 
+                        type="number" 
+                        class="form-control form-control-sm text-center" 
+                        formControlName="pack" 
+                        min="1"
+                        placeholder="Paid">
+                      <span class="separator">&</span>
+                      <input 
+                        type="number" 
+                        class="form-control form-control-sm text-center" 
+                        formControlName="freepack" 
+                        min="0"
+                        placeholder="Free">
+                    </div>
+                  </td>
+                  <td>
+                    <input 
+                      type="number" 
+                      class="form-control form-control-sm text-center" 
+                      formControlName="itemsPerPack" 
+                      min="1"
+                      (input)="calculateItemTotal(i)">
+                      <!-- Items per Pack is now manually entered and triggers calculation -->
+                  </td>
+                  <td class="qty-column">
+                    <input
+                      type="number"
+                      class="form-control form-control-sm text-center"
+                      formControlName="quantity"
+                      min="1"
+                      readonly
+                      [class.is-invalid]="formSubmitted && item.get('quantity')?.invalid"
+                    >
+                  </td>
+                  <td class="mrp-column">
+                    <input
+                      type="number"
+                      class="form-control form-control-sm text-right"
+                      formControlName="mrp"
+                      min="0.01"
+                      step="0.01"
+                      [class.is-invalid]="formSubmitted && item.get('mrp')?.invalid"
+                    >
+                  </td>
+                  <td class="cost-column">
+                    <input
+                      type="number"
+                      class="form-control form-control-sm text-right"
+                      formControlName="purchaseCost"
+                      min="0.01"
+                      step="0.01"
+                      [class.is-invalid]="formSubmitted && item.get('purchaseCost')?.invalid"
+                    >
+                  </td>
+                  <td class="disc-pct-column">
+                    <div class="input-group input-group-sm">
+                      <input 
+                        type="number" 
+                        class="form-control form-control-sm text-center" 
+                        formControlName="discount" 
+                        min="0" 
+                        max="100"
+                        (input)="calculateItemTotal(i)">
+                      
+                    </div>
+                  </td>
+                  <td class="tax-profile-column" *ngIf="purchaseForm.get('gst')?.value === 'EXCLUSIVE'">
+                    <select
+                      class="form-control form-control-sm tax-profile-select"
+                      formControlName="taxProfileId"
+                      (change)="calculateItemTotal(i)"
+                      [class.is-invalid]="formSubmitted && isTaxProfileRequired(i) && item.get('taxProfileId')?.invalid"
+                      style="width: 100%; min-width: 140px; overflow: visible;"
+                      [attr.title]="getSelectedTaxProfileLabel(item)"
+                    >
+                      <option value="">Select GST %</option>
+                      <option *ngFor="let profile of taxProfiles" [value]="profile.id">
+                        {{ profile.profileName }} ({{ profile.totalRate }}%)
+                      </option>
+                    </select>
+                    <div *ngIf="formSubmitted && isTaxProfileRequired(i) && (!item.get('taxProfileId')?.value || item.get('taxProfileId')?.value === '')" class="invalid-feedback d-block">
+                      GST profile is required
+                    </div>
+                  </td>
+                  <td class="tax-profile-column" *ngIf="purchaseForm.get('gst')?.value === 'INCLUSIVE'">
+                    <select
+                      class="form-control form-control-sm tax-profile-select"
+                      formControlName="taxProfileId"
+                      (change)="calculateItemTotal(i)"
+                      [class.is-invalid]="formSubmitted && isTaxProfileRequired(i) && item.get('taxProfileId')?.invalid"
+                      style="width: 100%; min-width: 140px; overflow: visible;"
+                      [attr.title]="getSelectedTaxProfileLabel(item)"
+                    >
+                      <option value="">Select GST %</option>
+                      <option *ngFor="let profile of taxProfiles" [value]="profile.id">
+                        {{ profile.profileName }} ({{ profile.totalRate }}%)
+                      </option>
+                    </select>
+                    <div *ngIf="formSubmitted && isTaxProfileRequired(i) && (!item.get('taxProfileId')?.value || item.get('taxProfileId')?.value === '')" class="invalid-feedback d-block">
+                      GST profile is required
+                    </div>
+                  </td>
+                  <td class="tax-profile-column" *ngIf="purchaseForm.get('gst')?.value === 'NON_GST'">
+                    <span class="text-muted">N/A</span>
+                  </td>
+                  <td class="taxable-amount-column text-right">
+                    <span>₹{{ item.get('taxableAmount')?.value || item.get('purchaseCost')?.value || 0 | number:'1.2-2' }}</span>
+                  </td>
+                  <td class="text-right total-column">
+                    <span>₹{{ item.get('totalAmount')?.value || 0 | number:'1.2-2' }}</span>
+                  </td>
+                  <td class="profit-column text-center">
+                    <span *ngIf="calculateProfitPercentage(item)">
+                      {{ calculateProfitPercentage(item) | number:'1.2-2' }}%
+                    </span>
+                  </td>
+                  <td class="action-column">
+                    <button type="button" class="btn btn-sm btn-danger" (click)="removePurchaseItem(i)">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="itemsFormArray.controls.length === 0" class="no-items-row">
+                  <td colspan="15" class="text-center py-4">
+                    <div class="empty-state">
+                      <i class="fas fa-shopping-basket empty-icon"></i>
+                      <p>No medicines added yet</p>
+                      
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Totals and Summary Card -->
+      <div class="info-card summary-card">
+        <div class="card-header summary-header" style="background-color: #f8f9fc;">
+          <h3 style="color: #333; font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 18px;"><i class="fas fa-calculator" style="color: #6b1d14;"></i> Invoice Summary</h3>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Discount Section -->
+            <div class="col-md-5">
+              <div class="discount-panel">
+                <h4 class="discount-title" style="color: #333; font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 16px;">Additional Discount</h4>
+                <div class="discount-controls">
+                  <div class="input-group">
+                    <input 
+                      type="number" 
+                      class="form-control" 
+                      formControlName="overallDiscount"
+                      min="0"
+                      (input)="calculateTotals()"
+                      aria-label="Discount amount"
+                    >
+                    <div class="input-group-append">
+                      <button type="button" class="btn" style="border: 1px solid #d1d3e2; background-color: transparent; color: #333; font-family: 'Roboto', sans-serif;" (click)="toggleDiscountType()">
+                        {{ overallDiscountType }}
+                      </button>
+                    </div>
+                  </div>
+                  <small class="text-muted">Applied to all items</small>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Summary Totals -->
+            <div class="col-md-7">
+              <div class="invoice-summary">
+                <div class="summary-row">
+                  <span class="summary-label">Gross Total:</span>
+                  <span class="summary-value">₹{{ grossTotal | number:'1.2-2' }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Discount:</span>
+                  <span class="summary-value discount-value">- ₹{{ discount | number:'1.2-2' }}</span>
+                </div>
+                <div class="summary-row">
+                  <span class="summary-label">Net Taxable Amount:</span>
+                  <span class="summary-value">₹{{ netTaxableAmt | number:'1.2-2' }}</span>
+                </div>
+                <div class="summary-row tax-row">
+                  <span class="summary-label">CGST:</span>
+                  <span class="summary-value">₹{{ cgstAmount | number:'1.2-2' }}</span>
+                </div>
+                <div class="summary-row tax-row">
+                  <span class="summary-label">SGST:</span>
+                  <span class="summary-value">₹{{ sgstAmount | number:'1.2-2' }}</span>
+                </div>
+                <div class="summary-row grand-total">
+                  <span class="summary-label">Total Amount:</span>
+                  <span class="summary-value grand-total-value" style="color: #6b1d14; font-weight: 600; font-family: 'Roboto', sans-serif;">₹{{ netTotal | number:'1.2-2' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Payment Information Card -->
+      <div class="info-card payment-card mt-3">
+        <div class="card-header payment-header" style="background-color: #f8f9fc;">
+          <h3 style="color: #333; font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 18px;">
+            <i class="fas fa-credit-card" style="color: #6b1d14;"></i> Payment Information
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="row align-items-end">
+            <!-- Amount Paid -->
+            <div class="col-md-4">
+              <div class="form-group mb-0">
+                <label for="amountPaid" class="form-label">Amount Given</label>
+                <div class="input-group">
+                  <input
+                  id="amountPaid"
+                  type="number"
+                  formControlName="amountPaid"
+                  class="form-control"
+                  placeholder="0.00"
+                >
+                </div>
+              </div>
+            </div>
+            
+            <!-- Payment Mode -->
+            <div class="col-md-4">
+              <div class="form-group mb-0">
+                <label for="paymentMode" class="form-label">Payment Mode</label>
+                <select
+                  id="paymentMode"
+                  formControlName="paymentMode"
+                  class="form-control"
+                >
+                  <option value="CASH">Cash</option>
+                  <option value="CARD">Card</option>
+                  <option value="UPI">UPI</option>
+                  <option value="BANK_TRANSFER">Bank Transfer</option>
+                  <option value="CHEQUE">Cheque</option>
+                  <option value="CREDIT">Credit</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Reference Number -->
+            <div class="col-md-4">
+              <div class="form-group mb-0">
+                <label for="paymentReference" class="form-label">Reference Number</label>
+                <input
+                  id="paymentReference"
+                  type="text"
+                  formControlName="paymentReference"
+                  class="form-control"
+                  placeholder="Transaction/UPI/Cheque Reference"
+                >
+              </div>
+            </div>
+            
+            <!-- Balance Amount (if needed) -->
+            <div class="col-md-12 mt-2">
+              <div class="balance-display" *ngIf="purchaseForm.get('amountPaid')?.value > 0">
+                <div *ngIf="(purchaseForm.get('amountPaid')?.value - netTotal) >= 0" class="text-success">
+                  <strong>Change: </strong>₹{{ (purchaseForm.get('amountPaid')?.value - netTotal) | number:'1.2-2' }}
+                </div>
+                <div *ngIf="(purchaseForm.get('amountPaid')?.value - netTotal) < 0" class="text-danger">
+                  <strong>Balance Due: </strong>₹{{ (netTotal - purchaseForm.get('amountPaid')?.value) | number:'1.2-2' }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Action Buttons -->
+      <div class="form-actions">
+        <button type="button" class="btn" style="background-color: #d1d3e2; color: #333; border: none; font-family: 'Roboto', sans-serif;" [routerLink]="['/inventory/purchases']">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        
+        <!-- Delete button - only visible in edit mode -->
+        <button 
+          *ngIf="isEditMode" 
+          type="button" 
+          class="btn mr-2" style="background-color: #e74a3b; color: white; border: none; font-family: 'Roboto', sans-serif;" 
+          [disabled]="submitting"
+          (click)="deletePurchase()">
+          <i class="fas fa-trash-alt" *ngIf="!submitting"></i>
+          <i class="fas fa-spinner fa-spin" *ngIf="submitting"></i>
+          Delete
+        </button>
+        
+        <button type="submit" class="btn" style="background-color: #6b1d14; color: white; border: none; font-family: 'Roboto', sans-serif;" [disabled]="submitting || !formIsValid">
+          <i class="fas fa-check" *ngIf="!submitting"></i>
+          <i class="fas fa-spinner fa-spin" *ngIf="submitting"></i>
+          {{ isEditMode ? 'Update' : 'Save' }} Purchase Invoice
+        </button>
+      </div>
+    </form>
+    
+    <!-- Medicine Search Results - Fixed Position Modal (like sales-prescription-form) -->
+    <div class="fixed-medicine-results" *ngIf="showMedicineSearch" style="position: fixed; z-index: 9999; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; background-color: white; border: 2px solid #6b1d14; border-radius: 8px; max-height: 300px; overflow-y: auto; box-shadow: 0 8px 16px rgba(0,0,0,0.2);">
+      <div style="background-color: #6b1d14; color: white; padding: 8px 12px; font-weight: bold; display: flex; justify-content-between; align-items: center;">
+        <span>Select Medicine</span>
+        <button type="button" (click)="showMedicineSearch = false" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer;">×</button>
+      </div>
+      <div class="loading" *ngIf="loadingMedicines" style="padding: 15px; text-align: center;">
+        <span>Loading medicines...</span>
+      </div>
+      <ul *ngIf="!loadingMedicines && filteredMedicines.length > 0" style="list-style: none; margin: 0; padding: 0;">
+        <li *ngFor="let medicine of filteredMedicines" (click)="selectMedicineForRow(medicine, activeSearchIndex)" style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #eee;">
+          <strong>{{ medicine.name }}</strong>
+          <div *ngIf="medicine.genericName" style="font-size: 0.9em; color: #666;">{{ medicine.genericName }}</div>
+        </li>
+      </ul>
+      <div class="no-results" *ngIf="!loadingMedicines && filteredMedicines.length === 0" style="padding: 15px; text-align: center; color: #666;">
+        No medicines found
+      </div>
+    </div>
+  </div>
+</div>

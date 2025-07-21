@@ -1,0 +1,258 @@
+/* Enhanced styling for the purchase medicine table */
+.medicine-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* Use fixed layout for better column control */
+  margin-bottom: 0;
+  font-size: 0.875rem;
+}
+
+.medicine-table th {
+  background-color: #f8f9fc;
+  color: #6b1d14 !important;
+  font-weight: 500 !important;
+  font-size: 0.875rem;
+  padding: 10px 8px;
+  vertical-align: middle;
+  border-bottom: 1px solid #e3e6f0;
+  white-space: nowrap;
+}
+
+.medicine-table td {
+  padding: 8px;
+  vertical-align: middle;
+  border-top: 1px solid #e9ecef;
+}
+
+.medicine-table .form-control,
+.medicine-table .form-control-sm {
+  border: 1px solid #e9ecef;
+  border-radius: 4px;
+  min-height: 30px;
+  width: 100%;
+  padding: 4px 8px;
+  font-size: 0.875rem;
+}
+
+/* Specialized styling for numeric inputs */
+.medicine-table input[type="number"] {
+  text-align: right;
+  padding-right: 4px;
+}
+
+/* Remove spinner buttons from number inputs for cleaner look */
+.medicine-table input[type="number"]::-webkit-outer-spin-button,
+.medicine-table input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.medicine-table input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.medicine-table .form-control:focus {
+  border-color: #6b1d14;
+  box-shadow: 0 0 0 0.2rem rgba(107, 29, 20, 0.25);
+}
+
+.medicine-table .text-center .form-control {
+  text-align: center;
+}
+
+.medicine-table .text-right .form-control {
+  text-align: right;
+}
+
+/* Column width optimizations */
+.medicine-table .index-cell {
+  width: 40px;
+  text-align: center;
+}
+
+/* Main columns */
+.medicine-table .medicine-column {
+  width: 180px;
+  min-width: 180px;
+}
+
+.medicine-table .medicine-select {
+  width: 100%;
+  min-width: 180px;
+}
+
+.medicine-table .generic-mfg-column {
+  width: 200px;
+  min-width: 200px;
+}
+
+.medicine-table .hsn-column {
+  width: 80px;
+  min-width: 80px;
+}
+
+.medicine-table .batch-column {
+  width: 110px;
+  min-width: 110px;
+}
+
+.medicine-table .expiry-column {
+  width: 120px;
+  min-width: 120px;
+}
+
+/* Pack columns */
+.medicine-table .pack-column {
+  width: 130px;
+  min-width: 130px;
+}
+
+.medicine-table .items-pack-column {
+  width: 100px;
+  min-width: 100px;
+}
+
+.medicine-table .qty-column {
+  width: 70px;
+  min-width: 70px;
+}
+
+/* Price columns */
+.medicine-table .mrp-column {
+  width: 90px;
+  min-width: 90px;
+}
+
+.medicine-table .cost-column {
+  width: 100px;
+  min-width: 100px;
+}
+
+.medicine-table .disc-pct-column {
+  width: 80px;
+  min-width: 80px;
+}
+
+.medicine-table .tax-profile-column {
+  width: 150px;
+  min-width: 150px; /* Much wider to fit the full GST value with percentages */
+}
+
+.medicine-table .taxable-amount-column {
+  width: 130px;
+  min-width: 130px;
+  text-align: right !important;
+}
+
+.medicine-table .total-column {
+  width: 130px;
+  min-width: 130px;
+  text-align: right !important;
+}
+
+.medicine-table .profit-column {
+  width: 90px;
+  min-width: 90px;
+  text-align: center !important;
+}
+
+.medicine-table .action-column {
+  width: 70px;
+  min-width: 70px;
+  text-align: center;
+}
+
+.medicine-table .item-total {
+  color: #6b1d14;
+  font-weight: 600;
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding-right: 8px;
+}
+
+/* Styling for Pack & Free Pack combined inputs */
+.pack-input-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  width: 100%;
+  gap: 0;
+}
+
+.pack-input-group input {
+  width: calc(50% - 10px);
+  min-width: 30px;
+  padding: 4px 2px;
+  font-size: 0.8rem;
+}
+
+.pack-input-group .separator {
+  display: inline-block;
+  width: 20px;
+  text-align: center;
+  color: #6b1d14;
+  font-weight: bold;
+}
+
+/* Tax profile select styling */
+.medicine-table .tax-profile-select {
+  width: 100%;
+  position: relative;
+}
+
+/* Make sure tax profile text doesn't get cut off */
+.medicine-table .tax-profile-column .form-control {
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: unset;
+  width: 100%;
+  min-width: 120px;
+}
+
+/* Empty state styling */
+.medicine-table .no-items-row .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.medicine-table .empty-state .empty-icon {
+  font-size: 24px;
+  color: #6b1d14;
+  margin-bottom: 10px;
+}
+
+.medicine-table .empty-state p {
+  color: #6b1d14;
+  margin-bottom: 15px;
+}
+
+/* Add Medicine button styling */
+.medicine-table .add-btn {
+  background-color: #6b1d14;
+  color: white;
+  border: none;
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 4px;
+}
+
+.medicine-table .add-btn:hover {
+  background-color: #8b2d24;
+}
+
+/* Validation styling */
+.medicine-table .is-invalid {
+  border-color: #e74a3b !important;
+}
+
+.medicine-table .invalid-feedback {
+  color: #e74a3b;
+  font-size: 11px;
+  display: block;
+  margin-top: 2px;
+}

@@ -1,0 +1,369 @@
+<div class="prescription-form-container">
+  <div class="page-header">
+    <div class="back-button">
+      <a [routerLink]="['/inventory/sales']">
+        <i class="fas fa-arrow-left"></i> Prescription Sale
+      </a>
+    </div>
+    <div class="header-title">
+      <span>Prescription Based Sale</span>
+    </div>
+  </div>
+  
+  <div class="prescription-form-wrapper">
+    <form [formGroup]="prescriptionForm" (ngSubmit)="onSubmit()">
+      <!-- Patient & Doctor Details -->
+      <div class="details-section">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="patientName">Patient Name*</label>
+            <input 
+              type="text" 
+              id="patientName" 
+              formControlName="patientName"
+              placeholder="Enter patient name"
+              [class.is-invalid]="prescriptionForm.get('patientName')?.touched && prescriptionForm.get('patientName')?.invalid"
+            >
+            <!-- Patient search results dropdown -->
+            <div class="search-results" *ngIf="showPatientSearch">
+              <div class="loading" *ngIf="loadingPatients">Loading patients...</div>
+              <ul *ngIf="!loadingPatients && patientSearchResults.length > 0">
+                <li *ngFor="let patient of patientSearchResults" (click)="selectPatient(patient)">
+                  {{ patient.name }} - {{ patient.phoneNumber }}
+                </li>
+              </ul>
+              <div class="no-results" *ngIf="!loadingPatients && patientSearchResults.length === 0">
+                No patients found
+              </div>
+            </div>
+            <div class="invalid-feedback" *ngIf="prescriptionForm.get('patientName')?.touched && prescriptionForm.get('patientName')?.invalid">
+              Patient name is required
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="phoneNumber">Mobile Number*</label>
+            <input 
+              type="text" 
+              id="phoneNumber" 
+              formControlName="phoneNumber"
+              placeholder="10-digit mobile number"
+              [class.is-invalid]="prescriptionForm.get('phoneNumber')?.touched && prescriptionForm.get('phoneNumber')?.invalid"
+            >
+            <div class="invalid-feedback" *ngIf="prescriptionForm.get('phoneNumber')?.touched && prescriptionForm.get('phoneNumber')?.invalid">
+              Valid 10-digit mobile number is required
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="doctorName">Doctor Name*</label>
+            <div class="doctor-search-container">
+              <input 
+                type="text" 
+                id="doctorName" 
+                formControlName="doctorName"
+                placeholder="Enter or select doctor name"
+                [class.is-invalid]="prescriptionForm.get('doctorName')?.touched && prescriptionForm.get('doctorName')?.invalid"
+              >
+              <button type="button" class="search-button" (click)="searchDoctorsManually()">Search</button>
+            </div>
+            
+            <!-- Doctor search results dropdown -->
+            <div class="search-results" *ngIf="showDoctorSearch">
+              <div class="loading" *ngIf="loadingDoctors">Loading doctors...</div>
+              <ul *ngIf="!loadingDoctors && doctorSearchResults.length > 0">
+                <li *ngFor="let doctor of doctorSearchResults" (click)="selectDoctor(doctor)">
+                  {{ doctor.name }} <span *ngIf="doctor.specialization">- {{ doctor.specialization }}</span>
+                </li>
+              </ul>
+              <div class="no-results" *ngIf="!loadingDoctors && doctorSearchResults.length === 0">
+                No doctors found
+              </div>
+            </div>
+            <div class="invalid-feedback" *ngIf="prescriptionForm.get('doctorName')?.touched && prescriptionForm.get('doctorName')?.invalid">
+              Doctor name is required
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="prescriptionDate">Prescription Date*</label>
+            <input 
+              type="date" 
+              id="prescriptionDate" 
+              formControlName="prescriptionDate"
+              [class.is-invalid]="prescriptionForm.get('prescriptionDate')?.touched && prescriptionForm.get('prescriptionDate')?.invalid"
+            >
+          </div>
+          
+          <div class="form-group">
+            <label for="saleDate">Sale Date*</label>
+            <input 
+              type="date" 
+              id="saleDate" 
+              formControlName="saleDate"
+              [class.is-invalid]="prescriptionForm.get('saleDate')?.touched && prescriptionForm.get('saleDate')?.invalid"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="gstType">GST</label>
+            <select
+              id="gstType"
+              formControlName="gstType"
+              class="form-control"
+              (change)="onGstTypeChange()"
+            >
+              <option *ngFor="let type of gstTypes" [value]="type">{{ type }}</option>
+            </select>
+          </div>
+
+          <div class="form-group toggle-group">
+            <label>Print GST</label>
+            <div class="toggle-control">
+              <label class="switch">
+                <input type="checkbox" id="printGST" formControlName="printGST">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Medicines Table -->
+      <div class="medicines-section">
+        <h3>Prescribed Medicines</h3>
+        
+        <div class="medicines-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Medicine Name*</th>
+                <th>Generic</th>
+                <th>MFG</th>
+                <th>Batch</th>
+                <th>Exp. Date</th>
+                <th>Unit Cost</th>
+                <th>MRP</th>
+                <th>Qty</th>
+                <th>Dis(%)</th>
+                <th *ngIf="prescriptionForm.get('gstType')?.value !== 'NON_GST'">Tax Profile</th>
+                <th *ngIf="prescriptionForm.get('gstType')?.value !== 'NON_GST'">Taxable Amt</th>
+                <th>Total</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody formArrayName="items">
+              <tr *ngFor="let itemGroup of itemsFormArray.controls; let i = index" [formGroupName]="i">
+                <td>
+                  <div class="medicine-search" style="position: relative;">
+                    <input 
+                      type="text" 
+                      formControlName="medicineName"
+                      placeholder="Search medicine"
+                      (input)="searchMedicine(i)"
+                      [class.is-invalid]="itemGroup.get('medicineName')?.invalid && itemGroup.get('medicineName')?.touched"
+                    >
+                  </div>
+                </td>
+                <td>
+                  <input type="text" formControlName="generic" placeholder="Generic">
+                </td>
+                <td>
+                  <input type="text" formControlName="mfg" placeholder="Manufacturer">
+                </td>
+                <td>
+                  <select formControlName="batchNo" (change)="onBatchChange($event, i)">
+                    <option value="" disabled>Select Batch</option>
+                    <option *ngFor="let batch of getBatchesForMedicine(i)" [value]="batch.batchNo">
+                      {{batch.batchNo}}
+                    </option>
+                  </select>
+                  <div class="loading" *ngIf="loadingBatches">Loading...</div>
+                </td>
+                <td>
+                  <input type="text" formControlName="expDate" placeholder="MM/YYYY">
+                </td>
+                <td>
+                  <input type="number" formControlName="unitCost" readonly>
+                </td>
+                <td>
+                  <input type="number" formControlName="unitMrp" readonly>
+                </td>
+                <td>
+                  <input 
+                    type="number" 
+                    formControlName="quantity" 
+                    min="1"
+                    [class.is-invalid]="itemGroup.get('quantity')?.invalid && itemGroup.get('quantity')?.touched"
+                    (change)="onQuantityChange($event, i)"
+                  >
+                </td>
+                <td>
+                  <input 
+                    type="number" 
+                    formControlName="discount"
+                    min="0" 
+                    max="100"
+                  >
+                </td>
+                <td *ngIf="prescriptionForm.get('gstType')?.value !== 'NON_GST'">
+                  <select class="form-select form-select-sm" formControlName="taxProfileId">
+                    <option value="">No Tax</option>
+                    <option *ngFor="let profile of taxProfiles" [value]="profile.taxProfileId">{{profile.profileName}} ({{profile.totalRate}}%)</option>
+                  </select>
+                </td>
+                <td *ngIf="prescriptionForm.get('gstType')?.value !== 'NON_GST'">
+                  <input type="number" formControlName="taxableAmount" readonly>
+                </td>
+                <td>
+                  <input type="number" formControlName="total" readonly>
+                </td>
+                <td>
+                  <button type="button" class="remove-btn" (click)="removeSaleItem(i)" *ngIf="itemsFormArray.length > 1">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="10">
+                  <button type="button" class="add-medicine-btn" (click)="addSaleItem()">
+                    <i class="fas fa-plus"></i> Add Medicine
+                  </button>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Notes Section -->
+      <div class="notes-section">
+        <div class="form-group">
+          <label for="notes">Notes</label>
+          <textarea 
+            id="notes" 
+            formControlName="notes"
+            placeholder="Add any special instructions or notes about this prescription"
+            rows="3"
+          ></textarea>
+        </div>
+      </div>
+      
+      <!-- Payment Details -->
+      <div class="payment-details-container">
+        <div class="totals-column">
+          <div class="total-row">
+            <label>Gross total</label>
+            <div class="amount">₹{{ subtotal | number:'1.2-2' }}</div>
+          </div>
+          
+          <div class="total-row">
+            <label>Discount</label>
+            <div class="amount">₹{{ discount | number:'1.2-2' }}</div>
+          </div>
+          
+          <div class="total-row" *ngIf="prescriptionForm.get('gstType')?.value !== 'NON_GST'">
+            <label>CGST</label>
+            <div class="amount">₹{{ cgstTotal | number:'1.2-2' }}</div>
+          </div>
+          
+          <div class="total-row" *ngIf="prescriptionForm.get('gstType')?.value !== 'NON_GST'">
+            <label>SGST</label>
+            <div class="amount">₹{{ sgstTotal | number:'1.2-2' }}</div>
+          </div>
+          
+          <div class="total-row">
+            <label>Net Total</label>
+            <div class="amount">₹{{ grandTotal | number:'1.2-2' }}</div>
+          </div>
+
+          
+          <div class="form-row simple-form-row">
+            <div class="form-group">
+              <label for="paymentMethod">Payment Mode*</label>
+              <select 
+                id="paymentMethod" 
+                formControlName="paymentMethod" 
+                class="form-control"
+              >
+                <option *ngFor="let method of paymentMethods" [value]="method">{{ method }}</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="paymentStatus">Payment Status*</label>
+              <select 
+                id="paymentStatus" 
+                formControlName="paymentStatus" 
+                class="form-control"
+              >
+                <option value="PAID">PAID</option>
+                <option value="PENDING">PENDING</option>
+                <option value="CREDIT">CREDIT</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-row simple-form-row">
+            <div class="form-group full-width">
+              <label for="transactionReference">Transaction Reference</label>
+              <input 
+                type="text" 
+                id="transactionReference"
+                formControlName="transactionReference"
+                placeholder="Auto-generated reference"
+                readonly
+                class="form-control"
+              >
+              <small class="form-text text-muted">Format: TRX-YYYYMMDD-HHMMSS-XXX</small>
+            </div>
+          </div>
+          
+          <div class="grand-total">
+            <h3>Grand Total</h3>
+            <h3>₹{{ grandTotal | number:'1.2-2' }}</h3>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button type="button" class="cancel-btn" [routerLink]="['/inventory/sales']">
+          Cancel
+        </button>
+        <button type="button" class="save-btn">
+          Save & Print
+        </button>
+        <button type="submit" class="submit-btn" [disabled]="submitting">
+          <i class="fas fa-check" *ngIf="!submitting"></i>
+          <i class="fas fa-spinner fa-spin" *ngIf="submitting"></i>
+          Complete Sale
+        </button>
+      </div>
+    </form>
+    
+    <!-- Medicine Search Results - Fixed Position -->
+    <div class="fixed-medicine-results" *ngIf="showMedicineSearch" style="position: fixed; z-index: 9999; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; background-color: white; border: 2px solid #007bff; border-radius: 8px; max-height: 300px; overflow-y: auto; box-shadow: 0 8px 16px rgba(0,0,0,0.2);">
+      <div style="background-color: #007bff; color: white; padding: 8px 12px; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+        <span>Select Medicine</span>
+        <button type="button" (click)="showMedicineSearch = false" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer;">×</button>
+      </div>
+      <div class="loading" *ngIf="loadingMedicines" style="padding: 15px; text-align: center;">
+        <span>Loading medicines...</span>
+      </div>
+      <ul *ngIf="!loadingMedicines && medicineSearchResults.length > 0" style="list-style: none; margin: 0; padding: 0;">
+        <li *ngFor="let medicine of medicineSearchResults" (click)="selectMedicine(medicine, activeSearchIndex)" style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #eee;">
+          <strong>{{ medicine.name }}</strong>
+          <div *ngIf="medicine.genericName" style="font-size: 0.9em; color: #666;">{{ medicine.genericName }}</div>
+        </li>
+      </ul>
+      <div class="no-results" *ngIf="!loadingMedicines && medicineSearchResults.length === 0" style="padding: 15px; text-align: center; color: #666;">
+        No medicines found
+      </div>
+    </div>
+  </div>
+</div>

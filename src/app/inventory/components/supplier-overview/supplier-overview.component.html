@@ -1,0 +1,138 @@
+<div class="supplier-overview-container">
+  <!-- Page header with back button -->
+  <div class="page-header">
+    <div class="back-button" (click)="goBackToSuppliers()">
+      <i class="fas fa-arrow-left"></i>
+      <span>View Supplier Overview</span>
+    </div>
+    <div class="supplier-id">Supplier ID: {{ formatSupplierId(supplier?.id) }}</div>
+  </div>
+
+  <!-- Supplier details card -->
+  <div class="supplier-details-card" *ngIf="supplier">
+    <div class="supplier-name-section">
+      <div class="supplier-name">{{ supplier?.name || 'Loading...' }}</div>
+      <div *ngIf="supplier?.gstNumber" class="gst-number">| GST No: {{ supplier?.gstNumber }}</div>
+    </div>
+    
+    <div class="contact-info">
+      <span *ngIf="supplier?.contactNumber" class="phone">
+        <i class="fas fa-phone-alt"></i> {{ supplier?.contactNumber }}
+      </span>
+    </div>
+
+    <div class="balance-section">
+      <div class="label">Total Balance:</div>
+      <div class="amount" [ngClass]="{'negative': (supplier?.balance || 0) < 0, 'positive': (supplier?.balance || 0) >= 0}">
+        ₹ {{ supplier?.balance | number:'1.2-2' }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Transactions Table -->
+  <div class="transactions-card">
+    <div class="table-header">
+      <div class="id">ID</div>
+      <div class="transaction-id">Transaction ID</div>
+      <div class="ref-id">Ref ID</div>
+      <div class="date">Date</div>
+      <div class="amount">Amount</div>
+      <div class="balance">Balance</div>
+      <div class="created-by">Created By</div>
+      <div class="action">Action</div>
+    </div>
+
+    <!-- Loading state -->
+    <div *ngIf="loading" class="loading-container">
+      <div class="spinner"></div>
+      <div class="loading-text">Loading transaction history...</div>
+    </div>
+
+    <!-- Transactions -->
+    <ng-container *ngIf="!loading">
+      <ng-container *ngFor="let transaction of transactions; let i = index">
+        <!-- Transaction Row -->
+        <div class="transaction-row" 
+             (click)="selectedTransactionIndex = selectedTransactionIndex === i ? -1 : i"
+             [class.selected]="selectedTransactionIndex === i">
+          <div class="id">{{ transaction.id }}</div>
+          <div class="transaction-id">{{ formatPurchaseId(transaction.transactionId) }}</div>
+          <div class="ref-id">{{ transaction.referenceId }}</div>
+          <div class="date">{{ transaction.date | date:'dd/MM/yyyy' }}</div>
+          <div class="amount">₹ {{ transaction.amount | number:'1.2-2' }}</div>
+          <div class="balance" [ngClass]="{'negative': transaction.balance < 0, 'positive': transaction.balance >= 0}">
+            ₹ {{ transaction.balance | number:'1.2-2' }}
+          </div>
+          <div class="created-by">{{ transaction.createdBy }}</div>
+          <div class="action">
+            <button class="action-button">
+              <i class="fas" [ngClass]="{'fa-chevron-down': selectedTransactionIndex !== i, 'fa-chevron-up': selectedTransactionIndex === i}"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Transaction Details Expansion Panel -->
+        <div class="transaction-details" *ngIf="selectedTransactionIndex === i && transaction.items && transaction.items.length > 0">
+          <div class="details-header">
+            <div>Medicine</div>
+            <div>Batch</div>
+            <div>Expiry</div>
+            <div>Qty</div>
+            <div>MRP</div>
+            <div>Unit Price</div>
+            <div>Tax %</div>
+            <div>Total</div>
+          </div>
+          
+          <div class="details-row" *ngFor="let item of transaction.items">
+            <div class="medicine-name">{{ getMedicineName(item.medicineId) }}</div>
+            <div>{{ item.batchNo }}</div>
+            <div>{{ item.expiryDate ? (item.expiryDate.seconds * 1000 | date:'MM/yyyy') : 'N/A' }}</div>
+            <div>{{ item.totalReceivedQuantity }}</div>
+            <div>₹ {{ item.mrpPerItem | number:'1.2-2' }}</div>
+            <div>₹ {{ item.purchaseCostPerPack / item.packQuantity | number:'1.2-2' }}</div>
+            <div>
+              <div class="tax-label">{{ item.taxRateApplied }}%</div>
+              <div class="tax-components" *ngIf="item.taxComponents && item.taxComponents.length > 0">
+                <span *ngFor="let tax of item.taxComponents; let last = last">
+                  {{ tax.name }} ({{ tax.rate }}%)<span *ngIf="!last">, </span>
+                </span>
+              </div>
+            </div>
+            <div class="total-amount">₹ {{ item.lineItemTotalAmount | number:'1.2-2' }}</div>
+          </div>
+
+          <div class="transaction-summary">
+            <div class="summary-row">
+              <div class="summary-label">Subtotal:</div>
+              <div class="summary-value">₹ {{ transaction.items[0]?.lineItemTaxableAmount | number:'1.2-2' }}</div>
+            </div>
+            <div class="summary-row">
+              <div class="summary-label">Tax Amount:</div>
+              <div class="summary-value">₹ {{ transaction.items[0]?.lineItemTaxAmount | number:'1.2-2' }}</div>
+            </div>
+            <div class="summary-row total">
+              <div class="summary-label">Total:</div>
+              <div class="summary-value">₹ {{ transaction.amount | number:'1.2-2' }}</div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- No transactions state -->
+      <div *ngIf="transactions.length === 0" class="no-transactions">
+        <i class="fas fa-receipt"></i>
+        <p>No transactions found for this supplier</p>
+      </div>
+    </ng-container>
+  </div>
+</div>
+
+<!-- Add Payment Button -->
+<button class="add-payment-button" (click)="addPayment()">
+  <i class="fas fa-plus"></i>
+  Add Payment
+</button>
+
+<!-- Modal backdrop -->
+<div class="modal-backdrop" *ngIf="false"></div>

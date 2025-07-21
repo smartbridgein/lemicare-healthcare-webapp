@@ -1,0 +1,438 @@
+// Purchase View Component Styles
+// Matching the styles from purchase-form with modifications for read-only view
+
+.purchase-view-container {
+  padding: 1.5rem;
+  background-color: #f8f9fc;
+  font-family: 'Roboto', sans-serif;
+
+  .page-header {
+    padding: 1rem 0;
+    border-bottom: 1px solid #e3e6f0;
+    margin-bottom: 1.5rem;
+  }
+
+  .back-button {
+    a {
+      text-decoration: none;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #6b1d14;
+      
+      &:hover {
+        text-decoration: underline;
+      }
+
+      i {
+        margin-right: 0.5rem;
+      }
+    }
+  }
+
+  .view-mode-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    margin-left: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #1e7e34;
+    background-color: #d4edda;
+  }
+
+  .info-cards-container {
+    margin-bottom: 1.5rem;
+  }
+
+  .info-card {
+    background-color: #fff;
+    border: 1px solid #e3e6f0;
+    border-radius: 0.35rem;
+    box-shadow: 0 0.15rem 0.25rem rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+    
+    .card-header {
+      padding: 1.2rem 1.5rem;
+      border-bottom: 1px solid #e3e6f0;
+      background-color: #f8f9fc;
+      border-top-left-radius: 0.35rem;
+      border-top-right-radius: 0.35rem;
+      position: relative;
+      
+      &:after {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 4px;
+        background-color: #6b1d14;
+      }
+      
+      h3 {
+        margin: 0;
+        color: #333;
+        font-size: 1.1rem;
+        font-weight: 600;
+        font-family: 'Roboto', sans-serif;
+        display: flex;
+        align-items: center;
+        
+        i {
+          margin-right: 0.75rem;
+          color: #6b1d14;
+          font-size: 1.2rem;
+        }
+      }
+    }
+    
+    .card-body {
+      padding: 1rem;
+      
+      .info-group {
+        margin-bottom: 1.2rem;
+        display: flex;
+        flex-direction: column;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+        
+        label {
+          display: block;
+          font-weight: 500;
+          font-size: 0.875rem;
+          margin-bottom: 0.5rem;
+          color: #555;
+          position: relative;
+          padding-left: 0.5rem;
+          border-left: 3px solid #6b1d14;
+        }
+        
+        .info-value {
+          font-size: 1rem;
+          padding: 0.5rem 0.75rem;
+          background-color: #f9f9f9;
+          border-radius: 4px;
+          font-weight: 400;
+          color: #333;
+          border-bottom: 1px solid #eaeaea;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+          min-height: 36px;
+          display: flex;
+          align-items: center;
+        }
+      }
+    }
+  }
+
+  .items-card {
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .medicine-table {
+      margin-bottom: 0;
+      font-size: 0.85rem;
+      border-collapse: collapse;
+      
+      th, td {
+        vertical-align: middle;
+        padding: 0.5rem 0.375rem;
+        white-space: nowrap;
+        border: 1px solid #e3e6f0;
+      }
+      
+      th {
+        background-color: #f8f9fc;
+        font-weight: 500;
+        color: #333;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+      
+      .index-cell {
+        width: 30px;
+        max-width: 30px;
+        text-align: center;
+      }
+      
+      .medicine-column {
+        min-width: 140px;
+        max-width: 180px;
+        text-align: left;
+      }
+      
+      .batch-column {
+        min-width: 60px;
+        max-width: 80px;
+        text-align: center;
+      }
+      
+      .expiry-column {
+        min-width: 80px;
+        max-width: 90px;
+        text-align: center;
+      }
+      
+      .pack-column {
+        min-width: 50px;
+        max-width: 60px;
+        text-align: center;
+      }
+      
+      .items-pack-column {
+        min-width: 60px;
+        max-width: 80px;
+        text-align: center;
+      }
+      
+      .qty-column {
+        min-width: 60px;
+        max-width: 70px;
+        text-align: center;
+      }
+      
+      .mrp-column, .cost-column {
+        min-width: 70px;
+        max-width: 80px;
+        text-align: right;
+      }
+      
+      .disc-pct-column {
+        min-width: 60px;
+        max-width: 70px;
+        text-align: center;
+      }
+      
+      .tax-profile-column {
+        min-width: 70px;
+        max-width: 80px;
+        text-align: center;
+      }
+      
+      .taxable-amount-column, .total-column {
+        min-width: 100px;
+        max-width: 120px;
+        text-align: right;
+      }
+      
+      .profit-column {
+        min-width: 100px;
+        text-align: center;
+      }
+      
+      .generic-info {
+        line-height: 1.4;
+        
+        .manufacturer {
+          color: #666;
+          font-size: 0.85rem;
+        }
+      }
+      
+      /* Totals Footer Row Styling */
+      .totals-footer-row {
+        background-color: #f8f9fc;
+        
+        td {
+          padding: 10px 8px;
+          border-top: 2px solid #e3e6f0;
+        }
+        
+        .totals-label {
+          font-weight: 600;
+          text-align: right;
+          padding-right: 10px;
+          color: #333;
+        }
+      }
+      
+      .hsn-code {
+        color: #6c757d;
+      }
+      
+      .tax-breakdown {
+        font-size: 0.8rem;
+        
+        .tax-component {
+          display: block;
+          margin-bottom: 0.25rem;
+          
+          &:last-child {
+            margin-bottom: 0;
+          }
+          
+          .tax-name {
+            font-weight: 500;
+            margin-right: 0.25rem;
+          }
+          
+          .tax-rate {
+            margin-right: 0.25rem;
+          }
+          
+          .tax-amount {
+            color: #333;
+          }
+        }
+      }
+    }
+  }
+
+  .summary-card {
+    .invoice-summary-container {
+      padding: 1.5rem;
+      background-color: #fff;
+      
+      .invoice-summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+        line-height: 1.5;
+        
+        &.tax-row {
+          margin-left: 20px;
+          font-size: 0.9rem;
+          color: #333;
+          padding: 4px 0;
+        }
+        
+        &.tax-total-row {
+          margin-top: 8px;
+          padding-top: 8px;
+          font-weight: 500;
+          border-top: 1px solid #eee;
+        }
+        
+        &.grand-total-row {
+          margin-top: 12px;
+          padding-top: 12px;
+          font-weight: 600;
+          font-size: 1.05rem;
+          border-top: 1px solid #e3e6f0;
+        }
+      }
+      
+      .invoice-summary-label {
+        text-align: right;
+        padding-right: 30px;
+      }
+      
+      .invoice-summary-value {
+        font-weight: 500;
+        min-width: 80px;
+        text-align: right;
+      }
+      
+      .tax-breakdown-title {
+        margin: 12px 0 8px 0;
+        font-weight: 500;
+        color: #333;
+        font-size: 0.95rem;
+      }
+      
+      .invoice-summary-section {
+        margin-top: 10px;
+        position: relative;
+      }
+    }
+  }
+
+  .tax-breakdown-section {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed #e3e6f0;
+    
+    .tax-breakdown-title {
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      color: #6b1d14;
+    }
+    
+    .tax-detail-row {
+      margin-bottom: 0.25rem;
+      font-size: 0.85rem;
+    }
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    
+    .btn {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.875rem;
+      border-radius: 0.25rem;
+      
+      i {
+        margin-right: 0.5rem;
+      }
+    }
+    
+    .btn-primary {
+      background-color: #6b1d14;
+      border-color: #6b1d14;
+      
+      &:hover {
+        background-color: #5a1911;
+        border-color: #5a1911;
+      }
+    }
+    
+    .btn-outline-primary {
+      color: #6b1d14;
+      border-color: #6b1d14;
+      
+      &:hover {
+        background-color: #6b1d14;
+        color: #fff;
+      }
+    }
+  }
+
+  .table-responsive {
+    max-height: 500px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #6b1d14 #f8f9fc;
+    
+    &::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f8f9fc;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background-color: #6b1d14;
+      border-radius: 4px;
+    }
+  }
+
+  .loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+    
+    i {
+      font-size: 2rem;
+      color: #6b1d14;
+    }
+  }
+
+  .error-message {
+    padding: 1rem;
+    background-color: #f8d7da;
+    color: #721c24;
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+  }
+}

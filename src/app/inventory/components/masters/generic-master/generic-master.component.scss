@@ -1,0 +1,290 @@
+/* Generic Master Styles */
+.masters-component {
+  padding: 20px;
+  font-family: "Times New Roman", Times, serif;
+  
+  .search-container {
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    
+    .search-box {
+      position: relative;
+      min-width: 300px;
+      
+      i {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #4e73df;
+      }
+      
+      input {
+        width: 100%;
+        padding: 10px 12px 10px 38px;
+        border: 2px solid #ccd6e5;
+        border-radius: 0.35rem;
+        font-size: 15px;
+        font-family: "Times New Roman", Times, serif;
+        letter-spacing: 0.02em;
+        color: #2c3e50;
+        
+        &:focus {
+          outline: none;
+          border-color: #4e73df;
+          box-shadow: 0 0 0 2px rgba(78, 115, 223, 0.15);
+        }
+        
+        &::placeholder {
+          font-style: italic;
+          color: #a0aec0;
+        }
+      }
+    }
+    
+    .add-new-btn {
+      background-color: #4e73df;
+      color: white;
+      padding: 10px 16px;
+      font-size: 15px;
+      border: 2px solid #4e73df;
+      border-radius: 0.35rem;
+      cursor: pointer;
+      font-family: "Times New Roman", Times, serif;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      
+      &:hover {
+        background-color: #224abe;
+        border-color: #224abe;
+      }
+      
+      i {
+        font-size: 14px;
+      }
+    }
+  }
+  
+  .table-container {
+    background-color: #fff;
+    border-radius: 0.35rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    overflow: hidden;
+    border: 2px solid #ccd6e5;
+    margin-bottom: 1.5rem;
+    
+    .table-header {
+      padding: 15px 20px;
+      border-bottom: 2px solid #4e73df;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      
+      h2 {
+        font-family: "Times New Roman", Times, serif;
+        color: #2c3e50;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        font-size: 1.5rem;
+        margin: 0;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+      }
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-family: "Times New Roman", Times, serif;
+      
+      th, td {
+        padding: 14px 15px;
+        text-align: left;
+        border-bottom: 1px solid #e9ecef;
+        font-size: 15px;
+      }
+      
+      th {
+        background-color: #eaecf4;
+        font-weight: 700;
+        color: #2c3e50;
+        letter-spacing: 0.03em;
+        border-bottom: 2px solid #4e73df;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+        white-space: nowrap;
+      }
+      
+      tr:nth-child(even) {
+        background-color: #f8f9fc;
+      }
+      
+      tr:hover {
+        background-color: #f0f2f8;
+      }
+      
+      .actions {
+        display: flex;
+        gap: 10px;
+        
+        button {
+          border: 2px solid;
+          background: none;
+          cursor: pointer;
+          padding: 5px 8px;
+          border-radius: 0.25rem;
+          font-family: "Times New Roman", Times, serif;
+          font-weight: 600;
+          transition: all 0.2s ease;
+          
+          &.edit-btn {
+            color: #4e73df;
+            border-color: #4e73df;
+            
+            &:hover {
+              background-color: rgba(78, 115, 223, 0.1);
+              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+          }
+          
+          &.delete-btn {
+            color: #e74a3b;
+            border-color: #e74a3b;
+            
+            &:hover {
+              background-color: rgba(231, 74, 59, 0.1);
+              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Modal Styles */
+.modal-dialog {
+  max-width: 550px;
+  font-family: "Times New Roman", Times, serif;
+}
+
+.modal-content {
+  border: 2px solid #ccd6e5;
+  border-radius: 0.35rem;
+  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.modal-header {
+  background-color: #eaecf4;
+  border-bottom: 2px solid #4e73df;
+  padding: 1.25rem 1.5rem;
+  
+  .modal-title {
+    color: #2c3e50;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    font-size: 1.5rem;
+    font-family: "Times New Roman", Times, serif;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+  
+  .close {
+    color: #4e73df;
+    opacity: 1;
+    text-shadow: none;
+    font-size: 1.5rem;
+    padding: 0.5rem;
+    margin: -0.5rem -0.5rem -0.5rem auto;
+    border: 2px solid transparent;
+    border-radius: 0.35rem;
+    
+    &:hover {
+      color: #224abe;
+      background-color: rgba(78, 115, 223, 0.1);
+      border-color: #4e73df;
+    }
+  }
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  border-top: 2px solid #e3e6f0;
+  padding: 1.25rem 1.5rem;
+  
+  button {
+    padding: 8px 16px;
+    border-radius: 0.35rem;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    
+    &.btn-primary {
+      background-color: #4e73df;
+      border-color: #4e73df;
+      
+      &:hover {
+        background-color: #224abe;
+        border-color: #224abe;
+      }
+    }
+    
+    &.btn-secondary {
+      background-color: #ffffff;
+      border-color: #ccd6e5;
+      color: #2c3e50;
+      
+      &:hover {
+        background-color: #eaecf4;
+        border-color: #4e73df;
+        color: #4e73df;
+      }
+    }
+  }
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+  
+  label {
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+    color: #2c3e50;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+  }
+  
+  input, select, textarea {
+    border: 2px solid #ccd6e5;
+    border-radius: 0.35rem;
+    padding: 10px 12px;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 15px;
+    color: #2c3e50;
+    
+    &:focus {
+      border-color: #4e73df;
+      box-shadow: 0 0 0 2px rgba(78, 115, 223, 0.15);
+      outline: none;
+    }
+  }
+}
+
+.invalid-feedback {
+  display: block;
+  color: #e74a3b;
+  font-size: 0.9rem;
+  margin-top: 0.4rem;
+  font-style: italic;
+  font-family: "Times New Roman", Times, serif;
+}

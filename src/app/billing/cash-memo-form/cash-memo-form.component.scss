@@ -1,0 +1,169 @@
+// Classic Form Styling
+.cash-memo-form {
+  background-color: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  
+  .form-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e3e6f0;
+    
+    &:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #4e73df;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #4e73df;
+      display: inline-block;
+    }
+  }
+  
+  // Form controls
+  .form-label {
+    font-weight: 500;
+    color: #5a5c69;
+    margin-bottom: 0.3rem;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .form-control, .form-select {
+    border: 1px solid #d1d3e2;
+    border-radius: 0.35rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    
+    &:focus {
+      border-color: #bac8f3;
+      box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+    }
+  }
+  
+  // Table styling
+  .table {
+    th {
+      background-color: #f8f9fc;
+      color: #4e73df;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.5px;
+      padding: 0.75rem;
+      border-bottom: 2px solid #e3e6f0;
+    }
+    
+    td {
+      vertical-align: middle;
+      padding: 0.75rem;
+      border-color: #e3e6f0;
+    }
+  }
+  
+  // Buttons
+  .btn {
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.35rem;
+    font-size: 0.9rem;
+    
+    &-primary {
+      background-color: #4e73df;
+      border-color: #4e73df;
+      
+      &:hover, &:focus {
+        background-color: #2e59d9;
+        border-color: #2653d4;
+      }
+    }
+    
+    &-outline-secondary {
+      color: #5a5c69;
+      border-color: #d1d3e2;
+      
+      &:hover {
+        background-color: #f8f9fc;
+        border-color: #bac8f3;
+        color: #4e73df;
+      }
+    }
+  }
+  
+  // Patient search results
+  .patient-search-results {
+    position: absolute;
+    width: 100%;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border-radius: 0.35rem;
+    border: 1px solid #e3e6f0;
+    
+    .list-group-item {
+      padding: 0.75rem 1.25rem;
+      border-left: none;
+      border-right: none;
+      border-color: #e3e6f0;
+      
+      &:hover {
+        background-color: #f8f9fc;
+        color: #4e73df;
+      }
+      
+      strong {
+        color: #4e73df;
+      }
+      
+      .small {
+        font-size: 0.8rem;
+        color: #858796;
+      }
+    }
+  }
+  
+  // Totals section
+  .totals-section {
+    background-color: #f8f9fc;
+    border-radius: 0.35rem;
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+    
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      font-size: 1rem;
+      
+      &.grand-total {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2e59d9;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e3e6f0;
+        margin-top: 1rem;
+      }
+    }
+  }
+  
+  // Action buttons
+  .action-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e3e6f0;
+  }
+}

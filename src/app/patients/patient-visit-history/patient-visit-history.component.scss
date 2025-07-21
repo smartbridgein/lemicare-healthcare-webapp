@@ -1,0 +1,922 @@
+// Brand colors
+$maroon-primary: #6b1d14;
+$maroon-dark: #4a0f09;
+$maroon-light: #8c2c21;
+$yellow-accent: #e6c157;
+$yellow-light: #f3d98b;
+$gray-light: #f8f9fa;
+$gray-medium: #e9ecef;
+$gray-dark: #6c757d;
+
+.visit-history-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: $gray-light;
+  padding: 1.5rem;
+  
+  .header {
+    background: white;
+    color: $maroon-dark;
+    padding: 1rem 1.5rem;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1.5rem;
+    border-left: 3px solid $maroon-primary;
+    
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: $maroon-dark;
+    }
+    
+    .subtitle {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      color: $gray-dark;
+      font-weight: 400;
+    }
+    
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: $maroon-primary;
+      text-decoration: none;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.8rem;
+      background: $gray-light;
+      border-radius: 3px;
+      border: 1px solid $gray-medium;
+      border-left: 2px solid $yellow-accent;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: $gray-medium;
+        color: $maroon-dark;
+        text-decoration: none;
+      }
+      
+      i {
+        font-size: 1rem;
+      }
+    }
+  }
+  
+  .loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(107, 29, 20, 0.15);
+      border-top: 3px solid $maroon-primary;
+      border-radius: 50%;
+      animation: spin 1.2s linear infinite;
+      margin-bottom: 1rem;
+    }
+    
+    p {
+      color: $gray-dark;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin: 0;
+      letter-spacing: 0.2px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  }
+  
+  .error-message {
+    background: $maroon-light;
+    color: $maroon-dark;
+    padding: 1rem 1.25rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    border-left: 3px solid $maroon-primary;
+    font-size: 0.9rem;
+  }
+  
+  .success-message {
+    background: $yellow-light;
+    color: $maroon-dark;
+    padding: 1rem 1.25rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    border-left: 3px solid $yellow-accent;
+    font-size: 0.9rem;
+  }
+  
+  .patient-info-card {
+    background: white;
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    border-left: 3px solid $maroon-primary;
+    
+    .patient-info {
+      flex: 1;
+      
+      h2 {
+        margin: 0 0 0.75rem 0;
+        font-size: 1.3rem;
+        color: $maroon-dark;
+        font-weight: 600;
+      }
+      
+      .patient-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 0.75rem;
+        
+        .detail-item {
+          padding: 0.6rem;
+          background: $gray-light;
+          border-radius: 3px;
+          border-left: 2px solid $yellow-accent;
+          
+          .label {
+            display: block;
+            font-weight: 500;
+            color: $gray-dark;
+            font-size: 0.75rem;
+            margin-bottom: 0.2rem;
+          }
+          
+          .value {
+            display: block;
+            color: $maroon-dark;
+            font-size: 0.85rem;
+            font-weight: 500;
+          }
+        }
+      }
+    }
+    
+    .action-links {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-left: 1.25rem;
+      align-items: flex-end;
+      min-width: 120px;
+      
+      .action-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        color: white;
+        text-decoration: none;
+        font-size: 0.8rem;
+        font-weight: 500;
+        padding: 0.4rem 0.6rem;
+        width: 100%;
+        text-align: center;
+        background: linear-gradient(to right, $maroon-primary, $maroon-dark);
+        border-radius: 3px;
+        transition: all 0.2s ease;
+        border: 1px solid rgba(0,0,0,0.05);
+        
+        &:hover {
+          background: linear-gradient(to right, $maroon-dark, $maroon-dark);
+          text-decoration: none;
+          box-shadow: 0 2px 4px rgba(107, 29, 20, 0.15);
+        }
+        
+        &:nth-child(2) {
+          background: linear-gradient(to right, $maroon-light, $maroon-primary);
+          
+          &:hover {
+            background: linear-gradient(to right, $maroon-primary, $maroon-primary);
+            box-shadow: 0 2px 4px rgba(107, 29, 20, 0.15);
+          }
+        }
+        
+        i {
+          font-size: 0.9rem;
+        }
+      }
+    }
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: flex-start;
+      
+      .patient-details {
+        grid-template-columns: 1fr;
+      }
+      
+      .action-links {
+        margin-top: 1rem;
+        margin-left: 0;
+        flex-direction: row;
+        width: 100%;
+        
+        .action-link {
+          flex: 1;
+        }
+      }
+    }
+  }
+  
+  .visit-history-content {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 1.25rem;
+    
+    @media (max-width: 1024px) {
+      grid-template-columns: 260px 1fr;
+      gap: 1rem;
+    }
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    
+    .visit-list-container {
+      background: #ffffff;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      padding: 1.25rem;
+      height: fit-content;
+      border: 1px solid $gray-medium;
+      border-top: 3px solid $maroon-primary;
+      
+      .visit-list-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid $gray-medium;
+        
+        h3 {
+          margin: 0;
+          font-size: 1.1rem;
+          color: $maroon-dark;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        
+        .add-visit-btn {
+          background: #1a73e8;
+          color: white;
+          border: none;
+          border-radius: 24px;
+          padding: 0.75rem 1.5rem;
+          font-size: 0.9rem;
+          font-weight: 600;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
+          
+          &:hover {
+            background: #1557b0;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(26, 115, 232, 0.4);
+          }
+          
+          &:active {
+            transform: translateY(0);
+          }
+          
+          i {
+            font-size: 0.9rem;
+          }
+        }
+      }
+      
+      .visit-list {
+        max-height: 500px;
+        overflow-y: auto;
+        
+        &::-webkit-scrollbar {
+          width: 3px;
+        }
+        
+        &::-webkit-scrollbar-track {
+          background: $gray-light;
+        }
+        
+        &::-webkit-scrollbar-thumb {
+          background: $gray-medium;
+          border-radius: 1px;
+          
+          &:hover {
+            background: $gray-dark;
+          }
+        }
+        
+        .no-visits-message {
+          color: $gray-dark;
+          padding: 1.5rem 1rem;
+          text-align: center;
+          background: $gray-light;
+          border-radius: 3px;
+          border: 1px dashed $gray-medium;
+          font-size: 0.85rem;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.5rem;
+          
+          &::before {
+            content: '';
+            display: none;
+          }
+          
+          .message-text {
+            font-weight: 500;
+            line-height: 1.3;
+          }
+        }
+        
+        .visit-item {
+          display: flex;
+          align-items: stretch;
+          gap: 0;
+          padding: 0;
+          margin-bottom: 0.75rem;
+          border-radius: 3px;
+          cursor: pointer;
+          background: #ffffff;
+          border: 1px solid $gray-medium;
+          transition: all 0.2s ease;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+          overflow: hidden;
+          
+          &:hover {
+            border-color: $maroon-light;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+          }
+          
+          &.selected {
+            background: rgba($yellow-light, 0.15);
+            border-color: $yellow-accent;
+            box-shadow: 0 1px 4px rgba(107, 29, 20, 0.1);
+            
+            .visit-date {
+              background: linear-gradient(to bottom, $maroon-dark, $maroon-primary);
+              border-right: 2px solid $yellow-accent;
+              
+              &::after {
+                background: rgba(255, 255, 255, 0.25);
+              }
+            }
+            
+            .visit-info h4 {
+              color: $maroon-dark;
+            }
+          }
+          
+          .visit-date {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 70px;
+            width: 70px;
+            padding: 1rem 0;
+            background: linear-gradient(to bottom, $maroon-primary, $maroon-light);
+            color: white;
+            position: relative;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+            
+            &::after {
+              content: '';
+              position: absolute;
+              right: 0;
+              top: 0;
+              bottom: 0;
+              width: 1px;
+              background: rgba(255, 255, 255, 0.15);
+            }
+            
+            .day {
+              font-size: 1.2rem;
+              font-weight: 700;
+              line-height: 1;
+              margin-bottom: 2px;
+            }
+            
+            .month-year {
+              font-size: 0.6rem;
+              opacity: 0.85;
+              font-weight: 500;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+          }
+          
+          .visit-info {
+            flex-grow: 1;
+            padding: 0.9rem 1.1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            
+            h4 {
+              margin: 0 0 0.4rem 0;
+              font-size: 0.95rem;
+              color: $maroon-dark;
+              font-weight: 600;
+              line-height: 1.2;
+            }
+            
+            .doctor {
+              margin: 0;
+              font-size: 0.8rem;
+              color: $gray-dark;
+              display: flex;
+              align-items: center;
+              gap: 0.4rem;
+              
+              i {
+                color: $maroon-primary;
+                font-size: 0.75rem;
+              }
+            }
+          }
+          
+          .edit-btn {
+            background: $gray-light;
+            border: none;
+            color: $gray-dark;
+            cursor: pointer;
+            padding: 0.6rem;
+            margin: 0.8rem 0.8rem;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            
+            &:hover {
+              background: $maroon-primary;
+              color: white;
+              box-shadow: 0 1px 3px rgba(107, 29, 20, 0.2);
+            }
+            
+            i {
+              font-size: 0.75rem;
+            }
+          }
+        }
+      }
+      
+      @media (max-width: 768px) {
+        padding: 0.75rem;
+        
+        .visit-list-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.5rem;
+          margin-bottom: 0.75rem;
+        }
+        
+        .visit-list .visit-item {
+          margin-bottom: 0.6rem;
+        }
+      }
+    }
+    
+    .visit-detail-container {
+      background: white;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      padding: 1.25rem;
+      border-left: 3px solid $maroon-primary;
+      border-top: 1px solid $gray-medium;
+      border-right: 1px solid $gray-medium;
+      border-bottom: 1px solid $gray-medium;
+      
+      .no-visit-selected {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 200px;
+        color: $gray-dark;
+        background: $gray-light;
+        border-radius: 3px;
+        border: 1px dashed $gray-medium;
+        
+        i {
+          font-size: 1.8rem;
+          margin-bottom: 0.75rem;
+          color: $gray-medium;
+        }
+        
+        p {
+          font-size: 0.85rem;
+          margin: 0;
+        }
+      }
+      
+      h3 {
+        margin-top: 0;
+        margin-bottom: 0.75rem;
+        font-size: 1rem;
+        color: $maroon-dark;
+        font-weight: 600;
+      }
+      
+      .visit-details {
+        .detail-section {
+          margin-bottom: 1rem;
+          
+          h4 {
+            font-size: 0.9rem;
+            color: $maroon-primary;
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid $gray-medium;
+            padding-bottom: 0.3rem;
+            font-weight: 600;
+          }
+          
+          .detail-row {
+            display: flex;
+            margin-bottom: 0.5rem;
+            
+            .detail-label {
+              font-weight: 600;
+              color: $gray-dark;
+              min-width: 90px;
+              font-size: 0.8rem;
+            }
+            
+            .detail-value {
+              color: $maroon-dark;
+              font-size: 0.8rem;
+            }
+          }
+          
+          .symptoms-list {
+            padding-left: 1.25rem;
+            margin: 0.4rem 0;
+            
+            li {
+              margin-bottom: 0.25rem;
+              color: $maroon-dark;
+              font-size: 0.8rem;
+            }
+          }
+          
+          p {
+            margin: 0.4rem 0;
+            color: $maroon-dark;
+            font-size: 0.8rem;
+          }
+          
+          .prescription-item {
+            background-color: $gray-light;
+            border-radius: 3px;
+            padding: 0.7rem;
+            margin-bottom: 0.75rem;
+            border-left: 2px solid $yellow-accent;
+            
+            .prescription-header {
+              h5 {
+                margin: 0;
+                color: $maroon-primary;
+                font-size: 0.85rem;
+                font-weight: 600;
+              }
+            }
+            
+            .prescription-details {
+              margin-top: 0.6rem;
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 0.6rem;
+              
+              .prescription-detail {
+                .detail-label {
+                  font-weight: 600;
+                  color: $gray-dark;
+                  margin-right: 0.3rem;
+                  font-size: 0.75rem;
+                }
+                
+                .detail-value {
+                  font-size: 0.75rem;
+                  color: $maroon-dark;
+                }
+              }
+            }
+          }
+        }
+        
+        .visit-actions {
+          margin-top: 1.5rem;
+          display: flex;
+          justify-content: flex-end;
+          
+          .edit-visit-btn {
+            background-color: #ffc107;
+            color: #212529;
+            border: none;
+            border-radius: 4px;
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            
+            &:hover {
+              background-color: #e0a800;
+            }
+          }
+        }
+      }
+      
+      // Visit Form Styles
+      .visit-form {
+        .form-row {
+          display: flex;
+          gap: 1rem;
+          margin-bottom: 1.5rem;
+          
+          @media (max-width: 576px) {
+            flex-direction: column;
+          }
+        }
+        
+        .form-group {
+          flex: 1;
+          margin-bottom: 1.5rem;
+          
+          &.full-width {
+            grid-column: 1 / -1;
+          }
+          
+          label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #495057;
+          }
+          
+          input, select, textarea {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            
+            &:focus {
+              outline: none;
+              border-color: #3498db;
+              box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            }
+          }
+          
+          textarea {
+            resize: vertical;
+          }
+          
+          .error-text {
+            color: #dc3545;
+            font-size: 0.8rem;
+            margin-top: 0.3rem;
+          }
+        }
+        
+        .form-section {
+          margin-bottom: 1.5rem;
+          
+          .form-array-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            
+            h4 {
+              margin: 0;
+              font-size: 1rem;
+              color: #2c3e50;
+            }
+            
+            .add-btn {
+              background-color: #28a745;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              padding: 0.4rem 0.8rem;
+              font-size: 0.8rem;
+              cursor: pointer;
+              display: inline-flex;
+              align-items: center;
+              gap: 0.3rem;
+              
+              &:hover {
+                background-color: #218838;
+              }
+            }
+          }
+          
+          .form-array-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            
+            input {
+              flex-grow: 1;
+            }
+            
+            .remove-btn {
+              background-color: #dc3545;
+              color: white;
+              border: none;
+              width: 28px;
+              height: 28px;
+              border-radius: 4px;
+              margin-left: 0.5rem;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              
+              &:hover {
+                background-color: #c82333;
+              }
+            }
+          }
+          
+          .prescription-form-item {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            
+            .prescription-form-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 1rem;
+              
+              h5 {
+                margin: 0;
+                color: #2c3e50;
+                font-size: 0.95rem;
+              }
+            }
+            
+            .prescription-form-details {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 1rem;
+              
+              @media (max-width: 576px) {
+                grid-template-columns: 1fr;
+              }
+            }
+          }
+        }
+        
+        .form-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 1rem;
+          margin-top: 2rem;
+          
+          button {
+            padding: 0.6rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 0.9rem;
+            
+            &.cancel-btn {
+              background-color: transparent;
+              border: 1px solid #6c757d;
+              color: #6c757d;
+              
+              &:hover {
+                background-color: #f8f9fa;
+              }
+            }
+            
+            &.save-btn {
+              background-color: #3498db;
+              border: none;
+              color: white;
+              display: inline-flex;
+              align-items: center;
+              gap: 0.5rem;
+              
+              &:hover:not(:disabled) {
+                background-color: #2980b9;
+              }
+              
+              &:disabled {
+                opacity: 0.7;
+                cursor: not-allowed;
+              }
+              
+              .button-spinner {
+                width: 16px;
+                height: 16px;
+                border: 2px solid rgba(255, 255, 255, 0.5);
+                border-top: 2px solid white;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+              }
+            }
+          }
+        }
+      }
+      
+      @media (max-width: 768px) {
+        padding: 1.5rem;
+        
+        h3 {
+          font-size: 1.1rem;
+        }
+        
+        .visit-details {
+          .detail-section {
+            margin-bottom: 1rem;
+            
+            h4 {
+              font-size: 0.95rem;
+            }
+            
+            .prescription-item {
+              .prescription-details {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+              }
+            }
+          }
+          
+          .visit-actions {
+            margin-top: 1rem;
+            justify-content: center;
+            
+            .edit-visit-btn {
+              width: 100%;
+              justify-content: center;
+            }
+          }
+        }
+        
+        .visit-form {
+          .form-actions {
+            flex-direction: column;
+            
+            button {
+              width: 100%;
+            }
+          }
+        }
+      }
+      
+      @media (max-width: 480px) {
+        padding: 1rem;
+        
+        .no-visit-selected {
+          height: 250px;
+          
+          i {
+            font-size: 2.5rem;
+          }
+          
+          p {
+            font-size: 1rem;
+            padding: 0 1rem;
+            text-align: center;
+          }
+        }
+        
+        h3 {
+          font-size: 1rem;
+        }
+      }
+    }
+  }
+}

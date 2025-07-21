@@ -1,0 +1,391 @@
+<div class="container-fluid px-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold fs-3 mb-1">Billing Dashboard</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0 fs-6">
+                    <li class="breadcrumb-item"><a href="#" class="text-decoration-none">Home</a></li>
+                    <li class="breadcrumb-item active">Billing Overview</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <div class="btn-group shadow">
+                <a [routerLink]="['/billing/invoices/new']" class="btn btn-maroon">
+                    <i class="far fa-file-alt me-2"></i>New Invoice
+                </a>
+                <a [routerLink]="['/billing/receipts/new']" class="btn btn-outline-primary text-maroon">
+                    <i class="far fa-receipt me-2"></i>New Receipt
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dashboard Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border h-100" style="border-color: #6b1d14 !important; border-left-width: 5px !important;">
+                <div class="card-header py-3" style="background-color: #f8f9fc;">
+                    <h6 class="m-0 font-weight-bold text-maroon fw-bold">INVOICES</h6>
+                </div>
+                <div class="card-body py-4" style="background-color: #fdfdfe;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-4 p-3 rounded-circle" style="background-color: rgba(107, 29, 20, 0.1);">
+                            <i class="far fa-file-alt fs-2 text-maroon"></i>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold mb-0 display-6">{{ stats.totalInvoices }}</h2>
+                            <p class="text-muted mb-0">Total Invoices Generated</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center py-3" style="background-color: #f8f9fc; border-top: 1px solid #f5f5f5;">
+                    <span class="text-xs text-muted">View Details</span>
+                    <a [routerLink]="['/billing/invoices']" class="text-decoration-none text-maroon">
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border h-100" style="border-color: #e6c157 !important; border-left-width: 5px !important;">
+                <div class="card-header py-3" style="background-color: #f8f9fc;">
+                    <h6 class="m-0 font-weight-bold text-yellow fw-bold">RECEIPTS</h6>
+                </div>
+                <div class="card-body py-4" style="background-color: #fdfdfe;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-4 p-3 rounded-circle" style="background-color: rgba(230, 193, 87, 0.1);">
+                            <i class="far fa-receipt fs-2 text-yellow"></i>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold mb-0 display-6">{{ stats.totalReceipts }}</h2>
+                            <p class="text-muted mb-0">Total Payment Receipts</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center py-3" style="background-color: #f8f9fc; border-top: 1px solid #f5f5f5;">
+                    <span class="text-xs text-muted">View Details</span>
+                    <a [routerLink]="['/billing/receipts']" class="text-decoration-none text-yellow">
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border h-100" style="border-color: #f6c23e !important; border-left-width: 5px !important;">
+                <div class="card-header py-3" style="background-color: #f8f9fc;">
+                    <h6 class="m-0 font-weight-bold text-warning fw-bold">CASH MEMOS</h6>
+                </div>
+                <div class="card-body py-4" style="background-color: #fdfdfe;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-4 p-3 rounded-circle" style="background-color: #f6c23e15;">
+                            <i class="far fa-money-bill-alt fs-2 text-warning"></i>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold mb-0 display-6">{{ stats.totalCashMemos }}</h2>
+                            <p class="text-muted mb-0">Total Cash Transactions</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center py-3" style="background-color: #f8f9fc; border-top: 1px solid #e3e6f0;">
+                    <span class="text-xs text-muted">View Details</span>
+                    <a [routerLink]="['/billing/cash-memos']" class="text-decoration-none text-warning">
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border h-100" style="border-color: #666666 !important; border-left-width: 5px !important;">
+                <div class="card-header py-3" style="background-color: #f8f9fc;">
+                    <h6 class="m-0 font-weight-bold text-info fw-bold">ADVANCES</h6>
+                </div>
+                <div class="card-body py-4" style="background-color: #fdfdfe;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-4 p-3 rounded-circle" style="background-color: #36b9cc15;">
+                            <i class="far fa-credit-card fs-2 text-info"></i>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold mb-0 display-6">{{ stats.totalAdvances }}</h2>
+                            <p class="text-muted mb-0">Total Advance Payments</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center py-3" style="background-color: #f8f9fc; border-top: 1px solid #e3e6f0;">
+                    <span class="text-xs text-muted">View Details</span>
+                    <a [routerLink]="['/billing/advances']" class="text-decoration-none text-info">
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Revenue Statistics Section -->
+    <div class="card shadow mb-5" style="border-left: 5px solid #6b1d14 !important;">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h5 class="m-0 font-weight-bold text-maroon">Revenue Dashboard</h5>
+            <div class="form-group mb-0">
+                <select class="form-select form-select-sm" [(ngModel)]="selectedPeriod" (change)="onPeriodChange()">
+                    <option *ngFor="let period of availablePeriods" [value]="period.value">{{ period.label }}</option>
+                </select>
+            </div>
+        </div>
+        <div class="card-body">
+            <div *ngIf="loadingRevenue" class="text-center py-4">
+                <div class="spinner-border text-maroon" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading revenue statistics...</p>
+            </div>
+            
+            <div *ngIf="!loadingRevenue" class="row">
+                <div class="col-md-12 mb-4">
+                    <div class="p-4 bg-light rounded-3 border shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h2 class="fw-bold mb-0">{{ revenueStats.periodLabel }} Revenue</h2>
+                            <span class="badge bg-maroon rounded-pill fs-6 px-4 py-2">
+                                {{ formatCurrency(revenueStats.totalRevenue) }}
+                            </span>
+                        </div>
+                        <p class="text-muted">Consolidated revenue from all billing sources</p>
+                    </div>
+                </div>
+                
+                <!-- Revenue breakdown cards -->
+                <div class="col-md-4">
+                    <div class="card shadow h-100" style="border-left: 5px solid #6b1d14 !important;">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-maroon text-uppercase mb-1">Invoices Revenue</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ formatCurrency(revenueStats.invoicesRevenue) }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="far fa-file-alt fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card shadow h-100" style="border-left: 5px solid #e6c157 !important;">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-yellow text-uppercase mb-1">Cash Memos Revenue</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ formatCurrency(revenueStats.cashMemosRevenue) }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="far fa-money-bill-alt fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card shadow h-100" style="border-left: 5px solid #666666 !important;">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Receipts Revenue</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ formatCurrency(revenueStats.receiptsRevenue) }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="far fa-receipt fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Revenue Chart -->
+                <div class="col-md-12 mt-4">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Revenue Breakdown</h5>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-outline-primary text-maroon" style="border-color: #6b1d14;" (click)="exportRevenueToExcel()">
+                                    <i class="bi bi-file-excel me-1"></i> Excel
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" style="border-color: #6b1d14; color: #6b1d14;" (click)="exportRevenueToPdf()">
+                                    <i class="bi bi-file-pdf me-1"></i> PDF
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body" #revenueChartContainer>
+                            <app-revenue-chart [revenueStats]="revenueStats"></app-revenue-chart>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Category Report Chart -->
+                <div class="col-md-12 mt-4">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">Revenue by Category</h5>
+                            <div class="btn-group" *ngIf="hasCategoryData()">
+                                <button type="button" class="btn btn-sm btn-outline-primary text-maroon" style="border-color: #6b1d14;" (click)="exportCategoryReportToExcel()">
+                                    <i class="bi bi-file-excel me-1"></i> Excel
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" style="border-color: #6b1d14; color: #6b1d14;" (click)="exportCategoryReportToPdf()">
+                                    <i class="bi bi-file-pdf me-1"></i> PDF
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div *ngIf="loadingCategoryReport" class="text-center py-4">
+                                <div class="spinner-border text-maroon" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2 text-muted">Loading category report...</p>
+                            </div>
+                            <div *ngIf="!loadingCategoryReport" #categoryChartContainer>
+                                <app-category-chart [categoryReport]="categoryReport"></app-category-chart>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity Tables -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card border mb-4" style="border-color: #6b1d14 !important; border-top-width: 3px !important;">
+                <div class="card-header d-flex align-items-center justify-content-between py-3" style="background-color: #f8f9fc;">
+                    <h5 class="mb-0 fw-bold text-dark">
+                        <i class="far fa-file-alt me-2 text-maroon"></i>Recent Invoices
+                    </h5>
+                    <a [routerLink]="['/billing/invoices']" class="btn btn-sm btn-maroon">
+                        <i class="fas fa-external-link-alt me-1 small"></i>View All
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div *ngIf="loading" class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted small">Loading recent invoices...</p>
+                    </div>
+                    <div class="table-responsive" *ngIf="!loading">
+                        <table class="table table-bordered table-striped mb-0">
+                            <thead>
+                                <tr style="background-color: #4e73df10;">
+                                    <th class="py-3 text-dark fw-bold">Invoice #</th>
+                                    <th class="py-3 text-dark fw-bold">Patient</th>
+                                    <th class="py-3 text-dark fw-bold">Date</th>
+                                    <th class="py-3 text-dark fw-bold text-end">Amount</th>
+                                    <th class="py-3 text-dark fw-bold text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let invoice of recentInvoices; let odd=odd" [ngClass]="{'table-light': odd}">
+                                    <td class="py-3 align-middle">
+                                        <span class="fw-bold text-primary">{{ invoice.invoiceId }}</span>
+                                    </td>
+                                    <td class="py-3 align-middle fw-medium">{{ invoice.patientName }}</td>
+                                    <td class="py-3 align-middle">{{ invoice.date }}</td>
+                                    <td class="py-3 align-middle fw-medium text-end">₹{{ invoice.amount | number: '1.2-2' }}</td>
+                                    <td class="py-3 align-middle text-center">
+                                        <span class="badge rounded-1 px-3 py-2" [ngClass]="{
+                                            'bg-success bg-opacity-25 text-success border border-success': invoice.status === 'PAID',
+                                            'bg-danger bg-opacity-25 text-danger border border-danger': invoice.status === 'UNPAID',
+                                            'bg-warning bg-opacity-25 text-warning border border-warning': invoice.status === 'PARTIAL'
+                                        }">{{ invoice.status }}</span>
+                                    </td>
+                                </tr>
+                                <tr *ngIf="recentInvoices.length === 0">
+                                    <td colspan="5" class="text-center py-4">
+                                        <i class="far fa-file-alt text-muted fs-4 mb-3 d-block"></i>
+                                        <p class="text-muted mb-0">No recent invoices found</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card border mb-4" style="border-color: #e6c157 !important; border-top-width: 3px !important;">
+                <div class="card-header d-flex align-items-center justify-content-between py-3" style="background-color: #f8f9fc;">
+                    <h5 class="mb-0 fw-bold text-dark">
+                        <i class="far fa-receipt me-2 text-yellow"></i>Recent Receipts
+                    </h5>
+                    <a [routerLink]="['/billing/receipts']" class="btn btn-sm btn-yellow">
+                        <i class="fas fa-external-link-alt me-1 small"></i>View All
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div *ngIf="loading" class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm text-success" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted small">Loading recent receipts...</p>
+                    </div>
+                    <div class="table-responsive" *ngIf="!loading">
+                        <table class="table table-bordered table-striped mb-0">
+                            <thead>
+                                <tr style="background-color: #1cc88a10;">
+                                    <th class="py-3 text-dark fw-bold">Receipt #</th>
+                                    <th class="py-3 text-dark fw-bold">Patient</th>
+                                    <th class="py-3 text-dark fw-bold">Date</th>
+                                    <th class="py-3 text-dark fw-bold text-end">Amount</th>
+                                    <th class="py-3 text-dark fw-bold text-center">Mode</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let receipt of recentReceipts; let odd=odd" [ngClass]="{'table-light': odd}">
+                                    <td class="py-3 align-middle">
+                                        <span class="fw-bold text-success">{{ receipt.receiptId }}</span>
+                                    </td>
+                                    <td class="py-3 align-middle fw-medium">{{ receipt.patientName }}</td>
+                                    <td class="py-3 align-middle">{{ receipt.date }}</td>
+                                    <td class="py-3 align-middle fw-medium text-end">₹{{ receipt.amount | number: '1.2-2' }}</td>
+                                    <td class="py-3 align-middle text-center">
+                                        <span class="badge rounded-1 px-3 py-2" [ngClass]="{
+                                            'bg-success bg-opacity-25 text-success border border-success': receipt.modeOfPayment === 'CASH',
+                                            'bg-primary bg-opacity-25 text-primary border border-primary': receipt.modeOfPayment === 'CARD',
+                                            'bg-info bg-opacity-25 text-info border border-info': receipt.modeOfPayment === 'UPI',
+                                            'bg-warning bg-opacity-25 text-warning border border-warning': receipt.modeOfPayment === 'ONLINE'
+                                        }">
+                                            {{ receipt.modeOfPayment }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr *ngIf="recentReceipts.length === 0">
+                                    <td colspan="5" class="text-center py-4">
+                                        <i class="far fa-receipt text-muted fs-4 mb-3 d-block"></i>
+                                        <p class="text-muted mb-0">No recent receipts found</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                <a [routerLink]="['/billing/invoices/new']" class="btn btn-maroon me-md-2">
+                    <i class="fas fa-plus me-2"></i> New Invoice
+                </a>
+                <a [routerLink]="['/billing/cash-memos/new']" class="btn btn-yellow">
+                    <i class="fas fa-plus me-2"></i> New Cash Memo
+                </a>
+                <a [routerLink]="['/billing/receipts/new']" class="btn btn-secondary">
+                    <i class="fas fa-plus me-2"></i> New Receipt
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

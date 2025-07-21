@@ -1,0 +1,123 @@
+<div class="reports-container">
+  <div class="page-header">
+    <div class="back-button">
+      <a [routerLink]="['/inventory']">
+        <i class="fas fa-arrow-left"></i> Inventory Reports
+      </a>
+    </div>
+  </div>
+  
+  <div class="reports-content">
+    <h2 class="section-title">Inventory Reports</h2>
+    
+    <div class="tabs">
+      <button 
+        [class.active]="activeReport === 'expiring'" 
+        (click)="changeReport('expiring')"
+      >
+        <i class="fas fa-calendar-times"></i> Expiring Medicines
+      </button>
+      <button 
+        [class.active]="activeReport === 'low-stock'" 
+        (click)="changeReport('low-stock')"
+      >
+        <i class="fas fa-cubes"></i> Low Stock Medicines
+      </button>
+      <button 
+        class="dashboard-btn"
+        [routerLink]="['/inventory/reports/dashboard']"
+      >
+        <i class="fas fa-chart-pie"></i> Comprehensive Dashboard
+      </button>
+    </div>
+    
+    <!-- Expiring Medicines Report -->
+    <div class="report-section" *ngIf="activeReport === 'expiring'">
+      <div class="report-header">
+        <h3>Expiring Medicines Report</h3>
+        <button class="export-btn" (click)="exportToCSV('expiring')">
+          <i class="fas fa-file-export"></i> Export to CSV
+        </button>
+      </div>
+      
+      <div class="report-table" *ngIf="!loading && expiringMedicines.length > 0">
+        <table>
+          <thead>
+            <tr>
+              <th>Medicine ID</th>
+              <th>Medicine Name</th>
+              <th>Batch No</th>
+              <th>Expiry Date</th>
+              <th>Stock Quantity</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let medicine of expiringMedicines">
+              <td>{{ medicine.id }}</td>
+              <td>{{ medicine.name }}</td>
+              <td>{{ medicine.batchNo || 'N/A' }}</td>
+              <td>{{ medicine.expiryDate || 'N/A' }}</td>
+              <td>{{ medicine.stockQuantity }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="getExpiryStatus(medicine.expiryDate || '')">
+                  {{ 
+                    getExpiryStatus(medicine.expiryDate || '') === 'expired' ? 'Expired' : 
+                    getExpiryStatus(medicine.expiryDate || '') === 'expiring-soon' ? 'Expiring Soon' : 
+                    getExpiryStatus(medicine.expiryDate || '') === 'expiring-medium' ? '1-3 Months' : 'Safe'
+                  }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="loading-message" *ngIf="loading">Loading expiring medicines...</div>
+      <div class="no-data-message" *ngIf="!loading && expiringMedicines.length === 0">No expiring medicines found</div>
+    </div>
+    
+    <!-- Low Stock Medicines Report -->
+    <div class="report-section" *ngIf="activeReport === 'low-stock'">
+      <div class="report-header">
+        <h3>Low Stock Medicines Report</h3>
+        <button class="export-btn" (click)="exportToCSV('low-stock')">
+          <i class="fas fa-file-export"></i> Export to CSV
+        </button>
+      </div>
+      
+      <div class="report-table" *ngIf="!loading && lowStockMedicines.length > 0">
+        <table>
+          <thead>
+            <tr>
+              <th>Medicine ID</th>
+              <th>Medicine Name</th>
+              <th>Current Stock</th>
+              <th>Low Stock Threshold</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let medicine of lowStockMedicines">
+              <td>{{ medicine.id }}</td>
+              <td>{{ medicine.name }}</td>
+              <td>{{ medicine.currentStock }}</td>
+              <td>{{ medicine.lowStockThreshold }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="getStockStatus(medicine)">
+                  {{ 
+                    getStockStatus(medicine) === 'out-of-stock' ? 'Out of Stock' : 
+                    getStockStatus(medicine) === 'low-stock' ? 'Low Stock' : 'Sufficient'
+                  }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="loading-message" *ngIf="loading">Loading low stock medicines...</div>
+      <div class="no-data-message" *ngIf="!loading && lowStockMedicines.length === 0">No low stock medicines found</div>
+    </div>
+  </div>
+</div>

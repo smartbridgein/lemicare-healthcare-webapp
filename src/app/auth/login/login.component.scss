@@ -1,0 +1,288 @@
+// Variables
+$primary-color: #6b1d14; // Maroon primary
+$secondary-color: #8a2a1e; // Darker maroon
+$accent-color: #f0ad4e; // Yellow accent
+$light-color: #f8f9fa;
+$dark-color: #343a40;
+$text-color: #333333;
+$border-radius: 8px;
+$box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+$font-family: 'Roboto', sans-serif;
+
+.login-container {
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  font-family: $font-family;
+
+  .row {
+    min-height: 100vh;
+    margin: 0; // Remove default row margin
+  }
+
+  .illustration-col {
+    background: linear-gradient(135deg, $primary-color, $secondary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden; // Prevent content from spilling out
+
+    .illustration-wrapper {
+      max-width: 450px;
+      text-align: center;
+      padding: 1rem;
+      
+      .logo-container {
+        width: 520px;
+        height: 520px;
+        margin: 0 auto 2rem;
+        background-image: url('assets/images/lemicare-logo.png');
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-color: transparent;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        padding: 0;
+      }
+
+      .illustration-image {
+        max-width: 80%;
+        height: auto;
+        margin: 1rem auto 2rem;
+        filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.1));
+        display: block;
+        background-color: white;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      h2 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        font-weight: 600;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      p {
+        font-size: 1.25rem;
+        opacity: 0.9;
+      }
+    }
+  }
+
+  .form-col {
+    padding: 2rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    
+    // Fix for input group alignment
+    .input-group {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      width: 100%;
+      
+      .input-group-text {
+        display: flex;
+        align-items: center;
+        padding: 0.375rem 0.75rem;
+        border-radius: $border-radius 0 0 $border-radius;
+        border: 1px solid #ced4da;
+        border-right: none;
+        background-color: #f8f9fa;
+      }
+      
+      .form-control {
+        flex: 1 1 auto;
+        width: 1%;
+        min-width: 0;
+        border-radius: 0 $border-radius $border-radius 0;
+      }
+    }
+
+    .form-wrapper {
+      max-width: 400px;
+      width: 100%;
+      padding: 0 0.5rem;
+
+      .logo-area {
+        margin-bottom: 2rem;
+
+        h1 {
+          font-weight: 700;
+          color: $primary-color;
+          margin-bottom: 0.25rem;
+          font-size: 2rem;
+          font-family: $font-family;
+        }
+
+        .tagline {
+          color: $text-color;
+          opacity: 0.7;
+          font-family: $font-family;
+        }
+      }
+
+      .form-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: $primary-color;
+        font-family: $font-family;
+      }
+
+      .form-subtitle {
+        color: $text-color;
+        opacity: 0.7;
+        margin-bottom: 1.5rem;
+        font-family: $font-family;
+      }
+
+      .alert {
+        margin-bottom: 1.5rem;
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+
+        .form-label {
+          font-weight: 500;
+          margin-bottom: 0.5rem;
+          color: $dark-color;
+          display: block;
+        }
+
+        .form-control {
+          height: 48px;
+          border-radius: $border-radius;
+          border: 1px solid #ced4da;
+          width: 100%;
+          font-family: $font-family;
+
+          &:focus {
+            box-shadow: 0 0 0 2px rgba($primary-color, 0.25);
+            border-color: $primary-color;
+            outline: none;
+          }
+        }
+
+        .input-group-text {
+          background-color: $light-color;
+          border-top-left-radius: $border-radius;
+          border-bottom-left-radius: $border-radius;
+          width: 50px;
+          justify-content: center;
+        }
+      }
+
+      .invalid-feedback {
+        color: #dc3545;
+        font-size: 0.875rem;
+      }
+
+      .password-toggle {
+        cursor: pointer;
+      }
+      
+      .btn-primary {
+        background-color: $primary-color;
+        border-color: $primary-color;
+        height: 48px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        font-family: $font-family;
+        
+        &:hover, &:focus {
+          background-color: darken($primary-color, 10%);
+          border-color: darken($primary-color, 10%);
+          box-shadow: 0 2px 8px rgba($primary-color, 0.4);
+        }
+        
+        &:disabled {
+          background-color: lighten($primary-color, 15%);
+          border-color: lighten($primary-color, 15%);
+          box-shadow: none;
+        }
+      }
+      
+      .btn-link {
+        color: $primary-color;
+        padding: 0;
+        font-weight: 500;
+        font-family: $font-family;
+        
+        &:hover {
+          color: darken($primary-color, 10%);
+          text-decoration: underline;
+        }
+      }
+      
+      .form-check {
+        padding-left: 1.75rem;
+        
+        .form-check-input {
+          margin-left: -1.75rem;
+          width: 1.25rem;
+          height: 1.25rem;
+          
+          &:checked {
+            background-color: $primary-color;
+            border-color: $primary-color;
+          }
+          
+          &:focus {
+            box-shadow: 0 0 0 2px rgba($primary-color, 0.25);
+            border-color: $primary-color;
+          }
+          
+          &:hover:not(:checked):not(:disabled) {
+            border-color: darken($primary-color, 5%);
+          }
+        }
+      }
+      
+      .form-switch {
+        padding-left: 2.5rem;
+        
+        .form-check-input {
+          margin-left: -2.5rem;
+          width: 2rem;
+        }
+      }
+      
+      .partners-section {
+        margin-top: 3rem;
+        font-family: $font-family;
+        
+        .partner-logos {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 1.5rem;
+          
+          .partner-logo {
+            max-height: 40px;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+            
+            &:hover {
+              opacity: 1;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.login-form {
+  box-shadow: none;
+  padding: 0;
+}
