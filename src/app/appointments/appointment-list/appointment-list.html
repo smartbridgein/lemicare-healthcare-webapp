@@ -232,7 +232,19 @@
                 <span>APPT-{{ 10000 + i }}</span>
               </td>
               <td style="padding: 12px;">
-                <b>{{ appointment.patientName || getPatientName(appointment.patientId) }}</b>
+                <b>
+                  <ng-container *ngIf="appointment.patientName && appointment.patientName !== appointment.patientId && appointment.patientName !== 'Loading...'; else loadingName">
+                    {{ appointment.patientName }}
+                  </ng-container>
+                  <ng-template #loadingName>
+                    <span *ngIf="getPatientName(appointment.patientId) === 'Loading...'; else showPatientId" class="text-muted">
+                      <i class="fas fa-spinner fa-spin me-1"></i>Loading...
+                    </span>
+                    <ng-template #showPatientId>
+                      {{ getPatientName(appointment.patientId) }}
+                    </ng-template>
+                  </ng-template>
+                </b>
                 <div class="small text-muted">{{ getPatientPhone(appointment.patientId) || 'No phone' }}</div>
               </td>
               <td style="padding: 12px;">

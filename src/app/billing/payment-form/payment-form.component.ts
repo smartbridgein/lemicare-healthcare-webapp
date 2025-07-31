@@ -59,7 +59,7 @@ export class PaymentFormComponent implements OnInit {
   loadInvoice(id: string): void {
     this.loading = true;
     this.billingService.getInvoiceById(id).subscribe({
-      next: (invoice) => {
+      next: (invoice: Invoice) => {
         this.invoice = invoice;
         
         // Set default payment amount to balance
@@ -69,7 +69,7 @@ export class PaymentFormComponent implements OnInit {
         
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading invoice', error);
         this.loading = false;
         alert('Failed to load invoice');
@@ -114,7 +114,7 @@ export class PaymentFormComponent implements OnInit {
         // Update the invoice status and balance
         this.updateInvoice(paymentAmount);
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error creating receipt', error);
         this.loading = false;
         alert('Payment failed');
@@ -130,7 +130,7 @@ export class PaymentFormComponent implements OnInit {
     const newBalanceAmount = Math.max(0, this.invoice.amount - newPaidAmount);
     
     // Determine new status
-    let newStatus = 'UNPAID';
+    let newStatus: 'PAID' | 'UNPAID' | 'PARTIAL' = 'UNPAID';
     if (newBalanceAmount <= 0) {
       newStatus = 'PAID';
     } else if (newPaidAmount > 0) {
@@ -150,7 +150,7 @@ export class PaymentFormComponent implements OnInit {
         alert('Payment processed successfully');
         this.router.navigate(['/billing/invoices', this.invoiceId]);
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error updating invoice', error);
         this.loading = false;
         alert('Payment recorded but failed to update invoice status');

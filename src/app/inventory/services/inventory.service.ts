@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, of, throwError, forkJoin } from 'rxjs';
 import { catchError, map, tap, delay } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
@@ -65,10 +65,10 @@ export interface CreateOtcSaleRequest {
   // Patient details
   patientName?: string;
   patientMobile?: string;
-  patientAddress?: string;
+  address?: string;
   patientDob?: string | null;
   patientAge?: number | null;
-  patientGender?: string | null;
+  gender?: string | null;
   walkInCustomerName?: string;
   walkInCustomerMobile?: string;
   
@@ -802,6 +802,28 @@ export class InventoryService {
     );
   }
 
+  /**
+   * Clean up all tax profiles except "no tax" profile
+   * Calls the backend cleanup endpoint to remove inconsistent tax profiles
+   * @returns Observable with cleanup results (deletedCount, errorCount, errors)
+   */
+  cleanupTaxProfiles(): Observable<any> {
+    const cleanupApiUrl = `${this.apiUrl}/api/inventory/masters/tax-profiles/cleanup`;
+    console.log('Starting tax profile cleanup...');
+    
+    return this.http.post(cleanupApiUrl, {}).pipe(
+      tap((result: any) => {
+        console.log('Tax profile cleanup completed:', result);
+        // Refresh tax profiles cache after cleanup
+        this.refreshTaxProfilesCache();
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Tax profile cleanup failed:', error);
+        return throwError(() => new Error(`Failed to cleanup tax profiles: ${error.message}`));
+      })
+    );
+  }
+
   // Suppliers
   getSuppliers(): Observable<Supplier[]> {
     // Using exact endpoint from MasterDataController.java: @RequestMapping("/api/inventory/masters")
@@ -819,6 +841,9 @@ export class InventoryService {
           gstNumber: supplier.gstin, // Map gstin to gstNumber for compatibility
           contactPerson: supplier.contactPerson,
           status: supplier.status,
+          drugLicenseNumber: supplier.drugLicenseNumber,
+          balance: supplier.balance, // Map balance field from API response
+          outstandingBalance: supplier.outstandingBalance, // Map outstandingBalance field from API response
           createdAt: supplier.createdAt,
           createdBy: supplier.createdBy
         })))
@@ -841,6 +866,9 @@ export class InventoryService {
           gstNumber: supplier.gstin,
           contactPerson: supplier.contactPerson,
           status: supplier.status,
+          drugLicenseNumber: supplier.drugLicenseNumber,
+          balance: supplier.balance, // Map balance field from API response
+          outstandingBalance: supplier.outstandingBalance, // Map outstandingBalance field from API response
           createdAt: supplier.createdAt,
           createdBy: supplier.createdBy
         }))
@@ -1205,6 +1233,11 @@ export class InventoryService {
           totalAmount: purchase.totalAmount || 0,
           createdBy: purchase.createdBy,
           
+          // Payment fields - CRITICAL: These were missing!
+          amountPaid: purchase.amountPaid || 0,
+          dueAmount: purchase.dueAmount || 0,
+          paymentStatus: purchase.paymentStatus || 'PENDING',
+          
           // Map items with all available fields from API response
           items: Array.isArray(purchase.items) ? purchase.items.map((item: any) => ({
             medicineId: item.medicineId,
@@ -1433,9 +1466,24 @@ export class InventoryService {
         tap(sales => {
           console.log('Raw API sales response:', sales);
         }),
-        // Return the raw API response data without transforming it
-        // This ensures we preserve all original fields including walkInCustomerMobile and grandTotal
-        map((sales: any[]) => sales)
+        // Map backend response to ensure consistent discount field mapping
+        map((sales: any[]) => sales.map(sale => ({
+          ...sale,
+          // Ensure consistent discount field mapping
+          discount: sale.totalDiscountAmount || sale.discount || 0,
+          totalDiscountAmount: sale.totalDiscountAmount || sale.discount || 0,
+          // Map item-level discounts consistently
+          items: Array.isArray(sale.items) ? sale.items.map((item: any) => ({
+            ...item,
+            discount: item.discountPercentage || item.discount || 0,
+            discountPercentage: item.discountPercentage || item.discount || 0
+          })) : [],
+          saleItems: Array.isArray(sale.saleItems) ? sale.saleItems.map((item: any) => ({
+            ...item,
+            discount: item.discountPercentage || item.discount || 0,
+            discountPercentage: item.discountPercentage || item.discount || 0
+          })) : []
+        })))
       );
     
     // MOCK implementation - Commented out as we now use real API
@@ -1466,15 +1514,19 @@ export class InventoryService {
     return this.http.get<any>(`${environment.apiUrlInventory}/api/inventory/sales/${id}`)
       .pipe(
         map((sale: any) => {
-          // Map backend sale data to frontend model
+          // Map backend sale data to frontend model with consistent discount mapping
           return {
+            ...sale, // Preserve all original fields
             id: sale.saleId || sale.id,
             date: sale.saleDate || sale.date,
             totalAmount: sale.totalAmount,
-            discount: sale.discount || 0,
+            // Ensure consistent discount field mapping
+            discount: sale.totalDiscountAmount || sale.discount || 0,
+            totalDiscountAmount: sale.totalDiscountAmount || sale.discount || 0,
             tax: sale.tax || 0,
             netAmount: sale.netAmount,
             items: Array.isArray(sale.items) ? sale.items.map((item: any) => ({
+              ...item, // Preserve all original item fields
               id: item.itemId || item.id,
               medicineId: item.medicineId,
               medicine: item.medicine ? {
@@ -1488,7 +1540,9 @@ export class InventoryService {
               } : undefined,
               quantity: item.quantity,
               unitPrice: item.unitPrice,
-              discount: item.discount || 0,
+              // Ensure consistent item-level discount mapping
+              discount: item.discountPercentage || item.discount || 0,
+              discountPercentage: item.discountPercentage || item.discount || 0,
               tax: item.tax || 0,
               total: item.total
             })) : [],
@@ -2009,21 +2063,117 @@ export class InventoryService {
   }
 
   getExpiringMedicines(): Observable<ExpiringMedicine[]> {
-    // Using the general medicines endpoint since the expiring-soon endpoint doesn't exist
+    // Get purchase data to check actual batch expiry dates
+    return this.getExpiringMedicinesFromPurchases();
+  }
+
+  // New method to get expiring medicines from purchase API data
+  getExpiringMedicinesFromPurchases(): Observable<ExpiringMedicine[]> {
+    // Fetch purchase data, medicines, and suppliers concurrently
+    return forkJoin({
+      purchases: this.http.get<any[]>(`${environment.apiUrlInventory}/api/inventory/purchases/`),
+      medicines: this.getMedicines(),
+      suppliers: this.getSuppliers()
+    }).pipe(
+      map(({ purchases, medicines, suppliers }) => {
+        const today = new Date();
+        const tenDaysFromNow = new Date();
+        tenDaysFromNow.setDate(today.getDate() + 10); // Medicines expiring in the next 10 days
+        
+        console.log('Processing purchase data for expiring medicines:', purchases.length, 'purchases');
+        console.log('Available medicines for mapping:', medicines.length);
+        console.log('Available suppliers for mapping:', suppliers.length);
+        
+        // Create lookup maps for efficient searching
+        const medicineMap = new Map<string, Medicine>();
+        medicines.forEach(medicine => {
+          medicineMap.set(medicine.medicineId || medicine.id, medicine);
+        });
+        
+        const supplierMap = new Map<string, Supplier>();
+        suppliers.forEach(supplier => {
+          supplierMap.set(supplier.supplierId || supplier.id, supplier);
+        });
+        
+        const expiringMedicines: ExpiringMedicine[] = [];
+        const processedMedicines = new Map<string, ExpiringMedicine>(); // To avoid duplicates
+        
+        purchases.forEach(purchase => {
+          if (purchase.items && Array.isArray(purchase.items)) {
+            purchase.items.forEach((item: any) => {
+              if (item.expiryDate && item.medicineId) {
+                // Convert timestamp to date
+                const expiryDate = new Date(item.expiryDate.seconds * 1000);
+                const daysToExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                
+                // Check if medicine is expired or expiring within 10 days
+                if (daysToExpiry <= 10) {
+                  const key = `${item.medicineId}_${item.batchNo}`;
+                  
+                  // Only add if not already processed or if this batch expires sooner
+                  if (!processedMedicines.has(key) || processedMedicines.get(key)!.daysToExpiry > daysToExpiry) {
+                    // Get medicine details
+                    const medicine = medicineMap.get(item.medicineId);
+                    const medicineName = medicine?.name || item.medicineName || `Medicine ${item.medicineId}`;
+                    
+                    // Get supplier details
+                    const supplier = supplierMap.get(purchase.supplierId);
+                    const supplierName = purchase.supplierName || supplier?.name || 'Unknown Supplier';
+                    
+                    const expiringMedicine: ExpiringMedicine = {
+                      id: item.medicineId,
+                      name: medicineName,
+                      batchNo: item.batchNo || 'N/A',
+                      expiryDate: expiryDate.toISOString(),
+                      daysToExpiry: daysToExpiry,
+                      quantity: item.totalReceivedQuantity || 0,
+                      purchaseId: purchase.purchaseId,
+                      referenceId: purchase.referenceId,
+                      supplierId: purchase.supplierId,
+                      supplierName: supplierName
+                    };
+                    
+                    processedMedicines.set(key, expiringMedicine);
+                  }
+                }
+              }
+            });
+          }
+        });
+        
+        // Convert map to array and sort by days to expiry
+        const result = Array.from(processedMedicines.values())
+          .sort((a, b) => a.daysToExpiry - b.daysToExpiry);
+        
+        console.log('Found expiring medicines from purchases:', result.length);
+        console.log('Enhanced expiring medicines with supplier names:', result);
+        
+        return result;
+      }),
+      catchError(error => {
+        console.error('Error fetching purchase data for expiring medicines:', error);
+        // Fallback to original method if purchase API fails
+        return this.getExpiringMedicinesFromMedicinesAPI();
+      })
+    );
+  }
+
+  // Fallback method using medicines API (original implementation)
+  private getExpiringMedicinesFromMedicinesAPI(): Observable<ExpiringMedicine[]> {
     return this.http.get<any[]>(`${environment.apiUrlInventory}/api/inventory/masters/medicines`)
       .pipe(
         map((medicines: any[]) => {
           const today = new Date();
-          const thirtyDaysFromNow = new Date();
-          thirtyDaysFromNow.setDate(today.getDate() + 30); // Medicines expiring in the next 30 days
+          const tenDaysFromNow = new Date();
+          tenDaysFromNow.setDate(today.getDate() + 10); // Medicines expiring in the next 10 days
           
-          // Filter medicines with expiry dates within 30 days and map to ExpiringMedicine interface
+          // Filter medicines with expiry dates within 10 days and map to ExpiringMedicine interface
           return medicines
             .filter(medicine => {
               if (!medicine.expiryDate) return false;
               
               const expiryDate = new Date(medicine.expiryDate);
-              return expiryDate <= thirtyDaysFromNow && expiryDate >= today;
+              return expiryDate <= tenDaysFromNow;
             })
             .map(medicine => {
               const expiryDate = new Date(medicine.expiryDate);
@@ -2049,12 +2199,28 @@ export class InventoryService {
     return this.http.get<any[]>(`${environment.apiUrlInventory}/api/inventory/masters/medicines`)
       .pipe(
         map((medicines: any[]) => {
+          console.log('🔍 Inventory service - Raw medicines data:', medicines.length);
+          
           // Filter medicines where current stock is below the threshold
-          return medicines
+          const lowStockMedicines = medicines
             .filter(medicine => {
-              const currentStock = medicine.quantityInStock || 0;
-              const threshold = medicine.lowStockThreshold || 10; // Default threshold if not specified
-              return currentStock < threshold;
+              const currentStock = Number(medicine.quantityInStock) || 0;
+              const threshold = Number(medicine.lowStockThreshold) || 0; // Use actual threshold, not default
+              const isActive = medicine.status === 'ACTIVE';
+              const isLowStock = currentStock < threshold && isActive && threshold > 0;
+              
+              // Debug specific medicines
+              if (medicine.name && (medicine.name.includes('Softina') || medicine.name.includes('Cirascreen'))) {
+                console.log(`🔍 Service checking ${medicine.name}:`, {
+                  currentStock,
+                  threshold,
+                  status: medicine.status,
+                  isActive,
+                  isLowStock
+                });
+              }
+              
+              return isLowStock;
             })
             .map(medicine => {
               // Map to LowStockMedicine interface
@@ -2062,12 +2228,19 @@ export class InventoryService {
                 id: medicine.medicineId || medicine.id,
                 name: medicine.name,
                 currentStock: medicine.quantityInStock || 0,
-                // Use threshold from medicine data or default
-                threshold: medicine.lowStockThreshold || 10
+                threshold: medicine.lowStockThreshold || 0
               };
             })
             // Sort by stock level (ascending)
             .sort((a, b) => a.currentStock - b.currentStock);
+            
+          console.log('🔍 Inventory service - Low stock result:', {
+            totalMedicines: medicines.length,
+            lowStockCount: lowStockMedicines.length,
+            lowStockItems: lowStockMedicines
+          });
+          
+          return lowStockMedicines;
         })
       );
   }

@@ -1,63 +1,93 @@
-// Apply classic styling with Times New Roman font and blue color palette
+// Dashboard theme colors
+$maroon-primary: #6b1d14;
+$maroon-dark: #4a0f09;
+$maroon-light: #8c2c21;
+$yellow-accent: #e6c157;
+$yellow-light: #f3d98b;
+$gray-dark: #333333;
+$gray-medium: #666666;
+$gray-light: #f5f5f5;
+
+// Apply dashboard consistent styling
 :host ::ng-deep {
-  font-family: "Times New Roman", Times, serif;
+  font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
 }
 
 .card {
-  border: 2px solid #ccd6e5;
-  border-radius: 0.35rem;
-  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-}
-
-.card-header {
-  border-bottom: 2px solid #4e73df;
-  padding: 1rem;
-  background-color: #f8f9fc;
+  border: 1px solid rgba($maroon-primary, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba($maroon-primary, 0.08);
+  transition: all 0.3s ease;
   
-  h5 {
-    font-family: "Times New Roman", Times, serif;
-    font-weight: 700;
-    color: #2c3e50;
-    letter-spacing: 0.02em;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+  &:hover {
+    box-shadow: 0 6px 20px rgba($maroon-primary, 0.12);
+    border-color: rgba($maroon-primary, 0.25);
   }
 }
 
-// Table styling
+.card-header {
+  border-bottom: 2px solid rgba($maroon-primary, 0.1);
+  padding: 1rem 1.25rem;
+  background-color: rgba($maroon-primary, 0.02);
+  border-radius: 12px 12px 0 0;
+  
+  h5 {
+    font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+    font-weight: 600;
+    color: $maroon-primary;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
+}
+
+// Table styling - Enhanced for full-width view
 .table {
-  font-family: "Times New Roman", Times, serif;
-  font-size: 0.95rem;
+  font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+  font-size: 0.9rem;
   border-collapse: separate;
   border-spacing: 0;
+  width: 100%;
+  table-layout: auto;
+  margin-bottom: 0;
   
   thead {
-    background-color: #f8f9fc;
+    background-color: rgba($maroon-primary, 0.03);
     
     th {
-      border-bottom: 2px solid #4e73df;
-      font-family: "Times New Roman", Times, serif;
-      font-weight: 700;
-      color: #2c3e50;
-      letter-spacing: 0.02em;
-      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+      border-bottom: 2px solid rgba($maroon-primary, 0.1);
+      font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+      font-weight: 600;
+      color: $maroon-primary;
+      letter-spacing: 0.01em;
+      padding: 0.75rem 0.5rem;
+      white-space: nowrap;
+      text-align: left;
+      vertical-align: middle;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
   }
   
   tbody {
-    tr:nth-child(even) {
-      background-color: #f8f9fc;
-    }
-    
-    tr:hover {
-      background-color: #eaecf4;
-    }
-    
     td {
-      border-bottom: 1px solid #e3e6f0;
-      color: #3a3b45;
-      letter-spacing: 0.01em;
+      padding: 0.6rem 0.5rem;
+      vertical-align: middle;
+      word-wrap: break-word;
+      border-bottom: 1px solid $gray-light;
+    }
+    
+    tr:hover td {
+      background-color: rgba($maroon-primary, 0.02);
     }
   }
+  
+  // Responsive column widths for Low Stock table
+  th:nth-child(1), td:nth-child(1) { width: 15%; }  // Medicine ID
+  th:nth-child(2), td:nth-child(2) { width: 40%; }  // Medicine Name
+  th:nth-child(3), td:nth-child(3) { width: 15%; }  // Current Stock
+  th:nth-child(4), td:nth-child(4) { width: 15%; }  // Threshold
+  th:nth-child(5), td:nth-child(5) { width: 15%; }  // Actions
 }
 
 // Status badges styling
@@ -138,4 +168,220 @@
   font-style: italic;
   color: #5a5c69;
   letter-spacing: 0.01em;
+}
+
+// Classic Charts Styling
+.charts-section {
+  background: linear-gradient(135deg, rgba($maroon-primary, 0.02) 0%, rgba($yellow-accent, 0.02) 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba($maroon-primary, 0.1);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba($yellow-accent, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+}
+
+.classic-chart-container {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 12px rgba($maroon-primary, 0.08);
+  border: 1px solid rgba($maroon-primary, 0.1);
+  position: relative;
+  transition: all 0.3s ease;
+  height: 350px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba($maroon-primary, 0.12);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, $maroon-primary 0%, $yellow-accent 100%);
+    border-radius: 12px 12px 0 0;
+  }
+}
+
+.chart-header {
+  margin-bottom: 1rem;
+  text-align: center;
+
+  .chart-title {
+    color: $maroon-primary;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i {
+      color: $yellow-accent;
+      font-size: 1.1rem;
+    }
+  }
+
+  .chart-subtitle {
+    color: $gray-medium;
+    font-size: 0.85rem;
+    margin: 0;
+    font-style: italic;
+  }
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 250px;
+  width: 100%;
+
+  .chart-canvas {
+    max-height: 100%;
+    max-width: 100%;
+  }
+}
+
+// Classic Stats Summary
+.classic-stats-summary {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 12px rgba($maroon-primary, 0.08);
+  border: 1px solid rgba($maroon-primary, 0.1);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, $maroon-primary 0%, $yellow-accent 50%, $maroon-primary 100%);
+  }
+
+  .stat-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    position: relative;
+    min-width: 120px;
+    justify-content: center;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+
+    .stat-icon {
+      margin-right: 0.75rem;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .stat-content {
+      text-align: center;
+
+      .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.25rem;
+        font-family: 'Inter', 'Segoe UI', sans-serif;
+      }
+
+      .stat-label {
+        font-size: 0.8rem;
+        font-weight: 500;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+
+    &.out-of-stock {
+      background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    }
+
+    &.critical {
+      background: linear-gradient(135deg, #fd7e14 0%, #e55a00 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(253, 126, 20, 0.3);
+    }
+
+    &.low {
+      background: linear-gradient(135deg, $yellow-accent 0%, #d4a843 100%);
+      color: $gray-dark;
+      box-shadow: 0 4px 12px rgba($yellow-accent, 0.3);
+    }
+
+    &.warning {
+      background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .charts-section {
+    padding: 1rem;
+  }
+
+  .classic-chart-container {
+    height: 300px;
+    margin-bottom: 1rem;
+  }
+
+  .chart-wrapper {
+    height: 200px;
+  }
+
+  .classic-stats-summary {
+    flex-direction: column;
+    gap: 0.75rem;
+
+    .stat-item {
+      width: 100%;
+      min-width: auto;
+    }
+  }
+
+  .chart-header .chart-title {
+    font-size: 0.9rem;
+  }
+
+  .chart-header .chart-subtitle {
+    font-size: 0.8rem;
+  }
 }

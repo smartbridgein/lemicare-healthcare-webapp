@@ -4,6 +4,8 @@ import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Appointment, AppointmentFilters, AppointmentStatus, Doctor, Patient } from '../shared/appointment.model';
 import { AppointmentService } from '../shared/appointment.service';
+import { PatientService } from '../../patients/shared/patient.service';
+import { Patient as PatientModel } from '../../patients/shared/patient.model';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -75,6 +77,7 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
   
   constructor(
     private appointmentService: AppointmentService,
+    private patientService: PatientService,
     private route: ActivatedRoute,
     private datePipe: DatePipe,
     private router: Router,
@@ -97,10 +100,19 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
         this.selectedDate = '';
       }
       
+      // Load appointments immediately
       this.loadAppointments();
+      
+      // Set up periodic refresh to catch new appointments and update queue count
+      setInterval(() => {
+        this.loadAppointments();
+      }, 30000); // Refresh every 30 seconds
       this.loadDoctors();
       this.loadPatients();
     });
+    
+    // Add immediate refresh when component loads (for redirects from appointment creation)
+    this.refreshAppointmentsOnLoad();
   }
 
   loadAppointments(): void {
@@ -114,8 +126,12 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
       searchTerm: this.searchTerm || undefined
     };
     
+    console.log('Loading appointments with filters:', filters);
+    
     this.appointmentService.getAppointments(filters).subscribe({
       next: (data) => {
+        console.log('Raw appointment data received:', data);
+        
         // Filter out appointments with missing critical data to prevent empty rows
         const validAppointments = data.filter(appointment => 
           appointment && 
@@ -123,26 +139,42 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
           appointment.patientId
         );
         
+        // Normalize appointment statuses - ensure new appointments default to SCHEDULED
+        const normalizedAppointments = validAppointments.map(appointment => ({
+          ...appointment,
+          status: appointment.status || 'SCHEDULED' // Default to SCHEDULED if no status
+        }));
+        
         // Sort appointments by date & time (newest first)
-        const sortedAppointments = this.sortAppointmentsByDate(validAppointments);
+        const sortedAppointments = this.sortAppointmentsByDate(normalizedAppointments);
         console.log('Appointments sorted by latest date and time first');
         
-        this.appointments = sortedAppointments;
-        this.filteredAppointments = [...sortedAppointments];
-        
-        // Load patient names for all appointments from the API
-        this.appointments.forEach(appointment => {
-          if (appointment.patientId && !appointment.patientName) {
-            this.loadPatientName(appointment.patientId);
+        // Preserve existing patient names from cache before updating appointments
+        const appointmentsWithCachedNames = sortedAppointments.map(appointment => {
+          if (appointment.patientId && this.patientNamesCache.has(appointment.patientId)) {
+            return {
+              ...appointment,
+              patientName: this.patientNamesCache.get(appointment.patientId)
+            };
           }
+          return appointment;
         });
         
+        this.appointments = appointmentsWithCachedNames;
+        this.filteredAppointments = [...appointmentsWithCachedNames];
+        
+        // Preload all patient names in batch to prevent race conditions
+        this.preloadPatientNames();
+        
         console.log(`Found ${this.filteredAppointments.length} valid appointments`);
+        console.log('Appointment statuses:', this.filteredAppointments.map(a => ({ id: a.appointmentId, status: a.status })));
+        
         this.updateStatistics();
         this.isLoading = false;
       },
-      error: (err) => {
-        this.error = `Failed to load appointments: ${err.message}`;
+      error: (error) => {
+        console.error('Error loading appointments:', error);
+        this.error = 'Failed to load appointments. Please try again.';
         this.isLoading = false;
       }
     });
@@ -189,8 +221,9 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
 
   
   // Maps to cache patient data we've already fetched
-  private patientNamesCache: Map<string, string> = new Map<string, string>();
-  private patientPhoneCache: Map<string, string> = new Map<string, string>();
+  private patientNamesCache = new Map<string, string>();
+  private patientPhoneCache = new Map<string, string>();
+  private loadingPatients = new Set<string>(); // Track which patients are currently being loaded
   
   // Load a single patient name by ID
   loadPatientName(patientId: string): void {
@@ -202,20 +235,31 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
       return;
     }
     
-    // Fetch from API if not in cache
-    this.appointmentService.getPatientById(patientId).subscribe({
-      next: (patient: any) => {
+    // Prevent multiple simultaneous API calls for the same patient
+    if (this.loadingPatients.has(patientId)) {
+      return; // Already loading this patient
+    }
+    
+    // Mark as loading
+    this.loadingPatients.add(patientId);
+    
+    // Fetch from API using the proper PatientService
+    this.patientService.getPatientById(patientId).subscribe({
+      next: (patient: PatientModel) => {
+        // Remove from loading set
+        this.loadingPatients.delete(patientId);
+        
         if (patient) {
-          console.log('Patient data from API:', patient);
-          // Get name from the direct API response
-          const patientName = patient.name;
+          console.log('Patient data from PatientService API:', patient);
+          // Get name from the patient model (firstName + lastName)
+          const patientName = `${patient.firstName || ''} ${patient.lastName || ''}`.trim() || patient.firstName || patient.lastName || `Patient ${patientId}`;
           
           // Update name cache
           this.patientNamesCache.set(patientId, patientName);
           
           // Update phone cache if available
-          if (patient.phoneNumber) {
-            this.patientPhoneCache.set(patientId, patient.phoneNumber);
+          if (patient.mobileNumber) {
+            this.patientPhoneCache.set(patientId, patient.mobileNumber);
           }
           
           // Update all appointments with this patient
@@ -223,7 +267,14 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
         }
       },
       error: (error: Error) => {
-        console.error(`Error loading patient ${patientId}:`, error);
+        // Remove from loading set on error
+        this.loadingPatients.delete(patientId);
+        console.error(`Error loading patient ${patientId} from PatientService:`, error);
+        
+        // Fallback: try to create a readable name from the patient ID
+        const fallbackName = `Patient ${patientId.replace('PAT-', '').substring(0, 8)}`;
+        this.patientNamesCache.set(patientId, fallbackName);
+        this.updateAppointmentsWithPatientName(patientId, fallbackName);
       }
     });
   }
@@ -240,6 +291,27 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
     // Force view refresh
     this.filteredAppointments = [...this.filteredAppointments];
     console.log(`Updated patient name: ${patientName} for ID: ${patientId}`);
+  }
+
+  // Preload all patient names in batch to prevent race conditions and instability
+  private preloadPatientNames(): void {
+    // Get unique patient IDs that need names loaded
+    const patientIdsToLoad = new Set<string>();
+    
+    this.appointments.forEach(appointment => {
+      if (appointment.patientId && 
+          !this.patientNamesCache.has(appointment.patientId) && 
+          !this.loadingPatients.has(appointment.patientId)) {
+        patientIdsToLoad.add(appointment.patientId);
+      }
+    });
+    
+    // Load each unique patient name
+    patientIdsToLoad.forEach(patientId => {
+      this.loadPatientName(patientId);
+    });
+    
+    console.log(`Preloading names for ${patientIdsToLoad.size} patients`);
   }
 
   getDoctorById(doctorId: string | undefined): Doctor | undefined {
@@ -269,11 +341,27 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
       return this.patientNamesCache.get(patientId) || patientId;
     }
     
+    // Check if any appointment already has the patient name loaded
+    const existingAppointment = this.appointments.find(app => 
+      app.patientId === patientId && app.patientName && app.patientName !== patientId
+    );
+    
+    if (existingAppointment && existingAppointment.patientName) {
+      // Cache the name we found and return it
+      this.patientNamesCache.set(patientId, existingAppointment.patientName);
+      return existingAppointment.patientName;
+    }
+    
+    // If we're currently loading this patient, show loading state
+    if (this.loadingPatients.has(patientId)) {
+      return 'Loading...';
+    }
+    
     // Otherwise fetch it from the API
     this.loadPatientName(patientId);
     
-    // Return the patient ID as a fallback while we wait for the API
-    return patientId;
+    // Return 'Loading...' instead of patient ID while we wait for the API
+    return 'Loading...';
   }
 
   
@@ -364,15 +452,46 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
   }
   
   /**
+   * Refreshes appointments when component loads (handles redirects from appointment creation)
+   */
+  private refreshAppointmentsOnLoad(): void {
+    // Add a small delay to ensure any newly created appointment is saved
+    setTimeout(() => {
+      console.log('Refreshing appointments on component load...');
+      this.loadAppointments();
+    }, 500);
+  }
+  
+  /**
    * Updates the statistics for the dashboard counts
    */
   updateStatistics(): void {
     this.totalAppointments = this.filteredAppointments.length;
-    this.queuedAppointments = this.filteredAppointments.filter(a => a.status === AppointmentStatus.SCHEDULED).length;
-    this.finishedAppointments = this.filteredAppointments.filter(a => a.status === AppointmentStatus.COMPLETED).length;
-    this.cancelledAppointments = this.filteredAppointments.filter(a => a.status === AppointmentStatus.CANCELLED).length;
-    this.arrivedAppointments = this.filteredAppointments.filter(a => a.status === AppointmentStatus.RESCHEDULED).length;
-    this.engagedAppointments = this.filteredAppointments.filter(a => a.status === AppointmentStatus.ENGAGED).length;
+    
+    // Handle multiple possible status values for queue (default status for new appointments)
+    this.queuedAppointments = this.filteredAppointments.filter(a => 
+      a.status === AppointmentStatus.SCHEDULED || 
+      a.status === 'SCHEDULED' ||
+      a.status === 'Queue' ||
+      a.status === 'QUEUE' ||
+      !a.status || // Handle appointments with no status (default to queue)
+      a.status === '' // Handle empty status
+    ).length;
+    
+    this.finishedAppointments = this.filteredAppointments.filter(a => a.status === AppointmentStatus.COMPLETED || a.status === 'COMPLETED').length;
+    this.cancelledAppointments = this.filteredAppointments.filter(a => a.status === AppointmentStatus.CANCELLED || a.status === 'CANCELLED').length;
+    this.arrivedAppointments = this.filteredAppointments.filter(a => a.status === AppointmentStatus.RESCHEDULED || a.status === 'RESCHEDULED').length;
+    this.engagedAppointments = this.filteredAppointments.filter(a => a.status === AppointmentStatus.ENGAGED || a.status === 'ENGAGED').length;
+    
+    console.log('Statistics updated:', {
+      total: this.totalAppointments,
+      queued: this.queuedAppointments,
+      arrived: this.arrivedAppointments,
+      engaged: this.engagedAppointments,
+      finished: this.finishedAppointments,
+      cancelled: this.cancelledAppointments,
+      appointmentStatuses: this.filteredAppointments.map(a => ({ id: a.appointmentId, status: a.status }))
+    });
   }
 
   private formatAppointmentTime(dateTime: string): string {
@@ -955,10 +1074,91 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
   }
   
   /**
+   * Validates if appointment status change is allowed based on time rules
+   * @param appointment The appointment to validate
+   * @param status The new status being requested
+   * @returns Validation result with blocking/warning information
+   */
+  private validateAppointmentTimeForStatusChange(appointment: Appointment, status: string): {
+    shouldBlock: boolean;
+    showWarning: boolean;
+    message: string;
+  } {
+    try {
+      // If no appointment date/time, allow the change
+      if (!appointment.appointmentDateTime) {
+        return { shouldBlock: false, showWarning: false, message: '' };
+      }
+
+      // Parse appointment date and time
+      const appointmentDate = new Date(appointment.appointmentDateTime);
+      const now = new Date();
+      const twoDaysAfter = new Date(appointmentDate.getTime() + (2 * 24 * 60 * 60 * 1000));
+      const oneDayAfter = new Date(appointmentDate.getTime() + (1 * 24 * 60 * 60 * 1000));
+      
+      // Calculate hours difference for more precise feedback
+      const hoursDiff = (now.getTime() - appointmentDate.getTime()) / (1000 * 60 * 60);
+      const daysDiff = Math.floor(hoursDiff / 24);
+      
+      console.log('Time validation:', {
+        appointmentTime: appointmentDate.toLocaleString(),
+        currentTime: now.toLocaleString(),
+        hoursDiff: hoursDiff.toFixed(1),
+        daysDiff,
+        twoDaysAfter: twoDaysAfter.toLocaleString()
+      });
+
+      // Block if more than 2 days have passed
+      if (now > twoDaysAfter) {
+        return {
+          shouldBlock: true,
+          showWarning: false,
+          message: `Status change not allowed. More than 2 days (${daysDiff} days) have passed since the appointment time (${appointmentDate.toLocaleString()}). The appointment will be automatically cancelled.`
+        };
+      }
+
+      // Show warning if more than 1 day but less than 2 days have passed
+      if (now > oneDayAfter) {
+        const hoursRemaining = Math.max(0, (twoDaysAfter.getTime() - now.getTime()) / (1000 * 60 * 60));
+        return {
+          shouldBlock: false,
+          showWarning: true,
+          message: `Warning: ${daysDiff} day(s) have passed since the appointment time. You have approximately ${hoursRemaining.toFixed(1)} hours remaining to make status changes before the appointment is automatically cancelled.`
+        };
+      }
+
+      // Within acceptable time range
+      return { shouldBlock: false, showWarning: false, message: '' };
+      
+    } catch (error) {
+      console.error('Error validating appointment time:', error);
+      // If we can't parse the date, allow the change (fallback behavior)
+      return { shouldBlock: false, showWarning: false, message: '' };
+    }
+  }
+
+  /**
    * Updates appointment status and sends update to API
+   * Includes client-side time validation for better user experience
    */
   updateStatus(appointment: Appointment, status: string): void {
     console.log(`Updating appointment ${appointment.appointmentId} status to: ${status}`);
+    
+    // Client-side time validation before API call
+    const timeValidationResult = this.validateAppointmentTimeForStatusChange(appointment, status);
+    if (timeValidationResult.shouldBlock) {
+      this.error = timeValidationResult.message;
+      this.success = null;
+      return;
+    }
+    
+    // Show warning if appointment is getting close to 2-day limit
+    if (timeValidationResult.showWarning) {
+      const confirmChange = confirm(`${timeValidationResult.message}\n\nDo you want to continue with the status change?`);
+      if (!confirmChange) {
+        return;
+      }
+    }
     
     // Map UI status values to API status values
     let apiStatus: string;
@@ -995,19 +1195,27 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
           status: apiStatus
         };
         
-        // Always set the appointment date to a future date to satisfy the @Future validation constraint
-        // The backend validation requires dates to be in the future even for completed appointments
+        // FIX: Preserve the original appointment date when changing status
+        // Only adjust if the date is actually required to be in the future by backend validation
+        // and the original date is in the past
         
-        // Create a date that's definitely in the future (7 days from now)
-        const futureDate = new Date();
-        futureDate.setDate(futureDate.getDate() + 7); // Set to 7 days in the future
-        
-        // Format as ISO string but ensure we keep just the date+time part without milliseconds
-        // This format matches what the backend expects: YYYY-MM-DDTHH:MM:SS
-        const futureDateString = futureDate.toISOString().split('.')[0];
-        
-        console.log('Setting appointment date to future date to pass validation:', futureDateString);
-        updatedAppointment.appointmentDateTime = futureDateString;
+        // Check if we need to modify the date at all (only if in the past)
+        if (updatedAppointment.appointmentDateTime) {
+          const appointmentDate = new Date(updatedAppointment.appointmentDateTime);
+          const now = new Date();
+          
+          // Only if the backend requires a future date for past appointments and
+          // the appointment date is in the past, use TODAY'S date (not 7 days ahead)
+          if (appointmentDate < now && (apiStatus === 'COMPLETED' || apiStatus === 'CANCELLED')) {
+            // Use today's date instead of a random future date
+            const todayStr = now.toISOString().split('.')[0];
+            console.log('Setting past appointment to today\'s date for completed/cancelled status:', todayStr);
+            updatedAppointment.appointmentDateTime = todayStr;
+          } else {
+            // Keep the original date for all other cases
+            console.log('Preserving original appointment date:', updatedAppointment.appointmentDateTime);
+          }
+        }
         
         // Log what we're sending to help with debugging
         console.log('Appointment being sent to API:', {
@@ -1015,7 +1223,6 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
           status: updatedAppointment.status,
           date: updatedAppointment.appointmentDateTime
         });
-        
         
         console.log('Sending updated appointment to API:', updatedAppointment);
         
@@ -1027,12 +1234,20 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
             // Find the appointment in the array and update it
             const index = this.appointments.findIndex(app => app.appointmentId === updated.appointmentId);
             if (index !== -1) {
-              this.appointments[index] = updated;
+              // Preserve patient name from original appointment to prevent name→ID issue
+              const originalPatientName = this.appointments[index].patientName;
+              this.appointments[index] = {
+                ...updated,
+                patientName: originalPatientName || updated.patientName
+              };
               
               // Also update in filtered appointments
               const filteredIndex = this.filteredAppointments.findIndex(app => app.appointmentId === updated.appointmentId);
               if (filteredIndex !== -1) {
-                this.filteredAppointments[filteredIndex] = updated;
+                this.filteredAppointments[filteredIndex] = {
+                  ...updated,
+                  patientName: originalPatientName || updated.patientName
+                };
               }
               
               // Force refresh of arrays to trigger change detection
@@ -1048,8 +1263,51 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
             }
           },
           error: (err) => {
-            console.error(`Failed to update appointment status: ${err.message}`);
-            this.error = `Failed to update appointment status: ${err.message}`;
+            console.error('Failed to update appointment status:', err);
+            
+            // Handle specific backend auto-cancellation response
+            if (err.status === 403 && err.error?.error === 'APPOINTMENT_AUTO_CANCELLED') {
+              const errorData = err.error;
+              this.error = `Appointment automatically cancelled: ${errorData.message}`;
+              
+              // Update the local appointment data with the cancelled status
+              if (errorData.updatedAppointment) {
+                const index = this.appointments.findIndex(app => app.appointmentId === appointment.appointmentId);
+                if (index !== -1) {
+                  this.appointments[index] = {
+                    ...this.appointments[index],
+                    status: 'CANCELLED',
+                    tokenStatus: 'CANCELLED'
+                  };
+                  
+                  // Also update in filtered appointments
+                  const filteredIndex = this.filteredAppointments.findIndex(app => app.appointmentId === appointment.appointmentId);
+                  if (filteredIndex !== -1) {
+                    this.filteredAppointments[filteredIndex] = {
+                      ...this.filteredAppointments[filteredIndex],
+                      status: 'CANCELLED',
+                      tokenStatus: 'CANCELLED'
+                    };
+                  }
+                  
+                  // Force refresh of arrays to trigger change detection
+                  this.appointments = [...this.appointments];
+                  this.filteredAppointments = [...this.filteredAppointments];
+                  
+                  // Update statistics counts
+                  this.updateStatistics();
+                }
+              }
+              
+              console.log(`Appointment ${appointment.appointmentId} was automatically cancelled due to time limit`);
+            } else {
+              // Handle other types of errors
+              const errorMessage = err.error?.message || err.message || 'Unknown error occurred';
+              this.error = `Failed to update appointment status: ${errorMessage}`;
+            }
+            
+            // Clear success message on error
+            this.success = null;
           }
         });
       },

@@ -36,16 +36,14 @@
               Invoice ID <i class="fas {{getSortIcon('invoiceId')}}"></i>
             </th>
             <th (click)="setSortColumn('supplierId')" style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; min-width: 190px; width: 190px; cursor: pointer;">
-              Supplier ID <i class="fas {{getSortIcon('supplierId')}}"></i>
+              Supplier Name <i class="fas {{getSortIcon('supplierId')}}"></i>
             </th>
-            <th (click)="setSortColumn('supplierName')" style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; cursor: pointer;">
-              Supplier Name <i class="fas {{getSortIcon('supplierName')}}"></i>
-            </th>
+          
             <th (click)="setSortColumn('contactNumber')" style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; cursor: pointer;">
               Contact No. <i class="fas {{getSortIcon('contactNumber')}}"></i>
             </th>
-            <th (click)="setSortColumn('invoiceDate')" style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; cursor: pointer;">
-              Date <i class="fas {{getSortIcon('invoiceDate')}}"></i>
+            <th (click)="setSortColumn('createdAt')" style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; cursor: pointer;">
+              Created Date <i class="fas {{getSortIcon('createdAt')}}"></i>
             </th>
             <th (click)="setSortColumn('totalAmount')" style="font-family: 'Roboto', sans-serif; font-size: 0.875rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; cursor: pointer;">
               Amount <i class="fas {{getSortIcon('totalAmount')}}"></i>
@@ -55,15 +53,17 @@
         </thead>
         <tbody *ngIf="!loading && filteredPurchases.length > 0">
           <tr *ngFor="let purchase of filteredPurchases">
-            <td>{{ purchase.referenceId || formatPurchaseId(purchase.id || purchase.purchaseId) }}</td>
-            <td class="supplier-id-cell">{{ formatSupplierId(purchase.supplierId) }}</td>
-            <td>{{ getSupplierName(purchase.supplierId) }}</td>
+            <td>{{ purchase.id || purchase.purchaseId }}</td>
+            <td class="supplier-name-cell">{{ getSupplierName(purchase.supplierId) }}</td>
             <td>{{ getSupplierContact(purchase.supplierId) }}</td>
-            <td>{{ formatTimestampDate(purchase.invoiceDate) }}</td>
+            <td>{{ formatTimestampDateWithTime(purchase.createdAt) }}</td>
             <td>{{ purchase.totalAmount | number:'1.2-2' }}</td>
             <td class="actions-cell">
-              <button class="action-btn view-btn" (click)="viewPurchaseDetails(purchase)" title="View details" style="background-color: #6b1d14; color: white; border: none; border-radius: 4px; padding: 5px 8px; font-family: 'Roboto', sans-serif;">
+              <button class="action-btn view-btn" (click)="viewPurchaseDetails(purchase)" title="View details" style="background-color: #6b1d14; color: white; border: none; border-radius: 4px; padding: 5px 8px; margin-right: 5px; font-family: 'Roboto', sans-serif;">
                 <i class="fas fa-eye"></i>
+              </button>
+              <button class="action-btn edit-btn" (click)="editPurchase(purchase)" title="Edit purchase" style="background-color: #e6c157; color: #6b1d14; border: none; border-radius: 4px; padding: 5px 8px; font-family: 'Roboto', sans-serif;">
+                <i class="fas fa-edit"></i>
               </button>
             </td>
           </tr>
@@ -139,7 +139,7 @@
                 </div>
                 <div class="info-group">
                   <label style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Created At:</label>
-                  <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">{{ formatTimestampDate(selectedPurchase.createdAt) }}</span>
+                  <span style="font-family: 'Roboto', sans-serif; font-size: 14px;">{{ formatTimestampDateWithTime(selectedPurchase.createdAt) }}</span>
                 </div>
               </div>
             </div>

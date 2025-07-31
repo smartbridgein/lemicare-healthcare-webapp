@@ -152,6 +152,11 @@ export class BillingService {
       .pipe(map(response => response.data));
   }
 
+  getReceiptsByInvoiceId(invoiceId: string): Observable<any> {
+    return this.http.get<ApiResponse<any[]>>(`${this.apiUrl}/api/billing/receipt/invoice/${invoiceId}`)
+      .pipe(map(response => response.data));
+  }
+
   updateReceipt(id: string, receiptData: any): Observable<any> {
     return this.http.put<ApiResponse<any>>(`${this.apiUrl}/api/billing/receipt/${id}`, receiptData)
       .pipe(map(response => response.data));
@@ -406,22 +411,52 @@ export class BillingService {
     );
   }
   
-  // Get today's revenue from cash memos and invoices
+  // Get today's revenue from cash memos, invoices, OTC and prescription sales
+  /**
+   * Get today's date in local timezone (YYYY-MM-DD format)
+   * Fixes timezone issues with toISOString() which returns UTC
+   */
+  private getTodayLocalDate(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   getTodaysRevenue(): Observable<number> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = this.getTodayLocalDate();
     return forkJoin({
       cashMemos: this.getTodaysCashMemos(),
-      invoices: this.getTodaysInvoices()
+      invoices: this.getTodaysInvoices(),
+      sales: this.getTodaysSales()
     }).pipe(
-      map(({ cashMemos, invoices }) => {
-        // Calculate total revenue from cash memos
-        const cashMemoTotal = cashMemos.reduce((sum, memo) => sum + (memo.grandTotal || 0), 0);
+      map(({ cashMemos, invoices, sales }) => {
+        const today = this.getTodayLocalDate(); // YYYY-MM-DD format
+        
+        // Filter cash memos to only include those created today
+        const todaysCashMemos = cashMemos.filter(memo => memo.createdDate === today);
+        
+        // Calculate total revenue from today's cash memos (using amount property)
+        const cashMemoTotal = todaysCashMemos.reduce((sum, memo) => sum + (memo.amount || 0), 0);
         
         // Calculate total revenue from invoices
         const invoiceTotal = invoices.reduce((sum, invoice) => sum + (invoice.grandTotal || 0), 0);
         
+        // Calculate total revenue from sales (OTC and prescription)
+        const salesTotal = sales.reduce((sum, sale) => sum + (sale.grandTotal || 0), 0);
+        
+        console.log('Revenue breakdown:', {
+          cashMemoTotal,
+          filteredCashMemos: todaysCashMemos.length,
+          totalCashMemos: cashMemos.length,
+          invoiceTotal,
+          salesTotal,
+          total: cashMemoTotal + invoiceTotal + salesTotal
+        });
+        
         // Return combined total
-        return cashMemoTotal + invoiceTotal;
+        return cashMemoTotal + invoiceTotal + salesTotal;
       }),
       catchError(error => {
         console.error('Error calculating today\'s revenue:', error);
@@ -429,10 +464,76 @@ export class BillingService {
       })
     );
   }
+
+  // Get today's sales from inventory service (OTC and prescription)
+  getTodaysSales(): Observable<any[]> {
+    const today = this.getTodayLocalDate();
+    // Get today's start and end time in seconds (timestamp)
+    const todayStart = new Date(today).getTime() / 1000;
+    const todayEnd = todayStart + 86400; // 24 hours in seconds
+    
+    // Correct endpoint is /api/inventory/sales/ without date parameter
+    return this.http.get<any[]>(`${environment.apiUrlInventory}/api/inventory/sales/`)
+      .pipe(
+        map(response => {
+          // Filter sales to include only those with today's date
+          const todaysSales = (response || []).filter(sale => {
+            // Handle timestamp format in saleDate
+            if (sale.saleDate && sale.saleDate.seconds) {
+              const saleTimestamp = sale.saleDate.seconds;
+              return saleTimestamp >= todayStart && saleTimestamp < todayEnd;
+            }
+            return false;
+          });
+          
+          console.log('Sales filtered by date:', {
+            totalSales: response?.length || 0,
+            todaySales: todaysSales.length,
+            date: today,
+            todayStart,
+            todayEnd
+          });
+          
+          return todaysSales;
+        }),
+        catchError(error => {
+          console.error('Error fetching today\'s sales:', error);
+          return of([]);
+        })
+      );
+  }
+
+  // Get revenue breakdown by type (Cash Memo, Invoice, OTC, Prescription)
+  getTodaysRevenueBreakdown(): Observable<{ cashMemos: any[], invoices: any[], sales: any[] }> {
+    const today = this.getTodayLocalDate();
+    return forkJoin({
+      cashMemos: this.getTodaysCashMemos(),
+      invoices: this.getTodaysInvoices(),
+      sales: this.getTodaysSales()
+    }).pipe(
+      map(result => {
+        // Filter cash memos to only include those created today
+        const todaysCashMemos = result.cashMemos.filter(memo => memo.createdDate === today);
+        
+        // Filter invoices to only include those created today
+        const todaysInvoices = result.invoices.filter(invoice => {
+          // Check both createdDate and date properties for today's date
+          const invoiceDate = invoice.createdDate || invoice.date;
+          return invoiceDate === today;
+        });
+        
+        return {
+          cashMemos: todaysCashMemos,
+          invoices: todaysInvoices,
+          sales: result.sales
+        };
+      })
+    );
+  }
   
   // Get today's cash memos
   getTodaysCashMemos(): Observable<CashMemo[]> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = this.getTodayLocalDate();
     // Format for the date filter: 2023-07-15
     return this.http.get<ApiResponse<CashMemo[]>>(`${this.apiUrl}/api/billing/cash-memo?date=${today}`)
       .pipe(
@@ -446,7 +547,7 @@ export class BillingService {
   
   // Get today's invoices
   getTodaysInvoices(): Observable<Invoice[]> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = this.getTodayLocalDate();
     return this.http.get<ApiResponse<Invoice[]>>(`${this.apiUrl}/api/billing/invoice?date=${today}`)
       .pipe(
         map(response => response.data),

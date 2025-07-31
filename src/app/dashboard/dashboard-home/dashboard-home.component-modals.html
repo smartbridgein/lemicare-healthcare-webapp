@@ -1,0 +1,148 @@
+<!-- Appointment Details Modal -->
+<div class="modal classic-modal" [ngClass]="{'show': showAppointmentDetailsModal}" *ngIf="showAppointmentDetailsModal && selectedAppointmentDetails">
+  <div class="modal-backdrop" (click)="closeAppointmentDetailsModal()"></div>
+  <div class="modal-dialog classic-modal-dialog">
+    <div class="modal-content classic-modal-content">
+      <div class="modal-header classic-modal-header">
+        <h4 class="modal-title classic-modal-title">Appointment Details</h4>
+        <button type="button" class="close" (click)="closeAppointmentDetailsModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body classic-modal-body">
+        <!-- Patient Information -->
+        <div class="detail-section patient-section">
+          <h5 class="section-title"><i class="fas fa-user"></i> Patient Information</h5>
+          <div class="detail-row">
+            <div class="detail-label">Name:</div>
+            <div class="detail-value">
+              <span *ngIf="loadingAppointmentDetails" class="text-muted">Loading...</span>
+              <span *ngIf="!loadingAppointmentDetails && appointmentPatientDetails">{{ appointmentPatientDetails.name }}</span>
+              <span *ngIf="!loadingAppointmentDetails && !appointmentPatientDetails">{{ getPatientName(selectedAppointmentDetails.patientId) }}</span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Phone:</div>
+            <div class="detail-value">
+              <span *ngIf="loadingAppointmentDetails" class="text-muted">Loading...</span>
+              <span *ngIf="!loadingAppointmentDetails && appointmentPatientDetails && appointmentPatientDetails.phoneNumber">{{ appointmentPatientDetails.phoneNumber }}</span>
+              <span *ngIf="!loadingAppointmentDetails && (!appointmentPatientDetails || !appointmentPatientDetails.phoneNumber)" class="text-muted">N/A</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Appointment Information -->
+        <div class="detail-section appointment-section">
+          <h5 class="section-title"><i class="fas fa-calendar-check"></i> Appointment Information</h5>
+          <div class="detail-row">
+            <div class="detail-label">Date:</div>
+            <div class="detail-value">{{ selectedAppointmentDetails.appointmentDateTime | date:'MMMM d, yyyy' }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Time:</div>
+            <div class="detail-value">{{ selectedAppointmentDetails.appointmentDateTime | date:'h:mm a' }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Status:</div>
+            <div class="detail-value">
+              <span class="status-badge" [ngClass]="getStatusClass(selectedAppointmentDetails.status)">{{ selectedAppointmentDetails.status }}</span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Category:</div>
+            <div class="detail-value">
+              <span class="category-badge" [ngClass]="getCategoryClass(selectedAppointmentDetails.category)">{{ selectedAppointmentDetails.category }}</span>
+            </div>
+          </div>
+          <div class="detail-row" *ngIf="selectedAppointmentDetails.subCategory">
+            <div class="detail-label">Sub-Category:</div>
+            <div class="detail-value">{{ selectedAppointmentDetails.subCategory }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedAppointmentDetails.doctorId">
+            <div class="detail-label">Doctor:</div>
+            <div class="detail-value">
+              <span *ngIf="loadingAppointmentDetails" class="text-muted">Loading...</span>
+              <span *ngIf="!loadingAppointmentDetails">
+                Dr. {{ getDoctorName(selectedAppointmentDetails.doctorId) }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes Section if available -->
+        <div class="detail-section notes-section" *ngIf="selectedAppointmentDetails.notes">
+          <h5 class="section-title"><i class="fas fa-sticky-note"></i> Notes</h5>
+          <div class="notes-content">
+            {{ selectedAppointmentDetails.notes }}
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer classic-modal-footer">
+        <button type="button" class="btn btn-secondary classic-btn" (click)="closeAppointmentDetailsModal()">
+          <i class="fas fa-times"></i> Close
+        </button>
+       <!-- <button type="button" class="btn btn-primary classic-btn" (click)="openRescheduleModal(selectedAppointmentDetails); closeAppointmentDetailsModal();">
+          <i class="fas fa-calendar-alt"></i> Reschedule
+        </button> -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reschedule Appointment Modal -->
+<div class="modal classic-modal" [ngClass]="{'show': showRescheduleModal}" *ngIf="showRescheduleModal && selectedAppointmentForReschedule">
+  <div class="modal-backdrop" (click)="closeRescheduleModal()"></div>
+  <div class="modal-dialog classic-modal-dialog">
+    <div class="modal-content classic-modal-content">
+      <div class="modal-header classic-modal-header">
+        <h4 class="modal-title classic-modal-title">Reschedule Appointment</h4>
+        <button type="button" class="close" (click)="closeRescheduleModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body classic-modal-body">
+        <div class="patient-info-summary">
+          <h5>Patient: {{ getPatientName(selectedAppointmentForReschedule.patientId) }}</h5>
+          <p>Current Appointment: {{ selectedAppointmentForReschedule.appointmentDateTime | date:'MMMM d, yyyy' }} at {{ selectedAppointmentForReschedule.appointmentDateTime | date:'h:mm a' }}</p>
+        </div>
+
+        <form class="reschedule-form">
+          <div class="form-group">
+            <label for="rescheduleDate">New Date:</label>
+            <input type="date" id="rescheduleDate" class="form-control classic-form-control" name="rescheduleDate" required>
+          </div>
+
+          <div class="form-group">
+            <label for="rescheduleTime">New Time:</label>
+            <input type="time" id="rescheduleTime" class="form-control classic-form-control" name="rescheduleTime" required>
+          </div>
+
+          <div class="form-group">
+            <label for="rescheduleReason">Reason for Rescheduling:</label>
+            <select id="rescheduleReason" class="form-select classic-form-select" name="rescheduleReason" required>
+              <option value="">Select a reason</option>
+              <option value="Patient Request">Patient Request</option>
+              <option value="Doctor Unavailable">Doctor Unavailable</option>
+              <option value="Clinic Schedule Change">Clinic Schedule Change</option>
+              <option value="Emergency">Emergency</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="rescheduleNotes">Notes:</label>
+            <textarea id="rescheduleNotes" class="form-control classic-form-control" name="rescheduleNotes" rows="3"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer classic-modal-footer">
+        <button type="button" class="btn btn-secondary classic-btn" (click)="closeRescheduleModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="button" class="btn btn-primary classic-btn" (click)="saveReschedule()">
+          <i class="fas fa-save"></i> Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

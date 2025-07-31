@@ -8,6 +8,80 @@ $gray-dark: #333333;
 $gray-medium: #666666;
 $gray-light: #f5f5f5;
 
+/* Section Card Styling */
+.section-card {
+  background: #ffffff;
+  border: 1px solid #e3e6f0;
+  border-radius: 12px;
+  box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.section-header {
+  background: linear-gradient(135deg, $maroon-primary 0%, $maroon-dark 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, $yellow-accent 0%, $yellow-light 100%);
+  }
+}
+
+.section-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  display: flex;
+  align-items: center;
+  
+  i {
+    color: $yellow-accent;
+    font-size: 1.1rem;
+  }
+}
+
+.section-body {
+  padding: 1.5rem;
+  background: #ffffff;
+}
+
+/* Background gradient for maroon headers */
+.bg-gradient-maroon {
+  background: linear-gradient(135deg, $maroon-primary 0%, $maroon-dark 100%) !important;
+}
+
+/* Summary total card styling */
+.summary-total-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 2px solid $maroon-primary;
+  border-radius: 12px;
+  padding: 1.5rem;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba($maroon-primary, 0.15);
+  
+  .text-maroon {
+    color: $maroon-primary !important;
+  }
+  
+  i {
+    color: $maroon-primary;
+  }
+}
+
 .card {
   box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
   margin-bottom: 1rem;

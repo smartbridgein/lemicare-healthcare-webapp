@@ -1,0 +1,927 @@
+// Classic Healthcare Colors - Enhanced
+$primary-maroon: #8B1538;
+$secondary-maroon: #6B0F2A;
+$light-maroon: #F5E6EA;
+$accent-gold: #DAA520;
+$light-gold: #FDF5E6;
+$primary-blue: #2c5aa0;
+$secondary-blue: #1e3d6f;
+$light-blue: #e8f0fe;
+$accent-green: #28a745;
+$light-gray: #f8f9fa;
+$medium-gray: #6c757d;
+$border-gray: #dee2e6;
+$text-dark: #212529;
+$shadow-light: rgba(0, 0, 0, 0.08);
+$shadow-medium: rgba(0, 0, 0, 0.15);
+
+.text-primary {
+  color: $primary-blue !important;
+}
+
+.text-maroon {
+  color: $primary-maroon !important;
+}
+
+.bg-maroon {
+  background-color: $primary-maroon !important;
+}
+
+.border-maroon {
+  border-color: $primary-maroon !important;
+}
+
+.stock-header {
+  background: white;
+  padding: 1rem 1.25rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  border: 1px solid $border-gray;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  .search-container {
+    width: 300px;
+
+    .form-control {
+      border: 1px solid $border-gray;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      padding: 0.5rem 0.75rem;
+      
+      &:focus {
+        border-color: $primary-blue;
+        box-shadow: 0 0 0 0.2rem rgba($primary-blue, 0.25);
+      }
+    }
+
+    .input-group-text {
+      border: 1px solid $border-gray;
+      border-left: none;
+      border-radius: 0 4px 4px 0;
+      background-color: $light-gray;
+    }
+  }
+
+  .btn {
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+    
+    &.btn-outline-secondary {
+      border-color: $medium-gray;
+      color: $medium-gray;
+      
+      &:hover {
+        background-color: $medium-gray;
+        border-color: $medium-gray;
+        color: white;
+      }
+    }
+
+    &.btn-outline-primary {
+      border-color: $primary-blue;
+      color: $primary-blue;
+      
+      &:hover {
+        background-color: $primary-blue;
+        border-color: $primary-blue;
+        color: white;
+      }
+    }
+
+    &.btn-success {
+      background-color: $accent-green;
+      border-color: $accent-green;
+      color: white;
+      
+      &:hover {
+        background-color: darken($accent-green, 10%);
+        border-color: darken($accent-green, 10%);
+      }
+    }
+  }
+
+  .badge {
+    font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+    font-weight: 500;
+  }
+}
+
+.loading-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+
+  .spinner-border {
+    color: $primary-blue !important;
+  }
+}
+
+.empty-state {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.stock-categories {
+  .category-card {
+    background: white;
+    border-radius: 4px;
+    border: 1px solid $border-gray;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: $primary-blue;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .category-header {
+      background: $light-blue;
+      color: $text-dark;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-bottom: 1px solid $border-gray;
+
+      &:hover {
+        background: darken($light-blue, 5%);
+      }
+
+      h5 {
+        color: $primary-blue !important;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0;
+      }
+
+      .transition-icon {
+        transition: transform 0.2s ease;
+        color: $primary-blue;
+        
+        &.rotated {
+          transform: rotate(180deg);
+        }
+      }
+
+      .badge {
+        background-color: $primary-blue !important;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 500;
+      }
+    }
+
+    .category-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+
+      &.expanded {
+        max-height: 2000px;
+      }
+
+      .medicines-container {
+        padding: 0.75rem;
+      }
+
+      .medicine-item {
+        border: 1px solid $border-gray;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+        transition: all 0.2s ease;
+
+        &:hover {
+          border-color: $primary-blue;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .medicine-header {
+          padding: 0.75rem;
+          cursor: pointer;
+          background: white;
+          transition: background-color 0.2s ease;
+
+          &:hover {
+            background: $light-gray;
+          }
+
+          .badge {
+            font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+            font-weight: 500;
+          }
+
+          .btn {
+            border-color: $primary-blue;
+            color: $primary-blue;
+            font-size: 0.8rem;
+            padding: 0.375rem 0.75rem;
+            
+            &:hover {
+              background-color: $primary-blue;
+              border-color: $primary-blue;
+              color: white;
+            }
+          }
+        }
+
+        .medicine-details {
+          max-height: 0;
+          overflow: hidden;
+          transition: max-height 0.3s ease;
+
+          &.expanded {
+            max-height: 1000px;
+          }
+
+          .tab-navigation {
+            background: linear-gradient(135deg, $light-maroon 0%, $light-gray 100%);
+            padding: 0.5rem 0.75rem;
+            border-bottom: 2px solid $primary-maroon;
+            box-shadow: inset 0 -2px 4px $shadow-light;
+
+            .custom-tabs {
+              border-bottom: none;
+              margin-bottom: 0;
+
+              .nav-item {
+                margin-right: 0.25rem;
+
+                .nav-link {
+                  border: 1px solid transparent;
+                  color: $secondary-maroon;
+                  font-weight: 600;
+                  font-size: 0.875rem;
+                  padding: 0.75rem 1.25rem;
+                  border-radius: 8px 8px 0 0;
+                  transition: all 0.3s ease;
+                  background: rgba(255, 255, 255, 0.7);
+                  backdrop-filter: blur(2px);
+                  position: relative;
+                  overflow: hidden;
+
+                  &::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: -100%;
+                    width: 100%;
+                    height: 100%;
+                    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+                    transition: left 0.5s ease;
+                  }
+
+                  &:hover {
+                    background: rgba(255, 255, 255, 0.95);
+                    color: $primary-maroon;
+                    border-color: $accent-gold;
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 8px $shadow-light;
+
+                    &::before {
+                      left: 100%;
+                    }
+                  }
+
+                  &.active {
+                    background: white;
+                    color: $primary-maroon;
+                    border-color: $primary-maroon;
+                    border-bottom: 2px solid white;
+                    box-shadow: 0 -2px 8px $shadow-medium;
+                    z-index: 10;
+                    position: relative;
+
+                    &::after {
+                      content: '';
+                      position: absolute;
+                      bottom: -2px;
+                      left: 0;
+                      right: 0;
+                      height: 3px;
+                      background: linear-gradient(90deg, $accent-gold, $primary-maroon, $accent-gold);
+                    }
+                  }
+
+                  i {
+                    margin-right: 0.5rem;
+                    font-size: 0.9rem;
+                  }
+                }
+              }
+            }
+          }
+
+          .tab-content {
+            padding: 0;
+            background: white;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 12px $shadow-light;
+
+            .tab-pane {
+              display: none;
+              animation: fadeIn 0.3s ease-in-out;
+
+              &.active {
+                display: block;
+              }
+
+              // Details Tab Styling
+              .details-view {
+                padding: 1.5rem;
+                background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+
+                .info-group {
+                  background: white;
+                  border: 1px solid $border-gray;
+                  border-radius: 6px;
+                  padding: 0.75rem;
+                  transition: all 0.2s ease;
+                  box-shadow: 0 1px 3px $shadow-light;
+
+                  &:hover {
+                    border-color: $primary-maroon;
+                    box-shadow: 0 2px 8px $shadow-light;
+                    transform: translateY(-1px);
+                  }
+
+                  label {
+                    color: $secondary-maroon;
+                    font-weight: 600;
+                    font-size: 0.75rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 0.25rem;
+                  }
+
+                  p {
+                    color: $text-dark;
+                    font-weight: 500;
+                    font-size: 0.9rem;
+                  }
+                }
+              }
+
+              // Supplier Tab Styling
+              .supplier-view {
+                padding: 1.5rem;
+                background: linear-gradient(135deg, $light-gold 0%, #ffffff 100%);
+
+                .info-group {
+                  background: white;
+                  border: 1px solid $accent-gold;
+                  border-radius: 6px;
+                  padding: 0.75rem;
+                  box-shadow: 0 2px 6px rgba($accent-gold, 0.2);
+
+                  label {
+                    color: darken($accent-gold, 20%);
+                    font-weight: 600;
+                    font-size: 0.75rem;
+                    text-transform: uppercase;
+                  }
+                }
+              }
+
+              h6 {
+                color: $primary-maroon;
+                font-size: 1rem;
+                font-weight: 700;
+                border-bottom: 2px solid $accent-gold;
+                padding-bottom: 0.5rem;
+                margin-bottom: 1rem;
+                position: relative;
+
+                &::after {
+                  content: '';
+                  position: absolute;
+                  bottom: -2px;
+                  left: 0;
+                  width: 50px;
+                  height: 2px;
+                  background: $primary-maroon;
+                }
+              }
+
+              // Batches and Transactions Tab Styling
+              .batches-view, .transactions-view {
+                padding: 1.5rem;
+                background: linear-gradient(135deg, $light-blue 0%, #ffffff 100%);
+              }
+
+              .table {
+                font-size: 0.875rem;
+                margin-bottom: 0;
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 4px 12px $shadow-light;
+                background: white;
+
+                thead {
+                  th {
+                    background: linear-gradient(135deg, $primary-maroon 0%, $secondary-maroon 100%) !important;
+                    color: white !important;
+                    font-weight: 600;
+                    font-size: 0.8rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    padding: 1rem 0.75rem;
+                    border: none;
+                    position: relative;
+
+                    &::after {
+                      content: '';
+                      position: absolute;
+                      bottom: 0;
+                      left: 0;
+                      right: 0;
+                      height: 2px;
+                      background: $accent-gold;
+                    }
+                  }
+                }
+
+                tbody {
+                  tr {
+                    transition: all 0.2s ease;
+                    border-bottom: 1px solid rgba($border-gray, 0.5);
+
+                    &:hover {
+                      background: linear-gradient(135deg, $light-maroon 0%, rgba(255, 255, 255, 0.9) 100%);
+                      transform: translateX(4px);
+                      box-shadow: 0 2px 8px $shadow-light;
+                    }
+
+                    &:nth-child(even) {
+                      background: rgba($light-gray, 0.3);
+                    }
+
+                    td {
+                      padding: 0.75rem;
+                      vertical-align: middle;
+                      border: none;
+                      font-weight: 500;
+
+                      .badge {
+                        font-size: 0.75rem;
+                        padding: 0.4rem 0.8rem;
+                        border-radius: 20px;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        letter-spacing: 0.3px;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 1000px;
+    opacity: 1;
+  }
+}
+
+// Enhanced Summary Cards
+.stock-header {
+  .card {
+    transition: all 0.3s ease;
+    border: 1px solid $border-gray;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px $shadow-light;
+      border-color: $primary-maroon;
+    }
+    
+    .card-body {
+      .card-title {
+        font-weight: 700;
+        font-size: 1.2rem;
+      }
+    }
+  }
+}
+
+// Enhanced Classic Category Cards
+.category-card {
+  &.classic-card {
+    background: white;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(139, 21, 56, 0.1);
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, $primary-maroon 0%, $accent-gold 50%, $primary-maroon 100%);
+    }
+    
+    &:hover {
+      transform: translateY(-4px) scale(1.01);
+      box-shadow: 0 12px 40px rgba(139, 21, 56, 0.2);
+      
+      .category-header {
+        background: linear-gradient(135deg, $light-maroon 0%, rgba(255, 255, 255, 0.95) 100%);
+      }
+      
+      .category-icon {
+        transform: scale(1.1) rotate(5deg);
+        color: $primary-maroon;
+      }
+    }
+  }
+  
+  .category-header {
+    &.classic-header {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 249, 250, 0.8) 100%);
+      padding: 1.5rem;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.6s ease;
+      }
+      
+      &:hover::after {
+        left: 100%;
+      }
+    }
+  }
+  
+  .category-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+  
+  .category-info {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    
+    .category-icon-wrapper {
+      position: relative;
+      margin-right: 1.25rem;
+      
+      .category-icon {
+        font-size: 2.5rem;
+        color: $accent-gold;
+        transition: all 0.3s ease;
+        filter: drop-shadow(0 2px 4px rgba(218, 165, 32, 0.3));
+      }
+      
+      .expand-indicator {
+        position: absolute;
+        bottom: -5px;
+        right: -5px;
+        background: $primary-maroon;
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        box-shadow: 0 2px 6px rgba(139, 21, 56, 0.3);
+        
+        .transition-icon {
+          transition: transform 0.3s ease;
+        }
+      }
+    }
+    
+    .category-details {
+      .category-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: $primary-maroon;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.5px;
+        text-shadow: 0 1px 2px rgba(139, 21, 56, 0.1);
+      }
+      
+      .category-subtitle {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+        
+        .medicine-count {
+          color: $secondary-maroon;
+          font-weight: 600;
+          font-size: 0.9rem;
+          
+          i {
+            color: $accent-gold;
+          }
+        }
+        
+        .stock-alerts {
+          display: flex;
+          gap: 0.75rem;
+          
+          .alert-item {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            
+            &.low-stock {
+              background: rgba(255, 193, 7, 0.15);
+              color: darken(#ffc107, 20%);
+              border: 1px solid rgba(255, 193, 7, 0.3);
+            }
+            
+            &.out-of-stock {
+              background: rgba(220, 53, 69, 0.15);
+              color: darken(#dc3545, 10%);
+              border: 1px solid rgba(220, 53, 69, 0.3);
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  .stock-summary {
+    text-align: right;
+    
+    .stock-metrics {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 1rem;
+      
+      .metric-item {
+        text-align: center;
+        
+        .metric-value {
+          font-size: 1.75rem;
+          font-weight: 800;
+          line-height: 1;
+          margin-bottom: 0.25rem;
+          
+          &:not(.currency) {
+            color: $primary-maroon;
+          }
+          
+          &.currency {
+            color: $accent-green;
+            font-size: 1.5rem;
+          }
+        }
+        
+        .metric-label {
+          font-size: 0.75rem;
+          color: $medium-gray;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        
+        &.primary-metric {
+          .metric-value {
+            text-shadow: 0 1px 3px rgba(139, 21, 56, 0.2);
+          }
+        }
+      }
+    }
+    
+    .stock-status-indicator {
+      .status-bar {
+        width: 120px;
+        height: 8px;
+        background: $light-gray;
+        border-radius: 4px;
+        overflow: hidden;
+        display: flex;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        
+        .status-segment {
+          height: 100%;
+          transition: width 0.6s ease;
+          
+          &.in-stock {
+            background: linear-gradient(90deg, $accent-green, lighten($accent-green, 10%));
+          }
+          
+          &.low-stock {
+            background: linear-gradient(90deg, #ffc107, lighten(#ffc107, 10%));
+          }
+          
+          &.out-of-stock {
+            background: linear-gradient(90deg, #dc3545, lighten(#dc3545, 10%));
+          }
+        }
+      }
+    }
+  }
+  
+  .header-decoration {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    
+    .decoration-line {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, $accent-gold, transparent);
+      margin-bottom: 1px;
+    }
+    
+    .decoration-dots {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      
+      .dot {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: $accent-gold;
+        opacity: 0.6;
+        
+        &:nth-child(2) {
+          opacity: 1;
+          transform: scale(1.2);
+        }
+      }
+    }
+  }
+}
+
+// Transition Icon Animation
+.transition-icon {
+  transition: transform 0.3s ease;
+  
+  &.rotated {
+    transform: rotate(180deg);
+  }
+}
+
+// Responsive Design
+@media (max-width: 1200px) {
+  .stock-header {
+    .d-flex {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: stretch !important;
+
+      .search-container {
+        width: 100%;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .stock-header {
+    padding: 1rem;
+
+    .d-flex {
+      .btn {
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+      }
+    }
+  }
+
+  .category-card {
+    .category-header {
+      padding: 1rem;
+
+      h5 {
+        font-size: 1.1rem;
+      }
+    }
+
+    .medicine-header {
+      .row {
+        .col-md-3, .col-md-2, .col-md-1 {
+          margin-bottom: 0.5rem;
+        }
+      }
+    }
+
+    .medicine-details {
+      .tab-content {
+        padding: 1rem;
+
+        .table-responsive {
+          font-size: 0.8rem;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .stock-header {
+    .search-container {
+      .form-control {
+        font-size: 0.9rem;
+      }
+    }
+  }
+
+  .medicine-header {
+    .row > div {
+      flex: 0 0 100%;
+      max-width: 100%;
+      margin-bottom: 0.75rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  .tab-navigation {
+    .custom-tabs {
+      .nav-link {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+      }
+    }
+  }
+}
+
+// Animation Classes
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-down {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 1000px;
+    opacity: 1;
+  }
+}

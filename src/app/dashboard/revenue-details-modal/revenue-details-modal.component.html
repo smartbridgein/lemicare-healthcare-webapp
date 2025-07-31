@@ -1,0 +1,166 @@
+<div class="modal fade show classic-modal" tabindex="-1" style="display: block;">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content">
+      <div class="modal-header classic-header">
+        <div class="header-icon"><i class="fas fa-chart-line"></i></div>
+        <h5 class="modal-title">Today's Revenue Details</h5>
+        <button type="button" class="btn-close classic-close" (click)="close()" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="revenue-content-wrapper">
+          <!-- Left Side: Revenue Details -->
+          <div class="revenue-details-section">
+            <div class="section-header">
+              <h6 class="section-title">
+                <i class="fas fa-money-bill-wave"></i>
+                Revenue Breakdown
+              </h6>
+            </div>
+            <div class="revenue-details">
+              <div class="revenue-item">
+                <div class="revenue-icon">
+                  <i class="fas fa-receipt"></i>
+                </div>
+                <div class="revenue-info">
+                  <div class="revenue-label">Cash Memo Revenue</div>
+                  <div class="revenue-value">₹{{ cashMemoTotal | number:'1.2-2' }}</div>
+                </div>
+              </div>
+              <div class="revenue-item">
+                <div class="revenue-icon">
+                  <i class="fas fa-file-invoice"></i>
+                </div>
+                <div class="revenue-info">
+                  <div class="revenue-label">Invoice Revenue</div>
+                  <div class="revenue-value">₹{{ invoiceTotal | number:'1.2-2' }}</div>
+                </div>
+              </div>
+              <div class="revenue-item">
+                <div class="revenue-icon">
+                  <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="revenue-info">
+                  <div class="revenue-label">OTC Sales Revenue</div>
+                  <div class="revenue-value">₹{{ otcSalesTotal | number:'1.2-2' }}</div>
+                </div>
+              </div>
+              <div class="revenue-item">
+                <div class="revenue-icon">
+                  <i class="fas fa-prescription"></i>
+                </div>
+                <div class="revenue-info">
+                  <div class="revenue-label">Prescription Sales Revenue</div>
+                  <div class="revenue-value">₹{{ prescriptionSalesTotal | number:'1.2-2' }}</div>
+                </div>
+              </div>
+              <div class="revenue-item">
+                <div class="revenue-icon">
+                  <i class="fas fa-hand-holding-usd"></i>
+                </div>
+                <div class="revenue-info">
+                  <div class="revenue-label">Advance Payments</div>
+                  <div class="revenue-value">₹{{ advanceTotal | number:'1.2-2' }}</div>
+                </div>
+              </div>
+              <hr class="classic-divider">
+              <div class="revenue-item total">
+                <div class="revenue-icon">
+                  <i class="fas fa-coins"></i>
+                </div>
+                <div class="revenue-info">
+                  <div class="revenue-label">Total Revenue</div>
+                  <div class="revenue-value">₹{{ grandTotal | number:'1.2-2' }}</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Summary Statistics -->
+            <div class="revenue-stats">
+              <div class="stat-item primary">
+                <div class="stat-icon">
+                  <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-value">₹{{ grandTotal | number:'1.2-2' }}</div>
+                  <div class="stat-label">Total Revenue</div>
+                </div>
+              </div>
+              <div class="stat-item success">
+                <div class="stat-icon">
+                  <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-value">{{ (otcSales.length + prescriptionSales.length) }}</div>
+                  <div class="stat-label">Total Sales</div>
+                </div>
+              </div>
+              <div class="stat-item info">
+                <div class="stat-icon">
+                  <i class="fas fa-file-invoice"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-value">{{ invoices.length }}</div>
+                  <div class="stat-label">Invoices</div>
+                </div>
+              </div>
+              <div class="stat-item warning">
+                <div class="stat-icon">
+                  <i class="fas fa-hand-holding-usd"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-value">{{ advances.length }}</div>
+                  <div class="stat-label">Advances</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right Side: Charts -->
+          <div class="revenue-charts-section">
+            <div class="section-header">
+              <h6 class="section-title">
+                <i class="fas fa-chart-pie"></i>
+                Revenue Analytics
+              </h6>
+            </div>
+          
+          <div class="charts-container">
+            <!-- Revenue Distribution Chart -->
+            <div class="chart-wrapper">
+              <div class="chart-header">
+                <h6 class="chart-title">Revenue Distribution</h6>
+                <p class="chart-subtitle">Breakdown by revenue sources</p>
+              </div>
+              <div class="chart-canvas-container">
+                <canvas #revenueChart></canvas>
+              </div>
+            </div>
+            
+            <!-- Revenue Comparison Chart -->
+            <div class="chart-wrapper">
+              <div class="chart-header">
+                <h6 class="chart-title">Revenue Comparison</h6>
+                <p class="chart-subtitle">Amount comparison across categories</p>
+              </div>
+              <div class="chart-canvas-container">
+                <canvas #categoryChart></canvas>
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer classic-footer">
+        <button type="button" class="btn classic-btn export-btn" (click)="exportToExcel()">
+          <i class="fas fa-file-excel"></i> Export to Excel
+        </button>
+        <button type="button" class="btn classic-btn close-btn" (click)="close()">
+          <i class="fas fa-times-circle"></i> Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade show"></div>

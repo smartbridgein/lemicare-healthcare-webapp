@@ -78,8 +78,8 @@
             <!-- Sale Returns -->
             <ng-container *ngIf="activeTab === 'sales'">
               <tr *ngFor="let returnItem of paginatedSalesReturns">
-                <td>{{ returnsService.formatReturnId(returnItem.salesReturnId) }}</td>
-                <td>{{ returnsService.formatSaleId(returnItem.originalSaleId) }}</td>
+                <td>{{ returnItem.salesReturnId }}</td>
+                <td>{{ returnItem.originalSaleId }}</td>
                 <td>{{ formatDate(returnItem.returnDate) }}</td>
                 <td>{{ returnItem.patientId ? returnItem.patientId : 'Walk-in Customer' }}</td>
                 <td>{{ returnItem.netRefundAmount | currency:'INR' }}</td>
@@ -97,8 +97,8 @@
             <!-- Purchase Returns -->
             <ng-container *ngIf="activeTab === 'purchases'">
               <tr *ngFor="let returnItem of paginatedPurchaseReturns">
-                <td>{{ returnsService.formatReturnId(returnItem.purchaseReturnId) }}</td>
-                <td>{{ returnsService.formatPurchaseId(returnItem.originalPurchaseId) }}</td>
+                <td>{{ returnItem.purchaseReturnId }}</td>
+                <td>{{ returnItem.originalPurchaseId }}</td>
                 <td>{{ formatDate(returnItem.returnDate) }}</td>
                 <td>{{ returnItem.supplierId }}</td>
                 <td>{{ returnItem.totalReturnedAmount | currency:'INR' }}</td>

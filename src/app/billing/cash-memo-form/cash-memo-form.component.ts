@@ -64,6 +64,7 @@ export class CashMemoFormComponent implements OnInit, OnDestroy {
   lineItemFilteredServices: {[key: number]: Service[]} = {};
   subtotal = 0;
   grandTotal = 0;
+  discountAmount = 0;
   isSubmitting = false;
   
   // For improved search
@@ -487,12 +488,16 @@ export class CashMemoFormComponent implements OnInit, OnDestroy {
     let totalTaxAmount = 0;
     let taxBreakdown: { [key: string]: number } = {};
     
-    // Loop through each line item and add up the totals
+    // Loop through each line item and add up the base amounts (before tax)
     for (let i = 0; i < this.lineItems.length; i++) {
       const lineItem = this.lineItems.at(i) as FormGroup;
-      const totalAmount = +lineItem.get('totalAmount')?.value || 0;
+      const quantity = +lineItem.get('quantity')?.value || 0;
+      const rate = +lineItem.get('rate')?.value || 0;
+      const discount = +lineItem.get('discount')?.value || 0;
       
-      this.subtotal += totalAmount;
+      // Calculate base amount (before tax) for subtotal
+      const baseAmount = quantity * rate - discount;
+      this.subtotal += baseAmount;
       
       // Accumulate tax details for the breakdown
       const taxDetails = lineItem.get('taxDetails')?.value || [];
@@ -516,14 +521,23 @@ export class CashMemoFormComponent implements OnInit, OnDestroy {
     const overallDiscount = +this.cashMemoForm.get('overallDiscount')?.value || 0;
     const discountType = this.cashMemoForm.get('discountType')?.value;
     
-    let discountAmount = 0;
     if (discountType === 'AMT') {
-      discountAmount = overallDiscount;
+      this.discountAmount = overallDiscount;
     } else {
-      discountAmount = this.subtotal * (overallDiscount / 100);
+      this.discountAmount = this.subtotal * (overallDiscount / 100);
     }
     
-    this.grandTotal = this.subtotal - discountAmount;
+    // Calculate grand total including tax
+    // For tax calculations, we need to consider the taxation type
+    const taxationType = this.cashMemoForm.get('taxation')?.value || 'Non-Gst';
+    
+    if (taxationType === 'Non-Gst') {
+      // No tax, grand total is subtotal minus discount
+      this.grandTotal = this.subtotal - this.discountAmount;
+    } else {
+      // Include tax in grand total
+      this.grandTotal = this.subtotal - this.discountAmount + totalTaxAmount;
+    }
     
     // Ensure we don't have negative totals
     if (this.grandTotal < 0) this.grandTotal = 0;
@@ -547,7 +561,7 @@ export class CashMemoFormComponent implements OnInit, OnDestroy {
   loadCashMemo(id: string): void {
     this.loading = true;
     this.billingService.getCashMemoById(id).subscribe({
-      next: (cashMemo) => {
+      next: (cashMemo: CashMemo) => {
         // Wait for tax profiles to be loaded before patching form
         this.loadTaxProfiles().then(() => {
           // Patch basic fields
@@ -581,65 +595,79 @@ export class CashMemoFormComponent implements OnInit, OnDestroy {
             }
             
             // Process each line item
-            cashMemo.lineItems.forEach((item, index) => {
+            cashMemo.lineItems.forEach((item: any, index: number) => {
               const lineItemGroup = this.createLineItem();
               
               // Create a spot for this line item in the filtered services array
               this.lineItemFilteredServices[index] = [];
               
-              // First check if we have a serviceGroup in the saved data
-              if (item.serviceGroup) {
-                // If we have a saved serviceGroup, use it to filter services
-                this.lineItemFilteredServices[index] = this.services
-                  .filter(s => s.group === item.serviceGroup);
-                
-                console.log(`Using saved serviceGroup ${item.serviceGroup} for line ${index}, found ${this.lineItemFilteredServices[index].length} matching services`);
-              } 
-              // Fallback: try to find service group from the serviceId
-              else if (item.serviceId) {
+              // Determine the service group for this item
+              let serviceGroup = item.serviceGroup;
+              
+              // If no serviceGroup is saved, try to extract it from the serviceId
+              if (!serviceGroup && item.serviceId) {
                 const service = this.services.find(s => s.id === item.serviceId);
                 if (service) {
-                  // Extract the service group from the found service
-                  const serviceGroup = service.group || 'OPD';
-                  
-                  // Update the item's serviceGroup for consistency
-                  item.serviceGroup = serviceGroup;
-                  
-                  // Filter services for this group
-                  this.lineItemFilteredServices[index] = this.services
-                    .filter(s => s.group === serviceGroup);
-                    
-                  console.log(`Extracted serviceGroup ${serviceGroup} from service for line ${index}, found ${this.lineItemFilteredServices[index].length} matching services`);
+                  serviceGroup = service.group || 'OPD';
+                  console.log(`Extracted serviceGroup ${serviceGroup} from service ${item.serviceId} for line ${index}`);
                 } else {
-                  // If service not found, load all services as fallback
                   console.log(`Service with ID ${item.serviceId} not found in services list`);
-                  this.lineItemFilteredServices[index] = this.services;
                 }
-              } else {
-                // If no service ID or serviceGroup, initialize with empty array
-                this.lineItemFilteredServices[index] = [];
               }
               
-              // Patch the form group values
-              lineItemGroup.patchValue(item);
-              this.lineItems.push(lineItemGroup);
+              // If we have a serviceGroup, filter services for this group
+              if (serviceGroup) {
+                this.lineItemFilteredServices[index] = this.services
+                  .filter(s => s.group === serviceGroup);
+                
+                console.log(`Using serviceGroup ${serviceGroup} for line ${index}, found ${this.lineItemFilteredServices[index].length} matching services`);
+                
+                // Update the item's serviceGroup to ensure consistency
+                item.serviceGroup = serviceGroup;
+              } else {
+                // If no service group found, initialize with all services
+                this.lineItemFilteredServices[index] = this.services;
+                console.log(`No serviceGroup found for line ${index}, using all services`);
+              }
               
-              // Make sure we update the service group dropdown with the saved value
-              // We need to do this after the form is updated with a setTimeout
-              setTimeout(() => {
-                const serviceGroupSelect = document.getElementById('serviceGroup_' + index) as HTMLSelectElement;
-                if (serviceGroupSelect && item.serviceGroup) {
-                  serviceGroupSelect.value = item.serviceGroup;
+              // Find the service name from the serviceId
+              if (item.serviceId && !item.serviceName) {
+                const service = this.services.find(s => s.id === item.serviceId);
+                if (service) {
+                  item.serviceName = service.name;
                 }
-              }, 0);
+              }
+              
+              // Patch the form group values with all the item data
+              lineItemGroup.patchValue({
+                date: item.date,
+                serviceId: item.serviceId || '',
+                serviceName: item.serviceName || '',
+                serviceGroup: serviceGroup || '',
+                description: item.description || '',
+                incentive: item.incentive || 'None',
+                quantity: item.quantity || 1,
+                rate: item.rate || 0,
+                discount: item.discount || 0,
+                taxProfileId: item.taxProfileId || '',
+                taxDetails: item.taxDetails || [],
+                totalAmount: item.totalAmount || 0
+              });
+              
+              this.lineItems.push(lineItemGroup);
             });
+            
+            // After all line items are added, trigger change detection and initialize dropdowns
+            setTimeout(() => {
+              this.initializeServiceDropdowns();
+            }, 100);
           }
           
           this.calculateTotal();
           this.loading = false;
         });
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading cash memo', error);
         this.loading = false;
       }
@@ -732,12 +760,12 @@ export class CashMemoFormComponent implements OnInit, OnDestroy {
       this.billingService.updateCashMemo(this.cashMemoId, cashMemo)
         .pipe(finalize(() => { this.loading = false; this.isSubmitting = false; }))
         .subscribe({
-          next: (response) => {
+          next: (response: any) => {
             console.log('Cash memo update successful:', response);
             alert('Cash memo updated successfully');
             this.router.navigate(['/billing/cash-memos']);
           },
-          error: (error) => {
+          error: (error: any) => {
             console.error('Error updating cash memo:', error);
             let errorMsg = 'Failed to update cash memo';
             if (error.error && error.error.message) {
@@ -752,12 +780,12 @@ export class CashMemoFormComponent implements OnInit, OnDestroy {
       this.billingService.createCashMemo(cashMemo)
         .pipe(finalize(() => { this.loading = false; this.isSubmitting = false; }))
         .subscribe({
-          next: (response) => {
+          next: (response: any) => {
             console.log('Cash memo creation successful:', response);
             alert('Cash memo created successfully');
             this.router.navigate(['/billing/cash-memos']);
           },
-          error: (error) => {
+          error: (error: any) => {
             console.error('Error creating cash memo:', error);
             let errorMsg = 'Failed to create cash memo';
             if (error.error && error.error.message) {
@@ -818,7 +846,7 @@ export class CashMemoFormComponent implements OnInit, OnDestroy {
               }];
             }
           },
-          error: (error) => {
+          error: (error: any) => {
             console.error('Error searching patients:', error);
             this.patientResults = [{
               id: 'error',
@@ -868,7 +896,7 @@ export class CashMemoFormComponent implements OnInit, OnDestroy {
           console.log(`Patient prepopulated: ${patient.firstName} ${patient.lastName}`);
         }
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading patient by ID:', error);
       }
     });
@@ -1117,6 +1145,33 @@ export class CashMemoFormComponent implements OnInit, OnDestroy {
     return service?.group || '';
   }
   
+  // Initialize service dropdowns after form is loaded in edit mode
+  initializeServiceDropdowns(): void {
+    // Trigger change detection to ensure all form controls are properly bound
+    this.lineItems.controls.forEach((control, index) => {
+      const lineItem = control as FormGroup;
+      const serviceGroup = lineItem.get('serviceGroup')?.value;
+      
+      // If we have a service group, make sure the filtered services are set
+      if (serviceGroup && this.lineItemFilteredServices[index]) {
+        console.log(`Initializing dropdown for line ${index} with serviceGroup: ${serviceGroup}`);
+        
+        // Ensure the filtered services are properly set
+        this.lineItemFilteredServices[index] = this.services.filter(
+          service => service.group === serviceGroup
+        );
+        
+        console.log(`Line ${index} has ${this.lineItemFilteredServices[index].length} filtered services`);
+      }
+    });
+    
+    // Trigger change detection
+    setTimeout(() => {
+      // Force Angular to detect changes
+      console.log('Service dropdowns initialized for edit mode');
+    }, 0);
+  }
+  
   // Load packages from API
   loadPackages(): void {
     // For testing, use dummy data
@@ -1131,7 +1186,7 @@ export class CashMemoFormComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.packages = data;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading packages', error);
       }
     });
@@ -1162,7 +1217,7 @@ export class CashMemoFormComponent implements OnInit, OnDestroy {
           console.log('Loaded tax profiles:', this.taxProfiles);
           resolve();
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Failed to load tax profiles:', error);
           
           // Provide fallback dummy data similar to the expected format

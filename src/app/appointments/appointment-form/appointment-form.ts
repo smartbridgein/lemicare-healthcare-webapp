@@ -114,10 +114,14 @@ export class AppointmentFormComponent implements OnInit, AfterViewInit {
 
   /**
    * Gets today's date as a string in YYYY-MM-DD format for min attribute
+   * Uses local timezone to avoid timezone-related date calculation issues
    */
   public getCurrentDate(): string {
-    const today = new Date();
-    return today.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
   
   /**
@@ -628,40 +632,48 @@ export class AppointmentFormComponent implements OnInit, AfterViewInit {
       doctorLongitude: null
     };
 
-    // First check for duplicate appointments
-    this.checkDuplicateAppointment(appointmentData).then(isDuplicate => {
-      if (isDuplicate) {
+    // First check for one-appointment-per-day restriction
+    this.checkPatientAppointmentOnDate(appointmentData).then((hasAppointmentOnDate: boolean) => {
+      if (hasAppointmentOnDate) {
         this.isSubmitting = false;
-        
-        // Show already booked modal instead of error message
-        // Extract time from appointmentDateTime for display (e.g., "07:34 PM")
-        const appointmentDateTime = appointmentData.appointmentDateTime || '';
-        const timeObj = new Date(appointmentDateTime);
-        const formattedTime = timeObj.toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
-        });
-        
-        // In a real app, we'd fetch patient and doctor details from backend
-        // For now, use placeholders or fetch from our lists
-        let patientName = 'Patient';
-        let doctorName = 'Doctor';
-        
-        // Try to get doctor name from our doctors list
-        const doctor = this.doctors.find(doc => doc.doctorId === appointmentData.doctorId);
-        if (doctor) {
-          doctorName = doctor.name;
-        }
-        
-        this.alreadyBookedData = {
-          appointmentTime: formattedTime,
-          doctorName
-        };
-        
-        this.showAlreadyBookedModal = true;
+        this.error = 'You already have an appointment scheduled for this date. Only one appointment per day is allowed. Please select a different date.';
         return;
       }
+      
+      // Then check for duplicate appointments (same time slot)
+      this.checkDuplicateAppointment(appointmentData).then(isDuplicate => {
+        if (isDuplicate) {
+          this.isSubmitting = false;
+          
+          // Show already booked modal instead of error message
+          // Extract time from appointmentDateTime for display (e.g., "07:34 PM")
+          const appointmentDateTime = appointmentData.appointmentDateTime || '';
+          const timeObj = new Date(appointmentDateTime);
+          const formattedTime = timeObj.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          });
+          
+          // In a real app, we'd fetch patient and doctor details from backend
+          // For now, use placeholders or fetch from our lists
+          let patientName = 'Patient';
+          let doctorName = 'Doctor';
+          
+          // Try to get doctor name from our doctors list
+          const doctor = this.doctors.find(doc => doc.doctorId === appointmentData.doctorId);
+          if (doctor) {
+            doctorName = doctor.name;
+          }
+          
+          this.alreadyBookedData = {
+            appointmentTime: formattedTime,
+            doctorName
+          };
+          
+          this.showAlreadyBookedModal = true;
+          return;
+        }
 
       // Continue with saving if no duplicate
       const saveOperation = this.isEdit ?
@@ -686,8 +698,10 @@ export class AppointmentFormComponent implements OnInit, AfterViewInit {
         error: (err: HttpErrorResponse) => {
           console.error('Error saving appointment:', err);
           
-          // Check for specific doctor availability error
-          if (err.error && typeof err.error === 'object' && err.error.message === 'Doctor is not available at the requested time') {
+          // Check for specific error types from backend
+          if (err.status === 409 && err.error && err.error.error === 'APPOINTMENT_ALREADY_EXISTS') {
+            this.error = err.error.message || 'You already have an appointment scheduled for this date. Only one appointment per day is allowed.';
+          } else if (err.error && typeof err.error === 'object' && err.error.message === 'Doctor is not available at the requested time') {
             this.error = 'The selected doctor is not available at this time. Please choose another time slot or doctor.';
           } else if (err.status === 500 && err.error && typeof err.error === 'string' && err.error.includes('Doctor is not available')) {
             this.error = 'The selected doctor is not available at this time. Please choose another time slot or doctor.';
@@ -698,8 +712,41 @@ export class AppointmentFormComponent implements OnInit, AfterViewInit {
           }
         }
       });
+      });
     });
   }
+  
+  /**
+   * Check if patient already has an appointment on the selected date
+   */
+  private async checkPatientAppointmentOnDate(appointment: Appointment): Promise<boolean> {
+    // Skip check for editing existing appointments
+    if (this.isEdit) return false;
+
+    return new Promise<boolean>(resolve => {
+      // Extract date from appointmentDateTime for filtering
+      const appointmentDate = appointment.appointmentDateTime ? appointment.appointmentDateTime.split('T')[0] : '';
+      
+      // Get all appointments and filter by patient ID
+      this.appointmentService.getAppointments({}).pipe(
+        catchError(() => of([]))
+      ).subscribe((appointments: Appointment[]) => {
+        // Filter appointments for this specific patient
+        const patientAppointments = appointments.filter(app => app.patientId === appointment.patientId);
+        
+        // Check if patient has any appointment on the same date
+        const hasAppointmentOnDate = patientAppointments.some((app: Appointment) => {
+          if (!app.appointmentDateTime) return false;
+          
+          const existingAppointmentDate = app.appointmentDateTime.split('T')[0];
+          return existingAppointmentDate === appointmentDate;
+        });
+
+        resolve(hasAppointmentOnDate);
+      });
+    });
+  }
+  
   private async checkDuplicateAppointment(appointment: Appointment): Promise<boolean> {
     // Skip check for editing existing appointments
     if (this.isEdit) return false;

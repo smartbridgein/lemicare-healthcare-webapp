@@ -4,6 +4,9 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { Router } from '@angular/router';
 import { InventoryService } from '../../../services/inventory.service';
 import { Supplier, Purchase } from '../../../models/inventory.models';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../../environments/environment';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-supplier-master',
@@ -27,6 +30,9 @@ export class SupplierMasterComponent implements OnInit {
   supplierIdMap: Map<string, string> = new Map();
   // Error message for form submission
   formError: string = '';
+  
+  // Make Math available in template
+  Math = Math;
 
   // Purchase details modal properties
   showPurchaseModal = false;
@@ -38,7 +44,8 @@ export class SupplierMasterComponent implements OnInit {
   constructor(
     private inventoryService: InventoryService,
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private http: HttpClient
   ) {
     this.supplierForm = this.fb.group({
       name: ['', Validators.required],
@@ -69,8 +76,18 @@ export class SupplierMasterComponent implements OnInit {
           status: supplier.status || 'ACTIVE' // Set default status to ACTIVE if not specified
         }));
         
+        // Sort suppliers by name in ascending order
+        const sortedSuppliers = processedSuppliers.sort((a, b) => {
+          const nameA = (a.name || '').toLowerCase();
+          const nameB = (b.name || '').toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
+        
         // Store all suppliers and show all by default (both active and inactive)
-        this.suppliers = processedSuppliers;
+        this.suppliers = sortedSuppliers;
+        
+        // Calculate accumulated balance for each supplier
+        this.calculateAccumulatedBalances();
         
         // Show all suppliers (both active and inactive)
         this.filteredSuppliers = [...this.suppliers];
@@ -85,14 +102,14 @@ export class SupplierMasterComponent implements OnInit {
         
         console.log('Processed suppliers:', this.suppliers.length);
         console.log('Active suppliers:', this.filteredSuppliers.length);
-        this.generateNextSupplierId();
+        //this.generateNextSupplierId();
       },
       error: (error) => {
         console.error('Error loading suppliers:', error);
         this.loading = false;
         // Load sample data in case of error
         this.loadSampleData();
-        this.generateNextSupplierId();
+        //this.generateNextSupplierId();
       }
     });
   }
@@ -144,14 +161,36 @@ export class SupplierMasterComponent implements OnInit {
     console.log('Editing supplier object:', JSON.stringify(supplier));
     
     // Populate the form with supplier data
+    // Log all supplier fields for debugging purposes
+    console.log('Supplier fields:', {
+      name: supplier.name,
+      id: supplier.id,
+      supplierId: supplier.supplierId,
+      gstin: supplier.gstin,
+      gstNumber: supplier.gstNumber,
+      contactNumber: supplier.contactNumber,
+      mobileNumber: supplier.mobileNumber,
+      contactPerson: supplier.contactPerson,
+      drugLicense: supplier.drugLicense,
+      drugLicenseNumber: supplier.drugLicenseNumber,
+      address: supplier.address,
+      status: supplier.status
+    });
+    
+    // The API response uses drugLicenseNumber, ensure we're using that
+    // Our interface has both drugLicense and drugLicenseNumber fields
+    const drugLicense = supplier.drugLicenseNumber || supplier.drugLicense || '';
+    
+    console.log('Drug license value from API:', drugLicense);
+    
     this.supplierForm.patchValue({
       name: supplier.name || '',
-      supplierId: supplier.id || '',
+      supplierId: supplier.id || supplier.supplierId || '',
       gstNumber: supplier.gstNumber || supplier.gstin || '',
       email: supplier.email || '',
       contactNumber: supplier.contactNumber || supplier.mobileNumber || '',
-      contactPerson: supplier.contactPerson || '', // Ensure contact person is patched
-      drugLicenseNumber: supplier.drugLicense || supplier.drugLicenseNumber || '',
+      contactPerson: supplier.contactPerson || '', 
+      drugLicenseNumber: drugLicense, // Use the drugLicense variable that checks both fields
       address: supplier.address || '',
       status: supplier.status || 'ACTIVE' // Default to ACTIVE if not specified
     });
@@ -163,6 +202,14 @@ export class SupplierMasterComponent implements OnInit {
     
     console.log('Form values after patch:', this.supplierForm.value);
     console.log('Contact person value:', this.supplierForm.get('contactPerson')?.value);
+    console.log('Drug license number value:', this.supplierForm.get('drugLicenseNumber')?.value);
+    
+    // Force setting the drugLicenseNumber value if it's still undefined
+    if (!this.supplierForm.get('drugLicenseNumber')?.value && drugLicense) {
+      console.log('Force setting drugLicenseNumber to:', drugLicense);
+      this.supplierForm.get('drugLicenseNumber')?.setValue(drugLicense);
+      console.log('After forced set:', this.supplierForm.get('drugLicenseNumber')?.value);
+    }
     
     this.showModal = true;
   }
@@ -211,7 +258,7 @@ export class SupplierMasterComponent implements OnInit {
     }
     
     const term = this.searchTerm.toLowerCase().trim();
-    this.filteredSuppliers = this.suppliers.filter(
+    const filtered = this.suppliers.filter(
       supplier => supplier.name.toLowerCase().includes(term) || 
                  (supplier.contactNumber && supplier.contactNumber.includes(term)) ||
                  (supplier.mobileNumber && supplier.mobileNumber.includes(term)) ||
@@ -219,6 +266,13 @@ export class SupplierMasterComponent implements OnInit {
                  (supplier.gstin && supplier.gstin.toLowerCase().includes(term)) ||
                  (supplier.gstNumber && supplier.gstNumber.toLowerCase().includes(term))
     );
+    
+    // Sort filtered results by name in ascending order
+    this.filteredSuppliers = filtered.sort((a, b) => {
+      const nameA = (a.name || '').toLowerCase();
+      const nameB = (b.name || '').toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
   }
 
   // Check if supplier name already exists
@@ -367,7 +421,7 @@ export class SupplierMasterComponent implements OnInit {
         mobileNumber: supplier.contactNumber || supplier.mobileNumber || '', // Also include as mobileNumber
         email: supplier.email || '',
         contactPerson: supplier.contactPerson || '', // Ensure contact person is included
-        drugLicenseNumber: supplier.drugLicenseNumber || supplier.drugLicense || '',
+        drugLicenseNumber: supplier.drugLicenseNumber || supplier.drugLicenseNumber || '',
         address: supplier.address || ''
       };
       
@@ -547,6 +601,52 @@ export class SupplierMasterComponent implements OnInit {
     return medicineId ? `Medicine ${medicineId.substring(0, 4)}...` : 'Unknown';
   }
   
+  /**
+   * Calculate accumulated balance for each supplier based on their purchase transactions
+   */
+  calculateAccumulatedBalances(): void {
+    // Get all purchases to calculate outstanding balance for each supplier
+    const apiBaseUrl = environment.apiUrlInventory + '/api/inventory';
+    
+    this.http.get<any[]>(`${apiBaseUrl}/purchases/`).subscribe({
+      next: (allPurchases) => {
+        if (allPurchases && allPurchases.length > 0) {
+          // Group purchases by supplier ID and calculate outstanding balance
+          const supplierBalances = new Map<string, number>();
+          
+          allPurchases.forEach(purchase => {
+            const supplierId = purchase.supplierId;
+            const amount = purchase.totalAmount || 0;
+            const amountPaid = purchase.amountPaid || 0;
+            const remainingAmount = amount - amountPaid;
+            
+            // Only add positive remaining amounts (unpaid invoices) to outstanding balance
+            if (remainingAmount > 0) {
+              const currentBalance = supplierBalances.get(supplierId) || 0;
+              supplierBalances.set(supplierId, currentBalance + remainingAmount);
+            }
+          });
+          
+          // Update each supplier's outstanding balance
+          this.suppliers.forEach(supplier => {
+            const outstandingAmount = supplierBalances.get(supplier.supplierId || supplier.id) || 0;
+            // For display: negative balance represents money owed (outstanding amount)
+            supplier.outstandingBalance = outstandingAmount > 0 ? -outstandingAmount : 0;
+            console.log(`Supplier ${supplier.name}: Outstanding Balance = ₹${supplier.outstandingBalance}`);
+          });
+          
+          console.log('Accumulated balances calculated for all suppliers');
+        } else {
+          console.log('No purchases found for balance calculation');
+        }
+      },
+      error: (err) => {
+        console.error('Error calculating accumulated balances:', err);
+        // Continue without balance calculation if API fails
+      }
+    });
+  }
+
   /**
    * Load sample supplier data for testing
    */

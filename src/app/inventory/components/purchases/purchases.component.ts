@@ -33,7 +33,7 @@ export class PurchasesComponent implements OnInit, OnDestroy {
   selectedDateFilter: string = 'all';
   
   // Sorting properties
-  sortColumn: string = 'invoiceDate';
+  sortColumn: string = 'createdAt';
   sortDirection: 'asc' | 'desc' = 'desc';
   
   private routeSubscription: Subscription | null = null;
@@ -206,6 +206,24 @@ export class PurchasesComponent implements OnInit, OnDestroy {
     }
     
     return this.formatDate(timestamp);
+  }
+
+  formatTimestampDateWithTime(timestamp: any): string {
+    if (!timestamp) return 'N/A';
+    
+    // Handle Firestore timestamp format with seconds and nanos
+    if (timestamp && timestamp.seconds) {
+      const date = new Date(timestamp.seconds * 1000);
+      return this.datePipe.transform(date, 'MMM dd, yyyy h:mm a') || 'N/A';
+    }
+    
+    // Handle regular date string or Date object
+    if (timestamp) {
+      const date = new Date(timestamp);
+      return this.datePipe.transform(date, 'MMM dd, yyyy h:mm a') || 'N/A';
+    }
+    
+    return 'N/A';
   }
 
   /**
@@ -442,14 +460,19 @@ export class PurchasesComponent implements OnInit, OnDestroy {
           valB = this.parseDate(b.invoiceDate) || this.parseDate(b.createdAt);
           break;
           
+        case 'createdAt':
+          valA = this.parseDate(a.createdAt);
+          valB = this.parseDate(b.createdAt);
+          break;
+          
         case 'totalAmount':
           valA = Number(a.totalAmount || 0);
           valB = Number(b.totalAmount || 0);
           break;
           
         default:
-          valA = this.parseDate(a.invoiceDate) || this.parseDate(a.createdAt);
-          valB = this.parseDate(b.invoiceDate) || this.parseDate(b.createdAt);
+          valA = this.parseDate(a.createdAt) || this.parseDate(a.invoiceDate);
+          valB = this.parseDate(b.createdAt) || this.parseDate(b.invoiceDate);
       }
       
       // Compare values based on type
@@ -582,6 +605,21 @@ export class PurchasesComponent implements OnInit, OnDestroy {
     } else {
       console.error('Cannot view purchase details: No purchase ID found', purchase);
       alert('Cannot view purchase details: No ID found');
+    }
+  }
+
+  /**
+   * Navigate to edit purchase page
+   */
+  editPurchase(purchase: Purchase): void {
+    console.log('Editing purchase:', purchase);
+    
+    const purchaseId = purchase.id || purchase.purchaseId;
+    if (purchaseId) {
+      this.router.navigate(['/inventory/purchases/edit', purchaseId]);
+    } else {
+      console.error('Cannot edit purchase: No purchase ID found', purchase);
+      alert('Cannot edit purchase: No ID found');
     }
   }
 

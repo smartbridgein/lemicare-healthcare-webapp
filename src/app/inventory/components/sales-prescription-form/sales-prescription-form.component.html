@@ -6,7 +6,11 @@
       </a>
     </div>
     <div class="header-title">
-      <span>Prescription Based Sale</span>
+      <span *ngIf="!isEditMode">Prescription Based Sale</span>
+      <span *ngIf="isEditMode" class="edit-mode-header">
+        <i class="fas fa-edit"></i> Edit Prescription Sale
+        <small class="sale-id-badge">ID: {{ editSaleId }}</small>
+      </span>
     </div>
   </div>
   
@@ -16,22 +20,34 @@
       <div class="details-section">
         <div class="form-row">
           <div class="form-group">
-            <label for="patientName">Patient Name*</label>
+            <label for="patientName">Patient Name</label>
             <input 
               type="text" 
               id="patientName" 
               formControlName="patientName"
-              placeholder="Enter patient name"
+              placeholder="Enter or search patient name"
+              (focus)="onPatientInputFocus()"
+              (blur)="onPatientInputBlur($event)"
               [class.is-invalid]="prescriptionForm.get('patientName')?.touched && prescriptionForm.get('patientName')?.invalid"
             >
             <!-- Patient search results dropdown -->
             <div class="search-results" *ngIf="showPatientSearch">
               <div class="loading" *ngIf="loadingPatients">Loading patients...</div>
-              <ul *ngIf="!loadingPatients && patientSearchResults.length > 0">
-                <li *ngFor="let patient of patientSearchResults" (click)="selectPatient(patient)">
-                  {{ patient.name }} - {{ patient.phoneNumber }}
-                </li>
-              </ul>
+              <div *ngIf="!loadingPatients && patientSearchResults.length > 0" class="patient-list">
+                <div *ngFor="let patient of patientSearchResults; let i = index" 
+                     class="patient-search-item"
+                     [attr.data-patient-id]="patient.id"
+                     (mousedown)="selectPatientSimple(patient, i, $event)">
+                  <div class="patient-main-info">
+                    <strong>{{ patient.name }}</strong>
+                    <span class="patient-id">ID: {{ patient.id || 'N/A' }}</span>
+                  </div>
+                  <div class="patient-details">
+                    <span class="patient-phone">📞 {{ patient.phoneNumber || 'No phone' }}</span>
+                    <span class="patient-address" *ngIf="patient.address">📍 {{ patient.address }}</span>
+                  </div>
+                </div>
+              </div>
               <div class="no-results" *ngIf="!loadingPatients && patientSearchResults.length === 0">
                 No patients found
               </div>
@@ -42,7 +58,7 @@
           </div>
           
           <div class="form-group">
-            <label for="phoneNumber">Mobile Number*</label>
+            <label for="phoneNumber">Mobile Number</label>
             <input 
               type="text" 
               id="phoneNumber" 
@@ -56,7 +72,35 @@
           </div>
           
           <div class="form-group">
-            <label for="doctorName">Doctor Name*</label>
+            <label for="address">Patient Address</label>
+            <input 
+              type="text" 
+              id="address" 
+              formControlName="address"
+              placeholder="Patient Address"
+              [class.is-invalid]="prescriptionForm.get('address')?.touched && prescriptionForm.get('address')?.invalid"
+            >
+            <div class="invalid-feedback" *ngIf="prescriptionForm.get('address')?.touched && prescriptionForm.get('address')?.invalid">
+              Patient address is required
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="gender">Gender</label>
+            <select 
+              id="gender" 
+              formControlName="gender"
+              class="form-control"
+            >
+              <option value="">Select Gender</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="doctorName">Doctor Name</label>
             <div class="doctor-search-container">
               <input 
                 type="text" 
@@ -71,11 +115,14 @@
             <!-- Doctor search results dropdown -->
             <div class="search-results" *ngIf="showDoctorSearch">
               <div class="loading" *ngIf="loadingDoctors">Loading doctors...</div>
-              <ul *ngIf="!loadingDoctors && doctorSearchResults.length > 0">
-                <li *ngFor="let doctor of doctorSearchResults" (click)="selectDoctor(doctor)">
+              <div *ngIf="!loadingDoctors && doctorSearchResults.length > 0" class="doctor-list">
+                <div *ngFor="let doctor of doctorSearchResults; let i = index" 
+                     class="doctor-search-item"
+                     [attr.data-doctor-id]="doctor.id"
+                     (mousedown)="selectDoctorSimple(doctor, i, $event)">
                   {{ doctor.name }} <span *ngIf="doctor.specialization">- {{ doctor.specialization }}</span>
-                </li>
-              </ul>
+                </div>
+              </div>
               <div class="no-results" *ngIf="!loadingDoctors && doctorSearchResults.length === 0">
                 No doctors found
               </div>
@@ -88,7 +135,7 @@
         
         <div class="form-row">
           <div class="form-group">
-            <label for="prescriptionDate">Prescription Date*</label>
+            <label for="prescriptionDate">Prescription Date *</label>
             <input 
               type="date" 
               id="prescriptionDate" 
@@ -98,7 +145,7 @@
           </div>
           
           <div class="form-group">
-            <label for="saleDate">Sale Date*</label>
+            <label for="saleDate">Sale Date</label>
             <input 
               type="date" 
               id="saleDate" 
@@ -174,7 +221,7 @@
                   <input type="text" formControlName="mfg" placeholder="Manufacturer">
                 </td>
                 <td>
-                  <select formControlName="batchNo" (change)="onBatchChange($event, i)">
+                  <select formControlName="batchNo">
                     <option value="" disabled>Select Batch</option>
                     <option *ngFor="let batch of getBatchesForMedicine(i)" [value]="batch.batchNo">
                       {{batch.batchNo}}
@@ -197,7 +244,9 @@
                     formControlName="quantity" 
                     min="1"
                     [class.is-invalid]="itemGroup.get('quantity')?.invalid && itemGroup.get('quantity')?.touched"
+                    (input)="onQuantityChange($event, i)"
                     (change)="onQuantityChange($event, i)"
+                    (blur)="onQuantityChange($event, i)"
                   >
                 </td>
                 <td>
@@ -206,10 +255,11 @@
                     formControlName="discount"
                     min="0" 
                     max="100"
+                    (change)="onLineItemDiscountChange(i)"
                   >
                 </td>
                 <td *ngIf="prescriptionForm.get('gstType')?.value !== 'NON_GST'">
-                  <select class="form-select form-select-sm" formControlName="taxProfileId">
+                  <select class="form-select form-select-sm" formControlName="taxProfileId" (change)="onTaxProfileSelectionChange(i)">
                     <option value="">No Tax</option>
                     <option *ngFor="let profile of taxProfiles" [value]="profile.taxProfileId">{{profile.profileName}} ({{profile.totalRate}}%)</option>
                   </select>
@@ -256,77 +306,94 @@
       <!-- Payment Details -->
       <div class="payment-details-container">
         <div class="totals-column">
-          <div class="total-row">
-            <label>Gross total</label>
-            <div class="amount">₹{{ subtotal | number:'1.2-2' }}</div>
-          </div>
-          
-          <div class="total-row">
-            <label>Discount</label>
-            <div class="amount">₹{{ discount | number:'1.2-2' }}</div>
-          </div>
-          
-          <div class="total-row" *ngIf="prescriptionForm.get('gstType')?.value !== 'NON_GST'">
-            <label>CGST</label>
-            <div class="amount">₹{{ cgstTotal | number:'1.2-2' }}</div>
-          </div>
-          
-          <div class="total-row" *ngIf="prescriptionForm.get('gstType')?.value !== 'NON_GST'">
-            <label>SGST</label>
-            <div class="amount">₹{{ sgstTotal | number:'1.2-2' }}</div>
-          </div>
-          
-          <div class="total-row">
-            <label>Net Total</label>
-            <div class="amount">₹{{ grandTotal | number:'1.2-2' }}</div>
-          </div>
-
-          
-          <div class="form-row simple-form-row">
-            <div class="form-group">
-              <label for="paymentMethod">Payment Mode*</label>
-              <select 
-                id="paymentMethod" 
-                formControlName="paymentMethod" 
-                class="form-control"
-              >
-                <option *ngFor="let method of paymentMethods" [value]="method">{{ method }}</option>
-              </select>
+          <!-- Summary Card -->
+          <div class="summary-card">
+            <!-- Sub Total -->
+            <div class="summary-row">
+              <label class="summary-label">Sub Total</label>
+              <div class="summary-value">₹{{ subtotal | number:'1.2-2' }}</div>
             </div>
             
-            <div class="form-group">
-              <label for="paymentStatus">Payment Status*</label>
-              <select 
-                id="paymentStatus" 
-                formControlName="paymentStatus" 
-                class="form-control"
-              >
-                <option value="PAID">PAID</option>
-                <option value="PENDING">PENDING</option>
-                <option value="CREDIT">CREDIT</option>
-              </select>
+            <!-- Total Before Discount (Net Amount) -->
+            <div class="summary-row total-before-discount">
+              <label class="summary-label">Total Before Discount</label>
+              <div class="summary-value">₹{{ totalBeforeDiscount | number:'1.2-2' }}</div>
             </div>
-          </div>
+            
+
           
-          <div class="form-row simple-form-row">
-            <div class="form-group full-width">
-              <label for="transactionReference">Transaction Reference</label>
-              <input 
-                type="text" 
-                id="transactionReference"
-                formControlName="transactionReference"
-                placeholder="Auto-generated reference"
-                readonly
-                class="form-control"
-              >
-              <small class="form-text text-muted">Format: TRX-YYYYMMDD-HHMMSS-XXX</small>
+            <!-- Tax Breakdown Section -->
+            <ng-container *ngIf="prescriptionForm.get('gstType')?.value !== 'NON_GST'">
+              <!-- Detailed GST Breakdown -->
+              <div class="summary-row tax-row">
+                <label class="summary-label">CGST</label>
+                <div class="summary-value">₹{{ cgstTotal | number:'1.2-2' }}</div>
+              </div>
+              <div class="summary-row tax-row">
+                <label class="summary-label">SGST</label>
+                <div class="summary-value">₹{{ sgstTotal | number:'1.2-2' }}</div>
+              </div>
+            </ng-container>
+            
+            <!-- Total Tax Amount (always shown) -->
+            <div class="summary-row tax-total-row">
+              <label class="summary-label">{{ prescriptionForm.get('gstType')?.value === 'NON_GST' ? 'Tax Amount' : 'Total GST' }}</label>
+              <div class="summary-value tax-total">₹{{ tax | number:'1.2-2' }}</div>
             </div>
-          </div>
           
-          <div class="grand-total">
-            <h3>Grand Total</h3>
-            <h3>₹{{ grandTotal | number:'1.2-2' }}</h3>
-          </div>
+            <!-- Payment Details Fields -->
+            <div class="summary-row payment-row">
+              <label class="summary-label" for="paymentMode">Payment Mode*</label>
+              <div class="summary-input payment-input">
+                <select 
+                  id="paymentMode" 
+                  formControlName="paymentMode" 
+                  class="form-control classic-select"
+                >
+                  <option *ngFor="let method of paymentMethods" [value]="method">{{ method }}</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="summary-row payment-row">
+              <label class="summary-label" for="paymentStatus">Payment Status*</label>
+              <div class="summary-input payment-input">
+                <select 
+                  id="paymentStatus" 
+                  formControlName="paymentStatus" 
+                  class="form-control classic-select"
+                >
+                  <option value="PAID">PAID</option>
+                  <option value="PENDING">PENDING</option>
+                  <option value="CREDIT">CREDIT</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Transaction Reference -->
+            <div class="summary-row reference-row">
+              <label class="summary-label" for="transactionReference">Transaction Reference</label>
+              <div class="summary-input reference-input">
+                <input 
+                  type="text" 
+                  id="transactionReference"
+                  formControlName="transactionReference"
+                  placeholder="Auto-generated reference"
+                  readonly
+                  class="form-control reference-field"
+                >
+              </div>
+            </div>
+            <div class="summary-row format-row">
+              <div class="format-text">Format: TRX-YYYYMMDD-HHMMSS-XXX</div>
+            </div>
+          
+            <!-- Grand Total -->
+            <div class="summary-row grand-total-row">
+              <label class="grand-total-label">Grand Total</label>
+              <div class="grand-total-value">₹{{ grandTotal | number:'1.2-2' }}</div>
+            </div>
+          </div> <!-- End of summary card -->
         </div>
       </div>
       
@@ -339,9 +406,11 @@
           Save & Print
         </button>
         <button type="submit" class="submit-btn" [disabled]="submitting">
-          <i class="fas fa-check" *ngIf="!submitting"></i>
+          <i class="fas fa-check" *ngIf="!submitting && !isEditMode"></i>
+          <i class="fas fa-save" *ngIf="!submitting && isEditMode"></i>
           <i class="fas fa-spinner fa-spin" *ngIf="submitting"></i>
-          Complete Sale
+          <span *ngIf="!isEditMode">Complete Sale</span>
+          <span *ngIf="isEditMode">Update Sale</span>
         </button>
       </div>
     </form>

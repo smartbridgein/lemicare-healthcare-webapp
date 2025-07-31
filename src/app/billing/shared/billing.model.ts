@@ -40,6 +40,14 @@ export interface Invoice extends BillingBase {
   paidAmount?: number;
   balanceAmount?: number;
   grandTotal?: number; // Total invoice amount including taxes
+  items?: InvoiceItem[]; // Invoice line items
+  payments?: any[]; // Payment history
+  taxationType?: string; // Tax type (GST, Non-GST, etc.)
+  subtotal?: number; // Subtotal before taxes
+  category?: string; // Invoice category
+  overallDiscount?: number; // Overall discount amount
+  overallDiscountType?: string; // Discount type (PERCENT, AMOUNT)
+  notes?: string; // Additional notes
 }
 
 export interface Receipt extends BillingBase {

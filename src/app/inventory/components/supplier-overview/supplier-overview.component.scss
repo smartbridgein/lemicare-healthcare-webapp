@@ -143,6 +143,16 @@ $font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
         color: #28a745;
         background-color: rgba(#28a745, 0.08);
       }
+      
+      // Classic red balance styling as requested
+      &.classic-red-balance {
+        color: #dc3545;
+        background-color: rgba(#dc3545, 0.08);
+        border: 1px solid rgba(#dc3545, 0.2);
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
     }
   }
 }

@@ -11,7 +11,7 @@
       <div class="invoice-info">
         <div class="invoice-row">
           <span class="label">Invoice #:</span>
-          <span class="value">{{ formatSaleId(sale.saleId || sale.id) }}</span>
+          <span class="value">{{ sale.saleId || sale.id }}</span>
         </div>
         <div class="invoice-row">
           <span class="label">Date:</span>
@@ -64,14 +64,11 @@
               <span *ngIf="!item.medicine?.name">{{ item.medicineName || 'Medicine ID: ' + item.medicineId }}</span>
               <div class="small text-muted" *ngIf="item.medicine?.manufacturer">{{ item.medicine.manufacturer }}</div>
             </td>
-            <td>{{ item.batchNo || 'N/A' }}</td>
-            <td>
-              <span *ngIf="item.expiryDate">{{ formatDate(item.expiryDate) }}</span>
-              <span *ngIf="!item.expiryDate">N/A</span>
-            </td>
+            <td>{{ getBatchNumber(item) }}</td>
+            <td>{{ getExpiryDate(item) }}</td>
             <td>{{ item.quantity }}</td>
             <td>{{ (item.mrpPerItem || item.unitPrice) | number:'1.2-2' }}</td>
-            <td>{{ item.discountPercentage || item.discount || 0 }}%</td>
+            <td>{{ (item.discountPercentage || item.discount || 0) | number:'1.2-2' }}%</td>
             <td>{{ (item.lineItemTotalAmount || item.total) | number:'1.2-2' }}</td>
           </tr>
           <tr *ngIf="!sale.items || sale.items.length === 0">
@@ -115,9 +112,9 @@
         </div>
         
         <!-- Discounts -->
-        <div class="summary-row">
-          <span class="label">Discount:</span>
-          <span class="value">{{ (sale.totalDiscountAmount || sale.discount || 0) | number:'1.2-2' }}</span>
+        <div class="summary-row" *ngIf="(sale.totalDiscountAmount || sale.discount || 0) > 0">
+          <span class="label">Total Discount:</span>
+          <span class="value">₹{{ (sale.totalDiscountAmount || sale.discount || 0) | number:'1.2-2' }}</span>
         </div>
         
         <!-- Payment Information -->
@@ -162,7 +159,7 @@
             <div class="sale-info">
               <div class="info-row">
                 <span class="label">Invoice #:</span>
-                <span class="value">{{ formatSaleId(sale.saleId || sale.id) }}</span>
+                <span class="value">{{ sale.saleId || sale.id }}</span>
               </div>
               <div class="info-row">
                 <span class="label">Date:</span>
@@ -199,7 +196,7 @@
             <div class="form-row">
               <div class="form-group">
                 <label>Doctor Name</label>
-                <div class="form-control-readonly">{{ doctorDetails?.name ? ('Dr. ' + doctorDetails.name) : 'N/A' }}</div>
+                <div class="form-control-readonly">{{ getDoctorName() }}</div>
               </div>
            
               <div class="form-group">
@@ -220,7 +217,7 @@
 
               <div class="form-group">
                 <label>Transaction Reference</label>
-                <div class="form-control-readonly">{{ 'N/A' }}</div>
+                <div class="form-control-readonly">{{ sale.transactionReference || 'N/A' }}</div>
               </div>
             </div>
 
@@ -262,12 +259,12 @@
                 <tr *ngFor="let item of sale.items || sale.saleItems || []; let i = index">
                   <td>{{ i + 1 }}</td>
                   <td>{{ item.medicine?.name || 'Medicine ID: ' + item.medicineId }}</td>
-                  <td>{{ item.batchNo || 'N/A' }}</td>
-                  <td>{{ 'N/A' }}</td>
+                  <td>{{ getBatchNumber(item) }}</td>
+                  <td>{{ getExpiryDate(item) }}</td>
                   <td>{{ item.quantity }}</td>
                   <td>{{ (item.mrpPerItem) | number:'1.2-2' }}</td>
                   <td>{{ (item.salePrice) | number:'1.2-2' }}</td>
-                  <td>{{ item.discountPercentage || item.discount || 0 }}%</td>
+                  <td>{{ (item.discountPercentage || item.discount || 0) | number:'1.2-2' }}%</td>
                   <td>{{ item.taxProfileId || 'N/A' }}</td>
                   <td>{{ (item.taxRateApplied || 0) | number:'1.2-2' }}</td>
                   <td>{{ (item.taxAmount ? item.taxAmount / 2 : 0) | number:'1.2-2' }}</td>
@@ -291,8 +288,8 @@
                 <span class="value">{{ (sale.totalTaxableAmount || 0) | number:'1.2-2' }}</span>
               </div>
               <div class="summary-row">
-                <span class="label">Discount Amount:</span>
-                <span class="value">{{ (sale.totalDiscountAmount || 0) | number:'1.2-2' }}</span>
+                <span class="label">Total Discount:</span>
+                <span class="value">₹{{ (sale.totalDiscountAmount || sale.discount || 0) | number:'1.2-2' }}</span>
               </div>
               <div class="summary-row">
                 <span class="label">CGST Amount:</span>

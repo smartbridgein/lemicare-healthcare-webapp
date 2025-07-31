@@ -27,12 +27,12 @@ export class ReceiptListComponent implements OnInit {
   loadReceipts(): void {
     this.loading = true;
     this.billingService.getAllReceipts().subscribe({
-      next: (data) => {
+      next: (data: Receipt[]) => {
         this.receipts = data;
         this.filterReceipts();
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading receipts', error);
         this.loading = false;
       }
@@ -71,7 +71,7 @@ export class ReceiptListComponent implements OnInit {
           this.filterReceipts();
           alert('Receipt deleted successfully');
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error deleting receipt', error);
           alert('Failed to delete receipt');
         }

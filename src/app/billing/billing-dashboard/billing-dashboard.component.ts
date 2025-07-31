@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BillingService } from '../shared/billing.service';
 import { ReportExportService } from '../shared/report-export.service';
-import { BillingDashboardStats, RevenueStats, RevenuePeriod, CategoryReport } from '../shared/billing.model';
+import { BillingDashboardStats, RevenueStats, RevenuePeriod, CategoryReport, Invoice, CashMemo, Receipt, Advance } from '../shared/billing.model';
 import { RevenueChartComponent } from './revenue-chart/revenue-chart.component';
 import { CategoryChartComponent } from './category-chart/category-chart.component';
 
@@ -82,12 +82,12 @@ export class BillingDashboardComponent implements OnInit {
     
     // Load invoices for counter and recent list
     this.billingService.getAllInvoices().subscribe({
-      next: (data) => {
+      next: (data: Invoice[]) => {
         this.stats.totalInvoices = data.length;
         this.recentInvoices = data.slice(0, 5); // Get the latest 5 invoices
         this.checkIfLoadingComplete();
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading invoices', error);
         this.checkIfLoadingComplete();
       }
@@ -95,11 +95,11 @@ export class BillingDashboardComponent implements OnInit {
 
     // Load cash memos for counter
     this.billingService.getAllCashMemos().subscribe({
-      next: (data) => {
+      next: (data: CashMemo[]) => {
         this.stats.totalCashMemos = data.length;
         this.checkIfLoadingComplete();
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading cash memos', error);
         this.checkIfLoadingComplete();
       }
@@ -107,12 +107,12 @@ export class BillingDashboardComponent implements OnInit {
 
     // Load receipts for counter and recent list
     this.billingService.getAllReceipts().subscribe({
-      next: (data) => {
+      next: (data: Receipt[]) => {
         this.stats.totalReceipts = data.length;
         this.recentReceipts = data.slice(0, 5); // Get the latest 5 receipts
         this.checkIfLoadingComplete();
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading receipts', error);
         this.checkIfLoadingComplete();
       }
@@ -120,11 +120,11 @@ export class BillingDashboardComponent implements OnInit {
 
     // Load advances for counter
     this.billingService.getAllAdvances().subscribe({
-      next: (data) => {
+      next: (data: Advance[]) => {
         this.stats.totalAdvances = data.length;
         this.checkIfLoadingComplete();
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading advances', error);
         this.checkIfLoadingComplete();
       }
@@ -135,11 +135,11 @@ export class BillingDashboardComponent implements OnInit {
     this.loadingRevenue = true;
     
     this.billingService.getRevenueStats(this.selectedPeriod).subscribe({
-      next: (data) => {
+      next: (data: RevenueStats) => {
         this.revenueStats = data;
         this.loadingRevenue = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading revenue statistics', error);
         this.loadingRevenue = false;
       }
@@ -150,11 +150,11 @@ export class BillingDashboardComponent implements OnInit {
     this.loadingCategoryReport = true;
     
     this.billingService.getCategoryReport(this.selectedPeriod).subscribe({
-      next: (data) => {
+      next: (data: CategoryReport) => {
         this.categoryReport = data;
         this.loadingCategoryReport = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading category report', error);
         this.loadingCategoryReport = false;
       }

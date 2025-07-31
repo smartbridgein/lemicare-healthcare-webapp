@@ -46,8 +46,7 @@ export class PurchaseFormComponent implements OnInit {
   sgstAmount: number = 0;
   netTotal: number = 0;
   totalItems: number = 0;
-  overallDiscount: number = 0;
-  overallDiscountType: string = '%';
+
   
   // Mode properties
   isEditMode: boolean = false;
@@ -57,6 +56,9 @@ export class PurchaseFormComponent implements OnInit {
   purchaseId: string | null = null;
   currentPurchase: Purchase | null = null;
   loading: boolean = false;
+  
+  // Direct property for amount paid to bypass form issues
+  directAmountPaid: number = 0;
   
   /**
    * Disables all form controls when in view mode
@@ -171,15 +173,7 @@ export class PurchaseFormComponent implements OnInit {
     }
   }
   
-  /**
-   * Scroll handler to close medicine dropdown when scrolling
-   */
-  private handleScroll = (): void => {
-    // Close dropdown when scrolling
-    if (this.activeMedicineRow !== -1) {
-      this.clearActiveMedicineRow();
-    }
-  }
+  // Form submission tracking - used to control when validation errors are shown
 
   constructor(
     private fb: FormBuilder,
@@ -267,14 +261,6 @@ export class PurchaseFormComponent implements OnInit {
         }
       }
     });
-    
-    // Add scroll event listener to close dropdown when scrolling
-    window.addEventListener('scroll', this.handleScroll, true);
-  }
-
-  ngOnDestroy(): void {
-    // Remove scroll event listener
-    window.removeEventListener('scroll', this.handleScroll, true);
   }
   
   /**
@@ -289,6 +275,12 @@ export class PurchaseFormComponent implements OnInit {
 
     console.log('Populating form with purchase:', purchase);
     console.log('Raw purchase data:', JSON.stringify(purchase, null, 2));
+    console.log('=== IMMEDIATE PAYMENT DEBUG ===');
+    console.log('purchase.amountPaid:', purchase.amountPaid);
+    console.log('typeof purchase.amountPaid:', typeof purchase.amountPaid);
+    console.log('purchase.amountPaid !== undefined:', purchase.amountPaid !== undefined);
+    console.log('purchase.amountPaid || 0:', purchase.amountPaid || 0);
+    console.log('=== END IMMEDIATE PAYMENT DEBUG ===');
     
     // Make sure tax profiles are loaded before populating the form
     if (!this.taxProfiles || this.taxProfiles.length === 0) {
@@ -301,9 +293,28 @@ export class PurchaseFormComponent implements OnInit {
     this.selectedSupplier = this.suppliers?.find(s => s.id === purchase.supplierId) || null;
     if (this.selectedSupplier) {
       console.log('Selected supplier:', this.selectedSupplier);
+      // CRITICAL FIX: Update the form control with supplier ID
+      this.purchaseForm.get('supplierId')?.setValue(this.selectedSupplier.id);
+      this.purchaseForm.get('supplierId')?.markAsTouched();
+      this.purchaseForm.get('supplierId')?.updateValueAndValidity();
     } else {
       console.warn('Supplier not found for ID:', purchase.supplierId);
     }
+    
+    // Populate basic form fields immediately (non-payment fields)
+    if (purchase.invoiceDate) {
+      const formattedDate = this.formatDate(purchase.invoiceDate);
+      this.purchaseForm.patchValue({
+        invoiceDate: formattedDate
+      });
+    }
+    
+    this.purchaseForm.patchValue({
+      referenceId: purchase.referenceId || '',
+      gstType: purchase.gstType || 'EXCLUSIVE',
+      paymentTerms: (purchase as any).paymentTerms || '',
+      notes: (purchase as any).notes || ''
+    });
     
     // Reset the form
     while (this.itemsFormArray.length > 0) {
@@ -411,6 +422,10 @@ export class PurchaseFormComponent implements OnInit {
         // API fields
         medicineId: [item.medicineId || '', Validators.required],
         medicine: [medicineDetails],
+        medicineName: [item.medicineName || medicineDetails?.name || '', Validators.required], // Use API medicineName or fallback to medicine master
+        genericName: [medicineDetails?.genericName || ''], // Get generic name from medicine master
+        hsnCode: [medicineDetails?.hsnCode || ''], // Get HSN code from medicine master
+        manufacturer: [medicineDetails?.manufacturer || ''], // Get manufacturer from medicine master
         batchNo: [item.batchNo || '', Validators.required],
         expiryDate: [this.formatDate(item.expiryDate) || '', Validators.required],
         
@@ -435,6 +450,7 @@ export class PurchaseFormComponent implements OnInit {
         purchaseCost: [purchaseCostPerPack, [Validators.required, Validators.min(0)]],
         mrp: [mrpPerItem, [Validators.required, Validators.min(0.01)]],
         discountAmount: [discountAmount, Validators.min(0)],
+        discount: [discountPercentage, Validators.min(0)], // Map API discountPercentage to HTML template's discount field
         
         // Tax and total fields from API - use exact API field names
         taxProfileId: [taxProfileId || this.defaultTaxProfileId],
@@ -468,8 +484,37 @@ export class PurchaseFormComponent implements OnInit {
       this.calculateItemTotal(index);
     });
     
-    // Calculate totals
-    setTimeout(() => this.calculateTotals(), 100);
+    // Calculate totals first, then populate payment fields
+    setTimeout(() => {
+      this.calculateTotals();
+      
+      // Now populate payment fields after totals are calculated
+      console.log('=== PAYMENT FIELD DEBUGGING (AFTER TOTALS) ===');
+      console.log('Purchase amountPaid from API:', purchase.amountPaid);
+      console.log('Form amountPaid field before payment population:', this.purchaseForm.get('amountPaid')?.value);
+      
+      // Set direct property as backup
+      this.directAmountPaid = purchase.amountPaid || 0;
+      console.log('Set directAmountPaid to:', this.directAmountPaid);
+      
+      // Populate payment fields
+      this.purchaseForm.patchValue({
+        amountPaid: purchase.amountPaid || 0
+      });
+      
+      // Force update the amountPaid field specifically
+      const amountPaidControl = this.purchaseForm.get('amountPaid');
+      if (amountPaidControl && purchase.amountPaid !== undefined) {
+        amountPaidControl.setValue(purchase.amountPaid);
+        amountPaidControl.markAsDirty();
+        amountPaidControl.updateValueAndValidity();
+        console.log('Force set amountPaid to:', purchase.amountPaid);
+        console.log('Control value after force set:', amountPaidControl.value);
+      }
+      
+      console.log('Form amountPaid field after payment population:', this.purchaseForm.get('amountPaid')?.value);
+      console.log('=== END PAYMENT FIELD DEBUGGING ===');
+    }, 200);
   }
   
   /**
@@ -539,7 +584,7 @@ export class PurchaseFormComponent implements OnInit {
   private syncLegacyFields(itemGroup: FormGroup): void {
     // Map legacy field names to new API field names
     const fieldMappings = [
-      // Removed pack->itemsPerPack mapping to keep itemsPerPack manual
+      // Removed { legacy: 'pack', api: 'itemsPerPack' } to prevent automatic sync
       { legacy: 'quantity', api: 'packQuantity' },
       { legacy: 'freepack', api: 'freePackQuantity' },
       { legacy: 'purchaseCost', api: 'purchaseCostPerPack' },
@@ -582,45 +627,20 @@ export class PurchaseFormComponent implements OnInit {
    * Toggle GST dropdown visibility
    */
   toggleGstDropdown(): void {
-    console.log('Toggling GST dropdown, current state:', this.showGstDropdown);
-    
-    // Toggle dropdown state
     this.showGstDropdown = !this.showGstDropdown;
-    console.log('GST dropdown new state:', this.showGstDropdown);
     
     // Close dropdown when clicking outside
     if (this.showGstDropdown) {
-      // Delay to ensure Angular has updated the DOM
       setTimeout(() => {
-        // Force GST dropdown to be shown with all options
-        const customDropdownMenu = document.querySelector('.custom-dropdown-menu');
-        if (customDropdownMenu) {
-          console.log('✓ GST custom dropdown menu found');
-          
-          // Ensure the dropdown is visible in the DOM
-          (customDropdownMenu as HTMLElement).style.display = 'block';
-          console.log('Forced dropdown display: block');
-        } else {
-          console.warn('❌ GST custom dropdown menu element not found');
-        }
-        
-        // Add outside click listener with a small delay to avoid immediate closing
-        setTimeout(() => {
-          const closeDropdownListener = (event: MouseEvent) => {
-            const dropdown = document.getElementById('gstDropdown');
-            const menu = document.querySelector('.custom-dropdown-menu');
-            
-            // Close only if clicking outside both the dropdown toggle and menu
-            if ((dropdown && !dropdown.contains(event.target as Node)) && 
-                (menu && !menu.contains(event.target as Node))) {
-              console.log('Closing GST dropdown from outside click');
-              this.showGstDropdown = false;
-              document.removeEventListener('click', closeDropdownListener);
-            }
-          };
-          document.addEventListener('click', closeDropdownListener);
-        }, 50);
-      }, 50);
+        const closeDropdownListener = (event: MouseEvent) => {
+          const dropdown = document.getElementById('gstDropdown');
+          if (dropdown && !dropdown.contains(event.target as Node)) {
+            this.showGstDropdown = false;
+            document.removeEventListener('click', closeDropdownListener);
+          }
+        };
+        document.addEventListener('click', closeDropdownListener);
+      }, 0);
     }
   }
   
@@ -654,7 +674,7 @@ export class PurchaseFormComponent implements OnInit {
       invoiceDate: [this.formatCurrentDate(), Validators.required],
       referenceId: [defaultReferenceId || '', Validators.required],
       gst: ['EXCLUSIVE'],
-      overallDiscount: [0, Validators.min(0)],
+
       amountPaid: [0, Validators.min(0)],
       paymentMode: ['CASH'],
       paymentReference: [''],
@@ -840,7 +860,7 @@ export class PurchaseFormComponent implements OnInit {
       mrp: [0, [Validators.required, Validators.min(0.01)]], // Legacy UI field (maps to mrpPerItem)
       
       // UI-only calculation fields
-      paidQuantity: [0], // UI-only: Number of packs charged
+      paidQuantity: [1], // UI-only: Number of packs charged
       discountAmount: [0], // UI-only: Calculated discount amount
       cgstAmount: [0], // UI-only: Calculated CGST
       sgstAmount: [0], // UI-only: Calculated SGST
@@ -1024,14 +1044,6 @@ export class PurchaseFormComponent implements OnInit {
     console.log(`Found ${this.filteredSuppliers.length} suppliers matching "${term}"`);
   }
 
-  /**
-   * Select supplier and update form values
-   * @param supplier Selected supplier object
-   */
-  /**
-   * Select supplier and update form values without showing GST dropdown
-   * @param supplier Selected supplier object
-   */
   selectSupplier(supplier: Supplier): void {
     console.log('Supplier selected:', supplier);
     this.selectedSupplier = supplier;
@@ -1041,15 +1053,6 @@ export class PurchaseFormComponent implements OnInit {
     // Clear search and filtered list after selection
     this.searchSupplierTerm = '';
     this.filteredSuppliers = [];
-    
-    // Ensure GST dropdown stays closed
-    this.showGstDropdown = false;
-    
-    // Prevent any event bubbling that might trigger the GST dropdown
-    setTimeout(() => {
-      // Force GST dropdown to be closed in case it was triggered
-      this.showGstDropdown = false;
-    }, 0);
   }
   
   clearSelectedSupplier(): void {
@@ -1068,16 +1071,12 @@ export class PurchaseFormComponent implements OnInit {
     // Update the form controls
     const row = this.itemsFormArray.at(rowIndex) as FormGroup;
     
-    // Update medicineName field with what the user is typing
-    row.patchValue({
-      medicineName: searchText // Keep the search text visible
-    }, {emitEvent: false});
-    
-    // Only clear medicineId if we're searching for something new (not when deleting)
-    if (searchText !== '' && row.get('medicineId')?.value && 
-        !row.get('medicine')?.value?.name?.toLowerCase().includes(term)) {
+    // Clear the medicineId if we're searching for something new
+    // But keep the medicineName field updated with what the user is typing
+    if (searchText !== row.get('medicineName')?.value) {
       row.patchValue({
-        medicineId: '' // Clear the ID since we're searching for something new
+        medicineId: '', // Clear the ID since we're searching for something new
+        medicineName: searchText // Keep the search text visible
       }, {emitEvent: false});
     }
     
@@ -1102,9 +1101,6 @@ export class PurchaseFormComponent implements OnInit {
       return nameMatch || genericMatch || idMatch;
     });
     
-    // DO NOT auto-select - let user choose from dropdown instead
-    // This allows backspace to work and prevents automatic selection
-    
     // Always keep dropdown open during search
     this.setActiveMedicineRow(rowIndex);
   }
@@ -1113,38 +1109,16 @@ export class PurchaseFormComponent implements OnInit {
   setActiveMedicineRow(rowIndex: number): void {
     this.activeMedicineRow = rowIndex;
   }
-
-  clearActiveMedicineRow(): void {
-    this.activeMedicineRow = -1;
-  }
   
-  /**
-   * Calculates the top position for the medicine dropdown based on row index
-   * This positions the dropdown outside the component at an appropriate vertical position
-   */
-  getDropdownTopPosition(rowIndex: number): number {
-    // Get the input element for the current row
-    const inputElements = document.querySelectorAll('.medicine-select input');
-    if (inputElements && inputElements.length > rowIndex) {
-      const inputEl = inputElements[rowIndex] as HTMLElement;
-      if (inputEl) {
-        // Get the position of the input element relative to the viewport
-        const rect = inputEl.getBoundingClientRect();
-        // Position the dropdown below the input but with some offset
-        // to ensure it doesn't cover the input itself
-        return rect.bottom + window.scrollY + 5; // 5px offset for spacing
-      }
-    }
-    // Default position if element not found
-    return window.scrollY + 100;
-  }
+  // Duplicate methods removed
+
+  // Duplicate searchMedicineForRow method removed
 
   selectMedicineForRow(medicine: Medicine, rowIndex: number): void {
     // Get the form group for this row
     const row = this.itemsFormArray.at(rowIndex) as FormGroup;
     
     console.log('Selected medicine with tax profile:', medicine.taxProfileId);
-    console.log('Medicine details:', JSON.stringify(medicine)); // Log full medicine details
     
     // Update all form fields with medicine data
     row.patchValue({
@@ -1152,9 +1126,8 @@ export class PurchaseFormComponent implements OnInit {
       medicineName: medicine.name,
       category: medicine.category && typeof medicine.category === 'object' ? (medicine.category as any).name || '' : medicine.category || '',
       genericName: medicine.genericName || '',
-      manufacturer: medicine.manufacturer || '', // Ensure manufacturer is explicitly patched
-      hsn: medicine.hsnCode || '', // Add HSN code patching
-      mrp: medicine.mrp || medicine.unitPrice || 0, // Changed sellingRate to mrp, fallback to unitPrice
+      manufacturer: medicine.manufacturer,
+      mrp: medicine.mrp || 0, // Changed sellingRate to mrp
       // Don't reset itemsPerPack if it already has a value
       itemsPerPack: row.get('itemsPerPack')?.value || 1, // Maintain existing value
       taxProfileId: medicine.taxProfileId || '',  // Important: set the tax profile ID
@@ -1165,15 +1138,6 @@ export class PurchaseFormComponent implements OnInit {
       pack: row.get('pack')?.value || 0,
       freepack: row.get('freepack')?.value || 0
     }, {emitEvent: false});
-    
-    // Also set form control values manually in case patching doesn't work
-    if (row.get('manufacturer')) {
-      row.get('manufacturer')?.setValue(medicine.manufacturer || '');
-    }
-    
-    if (row.get('hsn')) {
-      row.get('hsn')?.setValue(medicine.hsnCode || '');
-    }
     
     console.log(`Selected medicine for row ${rowIndex}:`, medicine);
     
@@ -1195,7 +1159,12 @@ export class PurchaseFormComponent implements OnInit {
     this.calculateItemTotal(rowIndex);
   }
 
-// Method implementation moved to line ~1101
+// Duplicate setActiveMedicineRow method removed
+
+// Clear active dropdown when not needed
+clearActiveMedicineRow(): void {
+this.activeMedicineRow = null;
+}
 
 // Calculate totals for a single item row based on backend logic
 calculateItemTotal(index: number): void {
@@ -1213,14 +1182,6 @@ calculateItemTotal(index: number): void {
   if (packQuantity <= 0) {
     console.log('Pack quantity is zero or negative - skipping calculation');
     return;
-  }
-  
-  // Store current GST type in the item for consistency checks
-  const formGstType = this.purchaseForm.get('gst')?.value || 'EXCLUSIVE';
-  if (!itemGroup.get('gstType')) {
-    itemGroup.addControl('gstType', this.fb.control(formGstType));
-  } else {
-    itemGroup.get('gstType')?.setValue(formGstType, { emitEvent: false });
   }
 
 // ... rest of the code remains the same ...
@@ -1248,15 +1209,15 @@ calculateItemTotal(index: number): void {
     const discountPercentage = itemGroup.get('discount')?.value || 0;
     
     // Get GST type from form
-    const currentItemGstType = this.purchaseForm.get('gst')?.value || 'EXCLUSIVE';
-    console.log(`GST Type: ${currentItemGstType}`);
+    const gstType = this.purchaseForm.get('gst')?.value || 'EXCLUSIVE';
+    console.log(`GST Type: ${gstType}`);
     
     // Initialize tax rates
     let cgstRate = 0;
     let sgstRate = 0;
     
     // Process tax calculations based on GST type
-    if (currentItemGstType !== 'NON_GST') { // Process for both EXCLUSIVE and INCLUSIVE
+    if (gstType !== 'NON_GST') { // Process for both EXCLUSIVE and INCLUSIVE
       // Get tax profile ID
       const taxProfileId = itemGroup.get('taxProfileId')?.value;
       
@@ -1341,13 +1302,13 @@ calculateItemTotal(index: number): void {
     let cgstAmount = 0;
     let sgstAmount = 0;
     
-    if (currentItemGstType === 'NON_GST') {
+    if (gstType === 'NON_GST') {
       // For NON_GST, no tax is applied
       taxableAmount = netAmountAfterDiscount;
       taxAmount = 0;
       cgstAmount = 0;
       sgstAmount = 0;
-    } else if (currentItemGstType === 'INCLUSIVE') {
+    } else if (gstType === 'INCLUSIVE') {
       // For INCLUSIVE GST (Tax is already included in the price)
       // Formula: Taxable Amount = Net Amount / (1 + Tax Rate %)
       taxableAmount = totalTaxRate > 0 ? 
@@ -1381,7 +1342,7 @@ calculateItemTotal(index: number): void {
     }
     
     // Calculate final amount - for both EXCLUSIVE and INCLUSIVE, the final amount is the same
-    const totalAmount = currentItemGstType === 'EXCLUSIVE' ? 
+    const totalAmount = gstType === 'EXCLUSIVE' ? 
                        taxableAmount + taxAmount : 
                        netAmountAfterDiscount;
     
@@ -1395,7 +1356,7 @@ calculateItemTotal(index: number): void {
     console.log(`- Inventory Qty: ${totalInventoryQuantity} ((${numPackQty} + ${numFreeQty}) × ${numItemsPerPack})`);
     console.log(`- Taxable Amount: ${taxableAmount}`);
     console.log(`- Tax Profile ID: ${itemGroup.get('taxProfileId')?.value || 'None'}`);
-    console.log(`- GST Type: ${currentItemGstType}, Tax Rates: CGST ${cgstRate}%, SGST ${sgstRate}%`);
+    console.log(`- GST Type: ${gstType}, Tax Rates: CGST ${cgstRate}%, SGST ${sgstRate}%`);
     console.log(`- CGST ${cgstRate}%: ${cgstAmount}, SGST ${sgstRate}%: ${sgstAmount}`);
     console.log(`- Total Amount: ${totalAmount}`);
     
@@ -1406,7 +1367,7 @@ calculateItemTotal(index: number): void {
     const roundedTotalAmount = this.roundToTwo(totalAmount);
     const roundedDiscountAmount = this.roundToTwo(discountAmount);
     
-    console.log('Setting form values for GST type:', currentItemGstType);
+    console.log('Setting form values for GST type:', gstType);
     console.log('- Taxable Amount:', roundedTaxableAmount);
     console.log('- CGST Amount:', roundedCgstAmount);
     console.log('- SGST Amount:', roundedSgstAmount);
@@ -1419,7 +1380,7 @@ calculateItemTotal(index: number): void {
     itemGroup.get('totalQuantity')?.setValue(totalInventoryQuantity);
     
     // If NON_GST type, ensure tax profile is cleared
-    if (currentItemGstType === 'NON_GST') {
+    if (gstType === 'NON_GST') {
       itemGroup.get('taxProfileId')?.setValue('', { emitEvent: false });
     }
     
@@ -1506,8 +1467,8 @@ calculateItemTotal(index: number): void {
     this.totalItems = 0;
     
     // Get GST type from form
-    const currentGstType = this.purchaseForm.get('gst')?.value || 'EXCLUSIVE';
-    console.log(`Calculating invoice totals with GST type: ${currentGstType}`);
+    const gstType = this.purchaseForm.get('gst')?.value || 'EXCLUSIVE';
+    console.log(`Calculating invoice totals with GST type: ${gstType}`);
     
     // Loop through all items in the form array
     for (let i = 0; i < this.itemsFormArray.length; i++) {
@@ -1523,14 +1484,6 @@ calculateItemTotal(index: number): void {
       const medicineName = item.get('medicineName')?.value || 'Unknown';
       const purchaseCostPerPack = Number(item.get('purchaseCost')?.value || 0);
       const packQuantityNum = Number(packQuantity);
-      
-      // Ensure item GST type matches current form GST type
-      const itemGstType = item.get('gstType')?.value;
-      if (itemGstType !== currentGstType) {
-        console.log(`GST type mismatch detected for item ${medicineName}. Form GST: ${currentGstType}, Item GST: ${itemGstType}`);
-        // Update the item's GST type to match the form GST type
-        item.get('gstType')?.setValue(currentGstType, { emitEvent: false });
-      }
       
       // Get calculated values (these are already rounded by calculateItemTotal)
       const discountAmount = Number(item.get('discountAmount')?.value || 0);
@@ -1556,76 +1509,7 @@ calculateItemTotal(index: number): void {
       this.netTotal += totalAmount;
       this.totalItems += totalQuantity;
     }
-    // Handle overall invoice discount if applicable
-    const overallDiscountValue = Number(this.purchaseForm.get('overallDiscount')?.value || 0);
-    
-    if (overallDiscountValue > 0) {
-      let additionalDiscount = 0;
-      
-      if (this.overallDiscountType === '%') {
-        // Percentage-based overall discount
-        additionalDiscount = this.roundToTwo(this.netTaxableAmt * (overallDiscountValue / 100));
-      } else {
-        // Fixed amount overall discount
-        additionalDiscount = Math.min(overallDiscountValue, this.netTaxableAmt);
-      }
-      
-      // Apply additional discount to taxable amount
-      this.discount += additionalDiscount;
-      this.netTaxableAmt -= additionalDiscount;
-      
-      // Recalculate taxes after applying overall discount based on GST type
-      if (currentGstType === 'NON_GST') {
-        // No tax adjustment needed
-        this.netTotal = this.netTaxableAmt;
-      } else if (currentGstType === 'EXCLUSIVE') {
-        // For EXCLUSIVE, recalculate taxes and total
-        const totalTaxRate = this.getTotalTaxRate();
-        const newTotalTax = this.roundToTwo(this.netTaxableAmt * (totalTaxRate / 100));
-        
-        // Split between CGST and SGST proportionally
-        if (this.cgstAmount + this.sgstAmount > 0) {
-          const oldRatio = this.cgstAmount / (this.cgstAmount + this.sgstAmount);
-          this.cgstAmount = this.roundToTwo(newTotalTax * oldRatio);
-          this.sgstAmount = this.roundToTwo(newTotalTax * (1 - oldRatio));
-        } else {
-          // If no previous tax, split 50/50
-          this.cgstAmount = this.roundToTwo(newTotalTax / 2);
-          this.sgstAmount = this.roundToTwo(newTotalTax / 2);
-        }
-        
-        // Update net total
-        this.netTotal = this.netTaxableAmt + this.cgstAmount + this.sgstAmount;
-      } else {
-        // For INCLUSIVE, the netTotal remains the same as grossTotal - discount
-        // but we need to recalculate taxes
-        const totalTaxRate = this.getTotalTaxRate();
-        
-        if (totalTaxRate > 0) {
-          // Calculate tax using formula: taxAmount = netAmount - (netAmount / (1 + taxRate))
-          const taxRate = totalTaxRate / 100;
-          const taxableAmount = this.roundToTwo(this.netTaxableAmt / (1 + taxRate));
-          const totalTaxAmount = this.roundToTwo(this.netTaxableAmt - taxableAmount);
-          
-          // Split tax proportionally
-          if (this.cgstAmount + this.sgstAmount > 0) {
-            const oldRatio = this.cgstAmount / (this.cgstAmount + this.sgstAmount);
-            this.cgstAmount = this.roundToTwo(totalTaxAmount * oldRatio);
-            this.sgstAmount = this.roundToTwo(totalTaxAmount * (1 - oldRatio));
-          } else {
-            // If no previous tax, split 50/50
-            this.cgstAmount = this.roundToTwo(totalTaxAmount / 2);
-            this.sgstAmount = this.roundToTwo(totalTaxAmount / 2);
-          }
-          
-          // For INCLUSIVE GST, the netTotal is already correct (includes tax)
-          this.netTotal = this.netTaxableAmt;
-        } else {
-          // If no tax rate, netTotal is simply the taxable amount
-          this.netTotal = this.netTaxableAmt;
-        }
-      }
-    }
+
     
     // Final rounding of all values
     this.grossTotal = this.roundToTwo(this.grossTotal);
@@ -1653,10 +1537,7 @@ calculateItemTotal(index: number): void {
     console.log(`- Net Total: ₹${this.netTotal}`);
   }
 
-  toggleDiscountType(): void {
-    this.overallDiscountType = this.overallDiscountType === '%' ? '₹' : '%';
-    this.calculateTotals();
-  }
+
 
   resetTotals(): void {
     this.grossTotal = 0;
@@ -1668,11 +1549,18 @@ calculateItemTotal(index: number): void {
     this.totalItems = 0;
   }
 
-  // Helper method for consistent decimal precision without rounding
+  // Method to calculate dropdown position for medicine selection
+  getDropdownTopPosition(rowIndex: number): number {
+    // Calculate the position based on row index and row height
+    // Assuming each row is approximately 60px in height
+    const rowHeight = 60;
+    const headerHeight = 100; // Approximate header height
+    return headerHeight + (rowIndex * rowHeight) + 40;
+  }
+
+  // Helper method for consistent rounding
   roundToTwo(num: number): number {
-    // Use Math.round to avoid floating point errors but maintain exact values
-    // Multiply by 100, round to avoid floating point errors, then divide by 100
-    return Math.round(num * 100) / 100;
+    return parseFloat(num.toFixed(2));
   }
   
   // Get effective total tax rate for the purchase
@@ -1923,19 +1811,12 @@ calculateItemTotal(index: number): void {
     itemGroup.get('mrp')?.valueChanges.subscribe(() => {
       this.calculateItemTotal(rowIndex);
     });
-    
-    // Listen for purchase cost changes
-    itemGroup.get('purchaseCost')?.valueChanges.subscribe(() => {
-      console.log('Purchase cost changed, recalculating totals');
-      this.calculateItemTotal(rowIndex);
-    });
 
     // Listen for changes in itemsPerPack to automatically update quantity
     itemGroup.get('itemsPerPack')?.valueChanges.subscribe((itemsPerPack) => {
       if (itemsPerPack && itemsPerPack > 0) {
         calculateQuantity();
       }
-      // Always update item total and invoice summary when items per pack changes
       this.calculateItemTotal(rowIndex);
     });
   }
@@ -2018,16 +1899,15 @@ calculateItemTotal(index: number): void {
     console.log('Using reference ID:', referenceId);
 
     // Return the formatted request according to API specifications
-    const request = {
+    const request: CreatePurchaseRequest = {
       supplierId: formValue.supplierId,
       invoiceDate: formValue.invoiceDate,
       referenceId: referenceId,
       gstType: formValue.gst, // Use form value instead of hardcoded "EXCLUSIVE"
-      // Include payment fields required by backend API
-      amountPaid: Number(formValue.amountPaid || 0),
+      items: items,
+      amountPaid: formValue.amountPaid || 0,
       paymentMode: formValue.paymentMode || 'CASH',
-      paymentReference: formValue.paymentReference || '',
-      items: items
+      paymentReference: formValue.paymentReference || ''
     };
     
     // Log the final request object
@@ -2152,18 +2032,11 @@ calculateItemTotal(index: number): void {
       invoiceDate: formData.invoiceDate,
       referenceId: formData.referenceId,
       gstType: formData.gst,
-      // Add payment fields required by API
-      amountPaid: Number(formData.amountPaid || 0),
+      items: [],
+      amountPaid: formData.amountPaid || 0,
       paymentMode: formData.paymentMode || 'CASH',
-      paymentReference: formData.paymentReference || '',
-      items: []
+      paymentReference: formData.paymentReference || ''
     };
-    
-    console.log('Including payment details in request:', {
-      amountPaid: request.amountPaid,
-      paymentMode: request.paymentMode,
-      paymentReference: request.paymentReference
-    });
     
     // Process each item by directly accessing the form controls
     for (let i = 0; i < this.itemsFormArray.length; i++) {

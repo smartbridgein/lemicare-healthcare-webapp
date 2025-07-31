@@ -298,6 +298,14 @@
 
         td {
           color: #2c3e50;
+          
+          &.actions-column {
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            min-width: 200px;
+          }
           vertical-align: middle;
 
           .badge {

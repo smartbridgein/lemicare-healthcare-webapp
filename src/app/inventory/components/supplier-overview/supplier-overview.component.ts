@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { InventoryService } from '../../services/inventory.service';
-import { Supplier, Purchase } from '../../models/inventory.models';
+import { Supplier, Purchase, Medicine } from '../../models/inventory.models';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
@@ -63,7 +63,12 @@ export class SupplierOverviewComponent implements OnInit {
   totalBalance: number = 0;
   selectedTransactionIndex: number = -1;
   medicineCache: Map<string, string> = new Map<string, string>();
+  medicines: Medicine[] = [];
+  loadingMedicines: boolean = false;
   private apiBaseUrl: string = environment.apiUrlInventory+'/api/inventory';
+  
+  // Make Math available in template
+  Math = Math;
 
   constructor(
     private route: ActivatedRoute,
@@ -76,7 +81,27 @@ export class SupplierOverviewComponent implements OnInit {
     this.route.params.subscribe(params => {
       this.supplierId = params['id'];
       if (this.supplierId) {
+        // Load medicines first to have them ready for display
+        this.loadMedicines();
         this.loadSupplierDetails();
+      }
+    });
+  }
+  
+  /**
+   * Load all medicines to use for name lookups
+   */
+  loadMedicines(): void {
+    this.loadingMedicines = true;
+    this.inventoryService.getMedicines().subscribe({
+      next: (medicines) => {
+        this.medicines = medicines;
+        console.log('Loaded medicines for name lookups:', medicines.length);
+        this.loadingMedicines = false;
+      },
+      error: (err) => {
+        console.error('Error loading medicines:', err);
+        this.loadingMedicines = false;
       }
     });
   }
@@ -109,7 +134,8 @@ export class SupplierOverviewComponent implements OnInit {
             gstNumber: matchingSupplier.gstin || '',
             contactPerson: matchingSupplier.contactPerson || '',
             status: matchingSupplier.status || 'ACTIVE',
-            balance: matchingSupplier.balance || 0
+            balance: matchingSupplier.balance || 0,
+            outstandingBalance: matchingSupplier.outstandingBalance || 0
           };
           
           console.log('Mapped supplier data:', this.supplier);
@@ -179,18 +205,24 @@ export class SupplierOverviewComponent implements OnInit {
             // Sort by invoice date ascending
             supplierPurchases.sort((a, b) => a.invoiceDate.seconds - b.invoiceDate.seconds);
             
-            // Map purchases to transactions and calculate running balance
-            let runningBalance = 0;
+            // Map purchases to transactions and calculate individual balances
+            let totalOutstandingAmount = 0;
+            
             this.transactions = supplierPurchases.map((purchase, index) => {
               // Calculate the invoice amount and amount paid
               const amount = purchase.totalAmount || 0;
               const amountPaid = purchase.amountPaid || 0;
               
-              // Calculate remaining balance (total amount - amount paid)
+              // Calculate individual transaction balance (remaining amount for this transaction)
               const remainingAmount = amount - amountPaid;
               
-              // Update running balance with the remaining amount only
-              runningBalance -= remainingAmount;
+              // For display: negative balance represents money owed (outstanding amount)
+              const individualBalance = remainingAmount > 0 ? -remainingAmount : 0;
+              
+              // Add to total outstanding amount (only unpaid amounts)
+              if (remainingAmount > 0) {
+                totalOutstandingAmount += remainingAmount;
+              }
               
               // Convert timestamp to Date
               const purchaseDate = new Date(purchase.invoiceDate.seconds * 1000);
@@ -202,7 +234,7 @@ export class SupplierOverviewComponent implements OnInit {
                 date: purchaseDate,
                 amount: amount,
                 amountPaid: amountPaid,
-                balance: runningBalance,
+                balance: individualBalance, // Individual transaction balance instead of running balance
                 createdBy: purchase.createdBy || 'System',
                 paymentMode: purchase.paymentMode || 'CASH',
                 paymentReference: purchase.paymentReference || '',
@@ -210,14 +242,20 @@ export class SupplierOverviewComponent implements OnInit {
               };
             });
             
-            // Update supplier's balance
+            // Update supplier's balance and outstanding balance
             if (this.supplier) {
-              this.supplier.balance = runningBalance;
-              this.totalBalance = runningBalance;
+              // For display: negative balance represents money owed (outstanding amount)
+              const displayBalance = totalOutstandingAmount > 0 ? -totalOutstandingAmount : 0;
+              this.supplier.balance = displayBalance;
+              this.supplier.outstandingBalance = displayBalance;
+              this.totalBalance = displayBalance;
             }
             
             // Set total balance
-            this.totalBalance = runningBalance;
+            this.totalBalance = totalOutstandingAmount > 0 ? -totalOutstandingAmount : 0;
+            
+            console.log('Calculated outstanding balance:', totalOutstandingAmount);
+            console.log('Individual transaction balances calculated');
           } else {
             console.log('No purchases found for supplier:', this.supplierId);
             this.transactions = [];
@@ -300,9 +338,20 @@ export class SupplierOverviewComponent implements OnInit {
       return this.medicineCache.get(medicineId) || 'Unknown Medicine';
     }
     
-    // Extract the medicine name from the ID for now
-    // In a real app, we would make an API call to get the medicine name
-    const medicineName = medicineId.replace('med_', 'Medicine ');
+    // Look up medicine in our loaded medicines array
+    const medicine = this.medicines.find(med => med.id === medicineId || med.medicineId === medicineId);
+    
+    let medicineName = 'Unknown Medicine';
+    
+    if (medicine) {
+      // Use the actual medicine name from the API
+      medicineName = medicine.name;
+      console.log(`Found medicine: ${medicineId} → ${medicineName}`);
+    } else {
+      // Fallback to ID-based name if medicine not found
+      medicineName = medicineId.replace('med_', 'Medicine ');
+      console.log(`Medicine not found: ${medicineId}, using fallback name`);
+    }
     
     // Add to cache for future use
     this.medicineCache.set(medicineId, medicineName);

@@ -400,3 +400,16 @@
     }
   }
 }
+
+// Classic red balance styling for Balance column
+.classic-red-balance {
+  color: #dc3545 !important;
+  background-color: rgba(#dc3545, 0.08);
+  border: 1px solid rgba(#dc3545, 0.2);
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  display: inline-block;
+}

@@ -42,6 +42,11 @@ export class PatientListComponent implements OnInit, OnDestroy {
   
   // Subscription for reactive updates
   private patientSubscription: Subscription | null = null;
+  
+  // Individual patient view properties
+  selectedPatient: Patient | null = null;
+  showPatientDetails: boolean = false;
+  patientId: string | null = null;
 
   constructor(
     private patientService: PatientService,
@@ -54,7 +59,17 @@ export class PatientListComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.loadPatients();
+    // Check if we have a patient ID in the route
+    this.route.params.subscribe(params => {
+      this.patientId = params['id'];
+      if (this.patientId) {
+        this.showPatientDetails = true;
+        this.loadPatientDetails(this.patientId);
+      } else {
+        this.showPatientDetails = false;
+        this.loadPatients();
+      }
+    });
     
     // Subscribe to patient list changes
     this.subscribeToPatientChanges();
@@ -87,6 +102,36 @@ export class PatientListComponent implements OnInit, OnDestroy {
       this.appRef.tick();
       console.log('Change detection forced');
     });
+  }
+
+  // Load individual patient details
+  loadPatientDetails(patientId: string): void {
+    this.error = null;
+    this.errorDetails = null;
+    this.isLoading = true;
+    
+    console.log('Loading patient details for ID:', patientId);
+    
+    // First try to get the patient by ID
+    this.patientService.getPatientById(patientId).subscribe({
+      next: (patient) => {
+        console.log('Patient details loaded successfully:', patient);
+        this.selectedPatient = patient;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading patient details:', error);
+        this.error = 'Failed to load patient details';
+        this.errorDetails = error.message || 'Unknown error occurred';
+        this.isLoading = false;
+      }
+    });
+  }
+  
+  // Go back to patient list
+  goBackToList(): void {
+    this.showPatientDetails = false;
+    this.selectedPatient = null;
   }
 
   loadPatients(): void {
@@ -342,7 +387,100 @@ export class PatientListComponent implements OnInit, OnDestroy {
   }
   
   getPagesArray(): number[] {
-    // Return array of page numbers for pagination controls
-    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+    // Return array of page numbers for pagination controls with limited visible pages
+    const maxVisiblePages = 5;
+    const pages: number[] = [];
+    
+    if (this.totalPages <= maxVisiblePages) {
+      // Show all pages if total pages is less than or equal to max visible
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Calculate start and end page for limited view
+      let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+      let endPage = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
+      
+      // Adjust start page if we're near the end
+      if (endPage - startPage < maxVisiblePages - 1) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      }
+      
+      // Add pages to array
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
+  }
+
+  /**
+   * Clear search input and reset filter
+   */
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.applyFilter();
+  }
+
+  /**
+   * Toggle sort direction between ascending and descending
+   */
+  toggleSortDirection(): void {
+    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    this.applySorting();
+  }
+
+  /**
+   * Apply sorting to the filtered patients list
+   */
+  applySorting(): void {
+    this.filteredPatients.sort((a, b) => {
+      let comparison = 0;
+      
+      if (this.sortField === 'name') {
+        const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+        const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+        comparison = nameA.localeCompare(nameB);
+      } else if (this.sortField === 'registrationDate') {
+        const dateA = new Date(a.registrationDate || 0).getTime();
+        const dateB = new Date(b.registrationDate || 0).getTime();
+        comparison = dateA - dateB;
+      }
+      
+      return this.sortDirection === 'asc' ? comparison : -comparison;
+    });
+    
+    // Reset to first page after sorting
+    this.currentPage = 1;
+    this.updatePagination();
+  }
+
+  /**
+   * Refresh patients list by reloading data from the server
+   */
+  refreshPatients(): void {
+    this.loadPatients();
+  }
+
+  /**
+   * View patient details by setting the selected patient and showing details view
+   * Opens inline within the current page context
+   */
+  viewPatientDetails(patient: Patient): void {
+    this.selectedPatient = patient;
+    this.showPatientDetails = true;
+    
+    // Smooth scroll to keep the user in context instead of jumping to top
+    setTimeout(() => {
+      const element = document.querySelector('.patient-details-view');
+      if (element) {
+        element.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest'
+        });
+      }
+    }, 100);
   }
 }

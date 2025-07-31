@@ -484,6 +484,21 @@
             }
             
             // Specific row styles
+            .total-before-discount {
+              background-color: #f8f9fa;
+              border-left: 3px solid #6b1d14;
+              
+              .summary-label {
+                color: #6b1d14;
+                font-weight: 600;
+              }
+              
+              .summary-value {
+                color: #6b1d14;
+                font-weight: 600;
+              }
+            }
+            
             .discount-row {
               background-color: #fff;
               

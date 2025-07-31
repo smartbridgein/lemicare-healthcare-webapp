@@ -1,11 +1,13 @@
 <div class="container-fluid py-4">
-  <!-- Back button and page title -->
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <button type="button" class="btn btn-outline-primary" routerLink="/inventory/returns">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-0">Sale Return</h2>
+      <p class="text-muted mb-0">Process return for a sale transaction</p>
+    </div>
+    <button type="button" class="btn btn-outline-secondary" routerLink="/inventory/returns">
       <i class="fas fa-arrow-left me-2"></i>Back to Returns
     </button>
-    <h3 class="mb-0">Create Sale Return</h3>
-    <div></div> <!-- Empty div for flex spacing -->
   </div>
 
   <div class="card border-0 shadow-sm">
@@ -17,264 +19,295 @@
     </div>
     <div class="card-body">
       <form [formGroup]="returnForm" (ngSubmit)="onSubmit()">
+        
+        <!-- Sale Search Section -->
         <div class="row mb-4">
-          <div class="col-md-6">
-            <!-- Sale Selection -->
-            <div class="form-group mb-3">
-              <label for="saleIdSearch" class="form-label">Search Sale by ID</label>
-              <div class="input-group">
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  id="saleIdSearch" 
-                  [formControl]="saleIdControl"
-                  placeholder="Enter Sale ID (e.g. sale_3fc57b9e-c6c5...)"
-                  (keyup.enter)="searchSaleById()" />
-                <button 
-                  class="btn btn-outline-primary" 
-                  type="button"
-                  [disabled]="isSearching || !saleIdControl.value"
-                  (click)="searchSaleById()">
-                  <i class="fas" [ngClass]="{'fa-search': !isSearching, 'fa-spinner fa-spin': isSearching}"></i>
-                  Search
-                </button>
-              </div>
-            </div>
-            
-            <!-- Or search by other criteria -->
-            <div class="form-group mb-3">
-              <label for="saleSearch" class="form-label">Search by Customer Info</label>
-              <div class="input-group">
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  id="saleSearch" 
-                  [formControl]="searchControl"
-                  placeholder="Search by patient name or phone" />
-                <button 
-                  class="btn btn-outline-secondary" 
-                  type="button"
-                  [disabled]="isSearching">
-                  <i class="fas" [ngClass]="{'fa-search': !isSearching, 'fa-spinner fa-spin': isSearching}"></i>
-                </button>
-              </div>
-              <!-- Sale Search Results -->
-              <div class="position-relative">
-                <ul class="list-group position-absolute w-100" style="z-index: 1000; max-height: 300px; overflow-y: auto;" 
-                    *ngIf="filteredSales.length > 0">
-                  <li 
-                    *ngFor="let sale of filteredSales" 
-                    class="list-group-item list-group-item-action"
-                    (click)="selectSale(sale)">
-                    <div class="d-flex justify-content-between">
-                      <span>{{ returnsService.formatSaleId(sale.saleId || sale.id || '') }}</span>
-                      <span>{{ sale.walkInCustomerName || sale.patientName || 'Walk-in Customer' }}</span>
-                      <span>{{ sale.grandTotal | currency:'INR' }}</span>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <!-- Return Date -->
-            <div class="form-group mb-3">
-              <label for="returnDate" class="form-label">Return Date</label>
+          <div class="col-md-8">
+            <label for="saleSearch" class="form-label fw-bold">Search Sale by ID *</label>
+            <div class="input-group">
               <input 
-                type="datetime-local" 
-                id="returnDate" 
-                formControlName="returnDate"
+                type="text" 
                 class="form-control" 
-                [class.is-invalid]="returnForm.get('returnDate')?.invalid && returnForm.get('returnDate')?.touched" />
-              <div class="invalid-feedback" 
-                   *ngIf="returnForm.get('returnDate')?.invalid && returnForm.get('returnDate')?.touched">
-                Return date is required
-              </div>
+                [formControl]="saleIdControl"
+                placeholder="Enter sale ID (e.g., SALE_01K0XMERM392WTSN2XS49VPDP9)"
+                id="saleSearch" />
+              <button 
+                class="btn btn-outline-secondary" 
+                type="button"
+                [disabled]="isSearching">
+                <i class="fas fa-search" *ngIf="!isSearching"></i>
+                <i class="fas fa-spinner fa-spin" *ngIf="isSearching"></i>
+              </button>
             </div>
+            <small class="text-muted">Search by complete sale ID or use the general search below</small>
           </div>
-
-          <div class="col-md-6">
-            <!-- Reason -->
-            <div class="form-group mb-3">
-              <label for="reason" class="form-label">Reason for Return</label>
-              <textarea 
-                id="reason" 
-                formControlName="reason"
-                class="form-control" 
-                rows="3"
-                [class.is-invalid]="returnForm.get('reason')?.invalid && returnForm.get('reason')?.touched"></textarea>
-              <div class="invalid-feedback" 
-                   *ngIf="returnForm.get('reason')?.invalid && returnForm.get('reason')?.touched">
-                Reason is required
-              </div>
-            </div>
-
-            <!-- Overall Discount Percentage -->
-            <div class="form-group mb-3">
-              <label for="discountPercentage" class="form-label">Overall Discount %</label>
+          <div class="col-md-4">
+            <label for="returnDate" class="form-label fw-bold">Return Date *</label>
+            <input 
+              type="date" 
+              class="form-control" 
+              id="returnDate" 
+              formControlName="returnDate" 
+              required />
+          </div>
+        </div>
+        
+        <!-- Alternative Search -->
+        <div class="row mb-4">
+          <div class="col-md-12">
+            <label for="generalSearch" class="form-label fw-bold">Or Search by Patient/Customer Name</label>
+            <div class="input-group">
               <input 
-                type="number" 
-                id="discountPercentage" 
-                formControlName="overallDiscountPercentage"
+                type="text" 
                 class="form-control" 
-                min="0"
-                max="100" />
+                [formControl]="searchControl"
+                placeholder="Search by patient name, phone, or sale details"
+                id="generalSearch" />
+              <button 
+                class="btn btn-outline-secondary" 
+                type="button"
+                [disabled]="isSearching">
+                <i class="fas fa-search" *ngIf="!isSearching"></i>
+                <i class="fas fa-spinner fa-spin" *ngIf="isSearching"></i>
+              </button>
             </div>
-            
-            <!-- Refund Amount -->
-            <div class="form-group mb-3">
-              <label for="refundAmount" class="form-label">Refund Amount *</label>
-              <div class="input-group">
-                <span class="input-group-text">₹</span>
-                <input 
-                  type="number" 
-                  id="refundAmount" 
-                  formControlName="refundAmount"
-                  class="form-control" 
-                  min="0"
-                  [class.is-invalid]="returnForm.get('refundAmount')?.invalid && returnForm.get('refundAmount')?.touched" />
-              </div>
-              <div class="invalid-feedback" 
-                   *ngIf="returnForm.get('refundAmount')?.invalid && returnForm.get('refundAmount')?.touched">
-                Refund amount is required and must be greater than or equal to 0
-              </div>
-            </div>
-            
-            <!-- Refund Mode -->
-            <div class="form-group mb-3">
-              <label for="refundMode" class="form-label">Refund Mode *</label>
-              <select
-                id="refundMode"
-                formControlName="refundMode"
-                class="form-select"
-                [class.is-invalid]="returnForm.get('refundMode')?.invalid && returnForm.get('refundMode')?.touched">
-                <option value="CASH">Cash</option>
-                <option value="CARD">Card</option>
-                <option value="UPI">UPI</option>
-                <option value="CHEQUE">Cheque</option>
-                <option value="CREDIT">Store Credit</option>
-              </select>
-              <div class="invalid-feedback"
-                   *ngIf="returnForm.get('refundMode')?.invalid && returnForm.get('refundMode')?.touched">
-                Refund mode is required
-              </div>
-            </div>
-            
-            <!-- Refund Reference -->
-            <div class="form-group mb-3">
-              <label for="refundReference" class="form-label">Refund Reference</label>
-              <input
-                type="text"
-                id="refundReference"
-                formControlName="refundReference"
-                class="form-control"
-                placeholder="Transaction ID / Cheque No / Reference" />
+            <!-- Search Results -->
+            <div class="position-relative" *ngIf="filteredSales.length > 0">
+              <ul class="list-group position-absolute w-100" style="z-index: 1000;">
+                <li 
+                  *ngFor="let sale of filteredSales.slice(0, 5)" 
+                  class="list-group-item list-group-item-action"
+                  (click)="selectSale(sale)">
+                  <div class="d-flex justify-content-between">
+                    <span><strong>{{ returnsService.formatSaleId(sale.saleId || sale.id || '') }}</strong></span>
+                    <span class="badge bg-primary">{{ sale.saleType }}</span>
+                  </div>
+                  <small class="text-muted d-block">{{ sale.patientName || sale.walkInCustomerName || 'Unknown Customer' }}</small>
+                  <small class="text-success">₹{{ sale.grandTotal | number:'1.2-2' }} - {{ getSafeDate(sale.date || sale.saleDate) | date:'dd/MM/yyyy' }}</small>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
 
-        <!-- Customer Information -->        
-        <div class="mb-4" *ngIf="selectedSale">
-          <div class="card">
-            <div class="card-header bg-light">
-              <h5 class="mb-0">Sale Information</h5>
+        <!-- Sale Details (shown when sale is selected) -->
+        <div class="card mb-4" *ngIf="selectedSale">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">Selected Sale Details</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-3">
+                <label class="form-label fw-bold">Sale ID</label>
+                <input type="text" class="form-control" [value]="returnsService.formatSaleId(selectedSale.saleId || selectedSale.id || '')" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-bold">Customer/Patient</label>
+                <input type="text" class="form-control" [value]="selectedSale.patientName || selectedSale.walkInCustomerName || 'Walk-in Customer'" readonly />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label fw-bold">Sale Type</label>
+                <input type="text" class="form-control" [value]="selectedSale.saleType" readonly />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label fw-bold">Sale Date</label>
+                <input type="text" class="form-control" [value]="getSafeDate(selectedSale.saleDate) | date:'dd/MM/yyyy'" readonly />
+              </div>
+              <div class="col-md-2">
+                <label class="form-label fw-bold">Total Amount</label>
+                <input type="text" class="form-control" [value]="'₹' + (selectedSale.grandTotal | number:'1.2-2')" readonly />
+              </div>
             </div>
-            <div class="card-body">
-              <div class="row">
-                <div class="col-md-6">
-                  <dl class="row mb-0">
-                    <dt class="col-sm-4">Sale ID:</dt>
-                    <dd class="col-sm-8">{{ returnsService.formatSaleId(selectedSale.saleId || selectedSale.id || '') }}</dd>
-                    
-                    <dt class="col-sm-4">Sale Date:</dt>
-                    <dd class="col-sm-8">{{ formatDate(selectedSale.saleDate) }}</dd>
-                  </dl>
-                </div>
-                <div class="col-md-6">
-                  <dl class="row mb-0">
-                    <dt class="col-sm-4">Customer:</dt>
-                    <dd class="col-sm-8">{{ returnForm.get('customerName')?.value || 'Walk-in Customer' }}</dd>
-                    
-                    <dt class="col-sm-4">Phone:</dt>
-                    <dd class="col-sm-8">{{ returnForm.get('customerMobile')?.value || 'N/A' }}</dd>
-                  </dl>
-                </div>
+            <div class="row mt-3" *ngIf="selectedSale.doctorName">
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Doctor</label>
+                <input type="text" class="form-control" [value]="selectedSale.doctorName" readonly />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Phone</label>
+                <input type="text" class="form-control" [value]="selectedSale.phoneNumber || selectedSale.walkInCustomerMobile || 'N/A'" readonly />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Payment Mode</label>
+                <input type="text" class="form-control" [value]="selectedSale.paymentMode || selectedSale.paymentMethod || 'N/A'" readonly />
               </div>
             </div>
           </div>
         </div>
         
-        <!-- Sale Items -->
-        <div class="mb-3" *ngIf="selectedSale">
-          <h5>Sale Items</h5>
+        <!-- Return Details -->
+        <div class="row mb-4" *ngIf="selectedSale">
+          <div class="col-md-6">
+            <label for="reason" class="form-label fw-bold">Return Reason *</label>
+            <textarea 
+              class="form-control" 
+              id="reason" 
+              formControlName="reason" 
+              rows="3" 
+              placeholder="Please specify the reason for return"
+              required></textarea>
+          </div>
+          <div class="col-md-3">
+            <label for="refundMode" class="form-label fw-bold">Refund Mode *</label>
+            <select class="form-control" id="refundMode" formControlName="refundMode" required>
+              <option value="CASH">Cash</option>
+              <option value="CARD">Card</option>
+              <option value="UPI">UPI</option>
+              <option value="BANK_TRANSFER">Bank Transfer</option>
+              <option value="CHEQUE">Cheque</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="refundReference" class="form-label fw-bold">Refund Reference</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="refundReference" 
+              formControlName="refundReference" 
+              placeholder="Transaction/Reference ID" />
+          </div>
+        </div>
+        
+        <!-- Overall Discount -->
+        <div class="row mb-4" *ngIf="selectedSale">
+          <div class="col-md-4">
+            <label for="overallDiscountPercentage" class="form-label fw-bold">Overall Discount %</label>
+            <input 
+              type="number" 
+              class="form-control" 
+              id="overallDiscountPercentage" 
+              formControlName="overallDiscountPercentage" 
+              min="0" 
+              max="100" 
+              step="0.01" 
+              placeholder="0.00" 
+              (input)="calculateTotalReturnAmount()" />
+          </div>
+          <div class="col-md-8">
+            <label for="notes" class="form-label fw-bold">Additional Notes</label>
+            <textarea 
+              class="form-control" 
+              id="notes" 
+              formControlName="notes" 
+              rows="2" 
+              placeholder="Any additional notes or comments about the return"></textarea>
+          </div>
+        </div>
+        
+        <!-- Sale Items for Return -->
+        <div class="mb-4" *ngIf="selectedSale">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Sale Items for Return</h5>
+            <span class="badge bg-info">{{ itemsArray.length }} items available</span>
+          </div>
           <div class="table-responsive">
-            <table class="table table-bordered table-striped">
-              <thead>
+            <table class="table table-bordered table-hover">
+              <thead class="table-dark">
                 <tr>
                   <th>Medicine</th>
                   <th>Batch No</th>
-                  <th>MRP</th>
+                  <th>Expiry Date</th>
                   <th>Original Qty</th>
+                  <th>Unit Price</th>
                   <th>Return Qty</th>
+                  <th>Return Value</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr *ngFor="let item of itemsArray.controls; let i = index" [formGroupName]="i">
+              <tbody formArrayName="items">
+                <tr *ngFor="let item of itemsArray.controls; let i = index" [formGroupName]="i" class="align-middle">
                   <td>
-                    <!-- Display medicine name with debugging info -->
-                    <strong>{{ item.get('medicineName')?.value || 'No Name' }}</strong>
-                    <br>
-                    <small class="text-muted">ID: {{ item.get('medicineId')?.value }}</small>
+                    <div class="fw-bold">{{ getFormGroup(item).get('medicineName')?.value }}</div>
+                    <small class="text-muted">ID: {{ getFormGroup(item).get('medicineId')?.value?.substring(0, 8) }}...</small>
                   </td>
                   <td>
-                    <input 
-                      type="text" 
-                      formControlName="batchNo"
-                      class="form-control form-control-sm"
-                      [class.is-invalid]="item.get('batchNo')?.invalid && item.get('batchNo')?.touched" />
-                    <div class="invalid-feedback" *ngIf="item.get('batchNo')?.invalid && item.get('batchNo')?.touched">Batch number is required</div>
+                    <span class="badge bg-secondary">{{ getFormGroup(item).get('batchNo')?.value }}</span>
                   </td>
-                  <td>{{ item.get('unitPrice')?.value | currency:'INR' }}</td>
-                  <td>{{ item.get('quantity')?.value }}</td>
+                  <td>
+                    <small>{{ getFormGroup(item).get('expiryDate')?.value | date:'dd/MM/yyyy' }}</small>
+                  </td>
+                  <td>
+                    <span class="badge bg-primary">{{ getFormGroup(item).get('originalQuantity')?.value }}</span>
+                  </td>
+                  <td>
+                    <span class="text-success fw-bold">₹{{ getFormGroup(item).get('unitPrice')?.value | number:'1.2-2' }}</span>
+                  </td>
                   <td>
                     <input 
                       type="number" 
-                      formControlName="returnQuantity"
-                      class="form-control form-control-sm" 
-                      min="0"
-                      [max]="item.get('quantity')?.value"
-                      [class.is-invalid]="item.get('returnQuantity')?.invalid && item.get('returnQuantity')?.touched" />
+                      class="form-control" 
+                      formControlName="returnQuantity" 
+                      min="0" 
+                      [max]="getFormGroup(item).get('originalQuantity')?.value" 
+                      step="1" 
+                      placeholder="0" />
+                  </td>
+                  <td>
+                    <span class="fw-bold text-danger">₹{{ getFormGroup(item).get('returnValue')?.value | number:'1.2-2' }}</span>
                   </td>
                 </tr>
               </tbody>
+              <tfoot class="table-light">
+                <tr>
+                  <td colspan="6" class="text-end fw-bold">Total Return Amount:</td>
+                  <td class="fw-bold text-danger fs-5">₹{{ returnForm.get('totalReturnAmount')?.value | number:'1.2-2' }}</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
 
-        <div class="card-footer bg-light d-flex justify-content-between mt-4">
-          <button 
-            type="button" 
-            class="btn btn-outline-secondary"
-            routerLink="/inventory/returns">
-            <i class="fas fa-times me-2"></i>Cancel
+        <!-- Submit Buttons -->
+        <div class="d-flex justify-content-between align-items-center">
+          <button type="button" class="btn btn-outline-secondary" routerLink="/inventory/returns">
+            <i class="fas fa-arrow-left me-2"></i>Back to Returns
           </button>
-          <div>
-            <button 
-              type="button" 
-              class="btn btn-outline-danger me-2"
-              (click)="resetForm()">
-              <i class="fas fa-redo me-2"></i>Reset Form
-            </button>
+          <div class="d-flex gap-2">
             <button 
               type="submit" 
-              class="btn btn-primary"
-              [disabled]="isSubmitting || returnForm.invalid">
-              <i class="fas fa-save me-2" *ngIf="!isSubmitting"></i>
-              <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
-              Create Return
+              class="btn btn-success btn-lg" 
+              [disabled]="returnForm.invalid || isLoading || itemsArray.length === 0 || !hasItemsToReturn()">
+              <i class="fas fa-spinner fa-spin me-2" *ngIf="isLoading"></i>
+              <i class="fas fa-check-circle me-2" *ngIf="!isLoading"></i>
+              {{ isLoading ? 'Processing Return...' : 'Create Sale Return' }}
             </button>
           </div>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Return Summary Card -->
+  <div class="card border-success" *ngIf="selectedSale && returnForm.get('totalReturnAmount')?.value > 0">
+    <div class="card-header bg-success text-white">
+      <h5 class="mb-0">Return Summary</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-3">
+          <div class="text-center">
+            <h6 class="text-muted">Total Return Amount</h6>
+            <h4 class="text-success">₹{{ returnForm.get('totalReturnAmount')?.value | number:'1.2-2' }}</h4>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center">
+            <h6 class="text-muted">Items to Return</h6>
+            <h4 class="text-info">{{ getItemsToReturnCount() }}</h4>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center">
+            <h6 class="text-muted">Refund Mode</h6>
+            <h4 class="text-warning">{{ returnForm.get('refundMode')?.value }}</h4>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center">
+            <h6 class="text-muted">Net Refund Amount</h6>
+            <h4 class="text-primary">₹{{ returnForm.get('netRefundAmount')?.value | number:'1.2-2' }}</h4>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

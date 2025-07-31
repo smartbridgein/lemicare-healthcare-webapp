@@ -112,7 +112,7 @@ export class AdvanceFormComponent implements OnInit, OnDestroy {
   loadAdvance(id: string): void {
     this.loading = true;
     this.billingService.getAdvanceById(id).subscribe({
-      next: (advance) => {
+      next: (advance: Advance) => {
         this.advanceForm.patchValue({
           patientId: advance.patientId,
           patientName: advance.patientName,
@@ -127,7 +127,7 @@ export class AdvanceFormComponent implements OnInit, OnDestroy {
         });
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading advance payment', error);
         this.loading = false;
       }
@@ -245,7 +245,7 @@ export class AdvanceFormComponent implements OnInit, OnDestroy {
           console.log(`Patient prepopulated: ${patient.firstName} ${patient.lastName}`);
         }
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading patient by ID:', error);
       }
     });

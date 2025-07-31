@@ -1,7 +1,19 @@
 /**
- * Success Modal Styles
+ * Success Modal Styles - Classic UI Design
  * Fixed layout with proper z-indexing to ensure backdrop stays behind content
+ * Uses brand maroon and yellow color scheme
  */
+
+// Brand color variables
+$maroon-primary: #6b1d14;
+$maroon-dark: #4a0f09;
+$maroon-light: #8c2c21;
+$yellow-accent: #e6c157;
+$yellow-light: #f3d98b;
+$gray-light: #f8f9fa;
+$gray-medium: #e9ecef;
+$gray-border: #dee2e6;
+$gray-text: #495057;
 
 :host {
   display: block;
@@ -18,7 +30,8 @@
   align-items: center;
   justify-content: center;
   // High z-index to cover all page content
-  z-index: 9999; 
+  z-index: 9999;
+  font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
 }
 
 // Backdrop overlay
@@ -28,22 +41,24 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); // Semi-transparent black
+  background-color: rgba(0, 0, 0, 0.6); // Slightly darker for better contrast
   z-index: 1; // Lower z-index than dialog
 }
 
 // Modal dialog box
 .success-modal-dialog {
   width: 100%;
-  max-width: 550px;
+  max-width: 480px;
   background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba($maroon-dark, 0.25);
   margin: 0 20px;
   position: relative;
   z-index: 2; // Higher than overlay
   overflow: hidden; // Ensures content stays inside rounded corners
   animation: modal-popup 0.3s ease-out;
+  border: 1px solid $gray-border;
+  border-top: 3px solid $maroon-primary;
 }
 
 @keyframes modal-popup {
@@ -62,26 +77,37 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #6f42c1; // Primary purple color
+  background: $maroon-primary;
   color: white;
-  padding: 15px 20px;
-  border-radius: 8px 8px 0 0;
+  padding: 12px 16px;
+  border-radius: 5px 5px 0 0;
   
   .success-modal-title {
     margin: 0;
     font-weight: 600;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
+    letter-spacing: 0px;
+    
+    i {
+      font-size: 1rem;
+      margin-right: 6px;
+    }
   }
   
   .success-modal-close {
     background: transparent;
     border: none;
     color: white;
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     line-height: 1;
     padding: 0;
     cursor: pointer;
-    transition: opacity 0.2s;
+    transition: all 0.2s;
+    height: 24px;
+    width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     
     &:hover {
       opacity: 0.8;
@@ -91,85 +117,86 @@
 
 // Modal Body
 .success-modal-body {
-  padding: 25px;
+  padding: 16px;
 }
 
 // Success Icon
 .success-icon-container {
   display: flex;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .success-icon {
-  width: 80px;
-  height: 80px;
-  background-color: #28a745; // Success green
+  width: 60px;
+  height: 60px;
+  background: $yellow-accent;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 2.5rem;
-  box-shadow: 0 0 0 rgba(40, 167, 69, 0.6);
-  animation: pulse-green 2s infinite;
+  color: $maroon-dark;
+  font-size: 1.8rem;
+  border: 1px solid rgba($yellow-light, 0.5);
 }
 
-@keyframes pulse-green {
-  0% {
-    box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.6);
-  }
-  70% {
-    box-shadow: 0 0 0 15px rgba(40, 167, 69, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
-  }
-}
+
 
 // Success message box
 .success-message {
-  background-color: #d4edda;
-  color: #155724;
-  border-radius: 6px;
-  padding: 15px;
+  background-color: rgba($yellow-light, 0.2);
+  color: $maroon-dark;
+  border-radius: 4px;
+  padding: 12px;
   text-align: center;
-  margin-bottom: 25px;
+  margin-bottom: 16px;
+  border-left: 3px solid $yellow-accent;
   
   h4 {
     margin: 0;
     font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+  }
+  
+  p {
+    margin: 0;
+    font-size: 0.9rem;
   }
 }
 
 // Info Cards
 .info-card {
-  background-color: #f8f9fa;
-  border-radius: 6px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  margin-bottom: 20px;
+  background-color: $gray-light;
+  border-radius: 4px;
+  margin-bottom: 10px;
   overflow: hidden;
+  border: 1px solid $gray-border;
   
   .info-card-title {
-    background-color: #e9ecef;
-    padding: 12px 15px;
+    background-color: $gray-medium;
+    padding: 8px 12px;
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    color: #495057;
-    border-bottom: 1px solid #dee2e6;
+    color: $maroon-primary;
+    border-bottom: 1px solid $gray-border;
     
     i {
-      margin-right: 8px;
+      margin-right: 6px;
+      color: $maroon-primary;
+      font-size: 0.95rem;
     }
   }
   
   .info-card-content {
-    padding: 15px;
+    padding: 12px;
     
     p {
       margin: 0;
-      font-size: 1rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: $gray-text;
     }
   }
 }
@@ -181,26 +208,29 @@
   
   tr {
     &:not(:last-child) {
-      border-bottom: 1px solid #e9ecef;
+      border-bottom: 1px solid $gray-medium;
     }
   }
   
   td {
-    padding: 10px 5px;
+    padding: 8px 2px;
+    font-size: 0.9rem;
     
     &:first-child {
       font-weight: 500;
-      color: #495057;
-      width: 40%;
+      color: $gray-text;
+      width: 35%;
       
       i {
-        color: #6f42c1;
-        margin-right: 8px;
+        color: $maroon-primary;
+        margin-right: 6px;
+        width: 16px;
       }
     }
     
     &:last-child {
       font-weight: 500;
+      color: darken($gray-text, 10%);
     }
   }
 }
@@ -209,39 +239,47 @@
 .success-modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  padding: 15px 20px;
-  background-color: #f8f9fa;
-  border-top: 1px solid #dee2e6;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: $gray-light;
+  border-top: 1px solid $gray-border;
   
   .btn-secondary, .btn-primary {
-    padding: 8px 16px;
+    padding: 6px 12px;
     border-radius: 4px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
     border: none;
+    font-size: 0.85rem;
   }
   
   .btn-secondary {
-    background-color: #6c757d;
-    color: white;
+    background-color: #ffffff;
+    color: $maroon-primary;
+    border: 1px solid $gray-border;
     
     &:hover {
-      background-color: #5a6268;
+      background-color: $gray-light;
+    }
+    
+    i {
+      margin-right: 4px;
+      font-size: 0.85rem;
     }
   }
   
   .btn-primary {
-    background-color: #6f42c1;
+    background: $maroon-primary;
     color: white;
     
     i {
-      margin-right: 8px;
+      margin-right: 4px;
+      font-size: 0.85rem;
     }
     
     &:hover {
-      background-color: #5e35b1;
+      background: darken($maroon-primary, 5%);
     }
   }
 }

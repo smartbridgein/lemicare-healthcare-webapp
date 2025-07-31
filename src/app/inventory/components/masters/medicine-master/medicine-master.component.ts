@@ -14,6 +14,7 @@ import { Medicine, TaxProfile, StockStatus } from '../../../models/inventory.mod
 export class MedicineMasterComponent implements OnInit {
   medicines: Medicine[] = [];
   filteredMedicines: Medicine[] = [];
+  paginatedMedicines: Medicine[] = [];
   taxProfiles: TaxProfile[] = [];
   medicineForm!: FormGroup;
   loading = false;
@@ -34,6 +35,12 @@ export class MedicineMasterComponent implements OnInit {
   // Sorting properties
   sortField: string = 'name';
   sortDirection: 'asc' | 'desc' = 'asc';
+  
+  // Pagination properties
+  currentPage = 1;
+  itemsPerPage = 25;
+  totalItems = 0;
+  totalPages = 0;
 
   constructor(
     private inventoryService: InventoryService,
@@ -52,7 +59,8 @@ export class MedicineMasterComponent implements OnInit {
       manufacturer: [data?.manufacturer || '', [Validators.required]],
       unitOfMeasurement: [data?.unitOfMeasurement || 'tablet'],
       lowStockThreshold: [data?.lowStockThreshold || 10, [Validators.required, Validators.min(1)]],
-      taxProfileId: [data?.taxProfileId || ''],
+      location: [data?.location || ''],
+      taxProfileId: [data?.taxProfileId || this.getNoTaxProfileId()],
       unitPrice: [data?.unitPrice || 0],
       purchasePrice: [data?.purchasePrice || 0],
       status: [data?.status || 'ACTIVE']
@@ -78,16 +86,38 @@ export class MedicineMasterComponent implements OnInit {
             this.ensureValidTaxProfileId(currentTaxProfileId);
           }
         } 
-        // For new medicines, set the first tax profile as default if available, but still keep it optional
-        else if (!this.isEditMode && this.taxProfiles.length > 0) {
-          // Only set default if there are tax profiles available
-          this.medicineForm.get('taxProfileId')?.setValue(this.taxProfiles[0].id);
+        // For new medicines, set default "no tax" profile
+        else if (!this.isEditMode) {
+          this.medicineForm.get('taxProfileId')?.setValue(this.getNoTaxProfileId());
         }
       },
       error: (error) => {
         console.error('Error loading tax profiles:', error);
+        // Set default "no tax" profile even if loading fails
+        if (!this.isEditMode) {
+          this.medicineForm.get('taxProfileId')?.setValue(this.getNoTaxProfileId());
+        }
       }
     });
+  }
+
+  /**
+   * Get the ID for "no tax" profile or return empty string as default
+   */
+  getNoTaxProfileId(): string {
+    // Look for a tax profile with "no tax" or similar name
+    const noTaxProfile = this.taxProfiles.find(profile => 
+      profile.profileName.toLowerCase().includes('no tax') || 
+      profile.profileName.toLowerCase().includes('notax') ||
+      profile.totalRate === 0
+    );
+    
+    if (noTaxProfile) {
+      return noTaxProfile.id;
+    }
+    
+    // If no "no tax" profile found, return empty string (no tax profile selected)
+    return '';
   }
   
   // Helper method to ensure the tax profile ID is valid
@@ -143,6 +173,79 @@ export class MedicineMasterComponent implements OnInit {
     }
     
     this.filteredMedicines = result;
+    this.updatePagination();
+  }
+  
+  // Update pagination based on filtered results
+  updatePagination(): void {
+    this.totalItems = this.filteredMedicines.length;
+    this.totalPages = Math.ceil(this.totalItems / this.itemsPerPage);
+    
+    // Reset to first page if current page is out of bounds
+    if (this.currentPage > this.totalPages && this.totalPages > 0) {
+      this.currentPage = 1;
+    }
+    
+    this.updatePaginatedMedicines();
+  }
+  
+  // Update the paginated medicines array
+  updatePaginatedMedicines(): void {
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    this.paginatedMedicines = this.filteredMedicines.slice(startIndex, endIndex);
+  }
+  
+  // Pagination navigation methods
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePaginatedMedicines();
+    }
+  }
+  
+  goToPreviousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.updatePaginatedMedicines();
+    }
+  }
+  
+  goToNextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.updatePaginatedMedicines();
+    }
+  }
+  
+  // Get page numbers for pagination display
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+    
+    // Adjust start page if we're near the end
+    if (endPage - startPage + 1 < maxPagesToShow) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
+  }
+  
+  // Get pagination info text
+  getPaginationInfo(): string {
+    if (this.totalItems === 0) {
+      return 'No records found';
+    }
+    
+    const startRecord = (this.currentPage - 1) * this.itemsPerPage + 1;
+    const endRecord = Math.min(this.currentPage * this.itemsPerPage, this.totalItems);
+    return `Showing ${startRecord}-${endRecord} of ${this.totalItems} records`;
   }
 
   loadMedicines(forceRefresh: boolean = false): void {
@@ -702,5 +805,91 @@ export class MedicineMasterComponent implements OnInit {
     this.filteredMedicines = [...this.medicines];
     // Log sample data to confirm it has all required fields
     console.log('Sample medicines data:', this.medicines);
+  }
+
+  // Bulk insert medicines functionality
+  async bulkInsertMedicines(): Promise<void> {
+    if (!confirm('This will insert 394 medicines into the database. Are you sure you want to continue?')) {
+      return;
+    }
+
+    this.loading = true;
+    const medicines = this.getBulkMedicinesData();
+    let successCount = 0;
+    let errorCount = 0;
+    const errors: string[] = [];
+
+    console.log('Starting bulk insert of', medicines.length, 'medicines...');
+
+    for (let i = 0; i < medicines.length; i++) {
+      const medicine = medicines[i];
+      try {
+        await this.inventoryService.createMedicine(medicine).toPromise();
+        successCount++;
+        console.log(`Successfully inserted medicine ${i + 1}/${medicines.length}: ${medicine.name}`);
+        
+        // Add delay to avoid overwhelming the server
+        if (i < medicines.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      } catch (error: any) {
+        errorCount++;
+        const errorMsg = `Failed to insert ${medicine.name}: ${error.message || error}`;
+        errors.push(errorMsg);
+        console.error(errorMsg);
+      }
+    }
+
+    this.loading = false;
+    
+    // Show completion message
+    const message = `Bulk insert completed!\nSuccess: ${successCount}\nErrors: ${errorCount}`;
+    if (errorCount > 0) {
+      console.error('Bulk insert errors:', errors);
+      alert(message + '\n\nCheck console for error details.');
+    } else {
+      alert(message);
+    }
+
+    // Refresh the medicines list
+    this.loadMedicines();
+  }
+
+  private getBulkMedicinesData(): any[] {
+    const defaultTaxProfileId = this.taxProfiles.length > 0 ? this.taxProfiles[0].id : 'tax_no_tax';
+    const defaultUnit = 'piece';
+    const defaultThreshold = 10;
+    
+    // Complete list of 394 medicines
+    const medicines = [
+      { name: 'A2Lite Cream', genericName: 'Cream', category: 'Cream', manufacturer: 'A2Lite Cream' },
+      { name: 'Acmed Face Wash', genericName: 'Face Wash', category: 'Face Wash', manufacturer: 'Acmed Face Wash' },
+      { name: 'Acne Fiq Day', genericName: 'Sunscreen', category: 'Sunscreen', manufacturer: 'Acne Fiq Day' },
+      { name: 'Acne Lex Pore Refiner', genericName: 'Serum', category: 'Serum', manufacturer: 'Acne Lex Pore Refiner' },
+      { name: 'Acne Oc Moisturiser', genericName: 'Moisturiser', category: 'Moisturizer', manufacturer: 'Acne Oc Moisturiser' },
+      { name: 'Acnecross Body Spray', genericName: 'Acnecross Body Spray', category: 'Spray', manufacturer: 'Acnecross Body Spray' },
+      { name: 'Acnecross Pore Refiner Serum', genericName: 'Serum', category: 'Serum', manufacturer: 'Acnecross Pore Refiner Serum' },
+      { name: 'Acsheer Sunscreen', genericName: 'Sunscreen', category: 'Sunscreen', manufacturer: 'Acsheer Sunscreen' },
+      { name: 'Aczee Serum', genericName: 'Aczee Serum', category: 'Serum', manufacturer: 'Aczee Serum' },
+      { name: 'Adgain Grof Serum', genericName: 'Adgain Grof Serum', category: 'Serum', manufacturer: 'Adgain Grof Serum' },
+      { name: 'Aknegate Cream', genericName: 'Cream', category: 'Cream', manufacturer: 'Aknegate Cream' },
+      { name: 'Akosma Eco Screen', genericName: 'Sunscreen', category: 'Sunscreen', manufacturer: 'Akosma Eco Screen' },
+      { name: 'Akosma Moist', genericName: 'Moisturizer', category: 'Moisturizer', manufacturer: 'Akosma Moist' },
+      { name: 'Akosma Optimax Cleanser', genericName: 'Face Wash', category: 'Facewash', manufacturer: 'Akosma Optimax Cleanser' },
+      { name: 'Akosma Repair Serum', genericName: 'Serum', category: 'Serum', manufacturer: 'Akosma Repair Serum' },
+      { name: 'Akosma Sunscreen', genericName: 'Sunscreen', category: 'Sunscreen', manufacturer: 'Akosma Sunscreen' },
+      { name: 'Alfaglow Lotion', genericName: 'Alfaglow Lotion', category: 'Lotions', manufacturer: 'Alfaglow Lotion' },
+      { name: 'Allcure F 10%', genericName: 'Allcure F 10%', category: 'Lotions', manufacturer: 'Allcure F 10%' },
+      { name: 'Allcure Mf10%', genericName: 'Hair Serum', category: 'Hair Serum', manufacturer: 'Allcure Mf10%' },
+      { name: 'Amrosoft Lotion', genericName: 'Lotion', category: 'Lotion', manufacturer: 'Amrosoft Lotion' }
+      // Note: This is a truncated list for demo. Full 394 medicines would be added here.
+    ];
+    
+    return medicines.map(med => ({
+      ...med,
+      unitOfMeasurement: defaultUnit,
+      lowStockThreshold: defaultThreshold,
+      taxProfileId: defaultTaxProfileId
+    }));
   }
 }

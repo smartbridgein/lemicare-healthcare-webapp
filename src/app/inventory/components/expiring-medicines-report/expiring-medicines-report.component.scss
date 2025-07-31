@@ -1,38 +1,384 @@
+// Dashboard theme colors
+$maroon-primary: #6b1d14;
+$maroon-dark: #4a0f09;
+$maroon-light: #8c2c21;
+$yellow-accent: #e6c157;
+$yellow-light: #f3d98b;
+$gray-dark: #333333;
+$gray-medium: #666666;
+$gray-light: #f5f5f5;
+
 .expired {
-  background-color: #dc3545;
+  background-color: $maroon-primary;
   color: white;
+  border-radius: 6px;
 }
 
 .expiring-soon {
-  background-color: #ffc107;
-  color: #212529;
+  background-color: $yellow-accent;
+  color: $gray-dark;
+  border-radius: 6px;
 }
 
 .valid {
-  background-color: #198754;
+  background-color: #10b981;
   color: white;
+  border-radius: 6px;
 }
 
 .table {
   font-size: 0.9rem;
+  font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+  width: 100%;
+  table-layout: auto;
+  margin-bottom: 0;
+  
+  th {
+    color: $maroon-primary;
+    font-weight: 600;
+    border-bottom: 2px solid rgba($maroon-primary, 0.1);
+    background-color: rgba($maroon-primary, 0.03);
+    padding: 0.75rem 0.5rem;
+    white-space: nowrap;
+    text-align: left;
+    vertical-align: middle;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  td {
+    border-bottom: 1px solid $gray-light;
+    padding: 0.6rem 0.5rem;
+    vertical-align: middle;
+    word-wrap: break-word;
+  }
+  
+  tr:hover td {
+    background-color: rgba($maroon-primary, 0.02);
+  }
+  
+  // Responsive column widths (Medicine Name column removed)
+  th:nth-child(1), td:nth-child(1) { width: 10%; }  // Medicine ID
+  th:nth-child(2), td:nth-child(2) { width: 15%; }  // Batch No
+  th:nth-child(3), td:nth-child(3) { width: 15%; }  // Expiry Date
+  th:nth-child(4), td:nth-child(4) { width: 12%; }  // Days to Expiry
+  th:nth-child(5), td:nth-child(5) { width: 10%; }  // Quantity
+  th:nth-child(6), td:nth-child(6) { width: 28%; }  // Purchase Ref (Full Width)
+  th:nth-child(7), td:nth-child(7) { width: 10%; }  // Status
 }
 
 .badge {
   padding: 0.4rem 0.6rem;
   font-weight: 500;
+  font-size: 0.75rem;
+  border-radius: 6px;
 }
 
 .card-header {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
-  padding: 0.75rem 1rem;
+  border-bottom: 2px solid rgba($maroon-primary, 0.1);
+  padding: 1rem 1.25rem;
+  background-color: rgba($maroon-primary, 0.02);
+  color: $maroon-primary;
+  font-weight: 600;
+  font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
 }
 
 .btn-outline-primary {
-  border-color: #6a5acd;
-  color: #6a5acd;
+  border-color: $maroon-primary;
+  color: $maroon-primary;
+  border-radius: 6px;
+  font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .btn-outline-primary:hover {
-  background-color: #6a5acd;
+  background-color: $maroon-primary;
+  border-color: $maroon-primary;
   color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba($maroon-primary, 0.2);
+}
+
+// Enhanced table cell styling
+.medicine-id {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: $gray-medium;
+  font-weight: 500;
+}
+
+.medicine-name {
+  font-weight: 600;
+  color: $maroon-primary;
+}
+
+.badge-secondary {
+  background-color: $gray-medium;
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.expiry-date {
+  font-weight: 500;
+  color: $gray-dark;
+}
+
+.days-count {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  
+  i {
+    font-size: 0.8rem;
+  }
+}
+
+// Classic Charts Styling
+.charts-section {
+  background: linear-gradient(135deg, rgba($maroon-primary, 0.02) 0%, rgba($yellow-accent, 0.02) 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba($maroon-primary, 0.1);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba($yellow-accent, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+}
+
+.classic-chart-container {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 12px rgba($maroon-primary, 0.08);
+  border: 1px solid rgba($maroon-primary, 0.1);
+  position: relative;
+  transition: all 0.3s ease;
+  height: 350px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba($maroon-primary, 0.12);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, $maroon-primary 0%, $yellow-accent 100%);
+    border-radius: 12px 12px 0 0;
+  }
+}
+
+.chart-header {
+  margin-bottom: 1rem;
+  text-align: center;
+
+  .chart-title {
+    color: $maroon-primary;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i {
+      color: $yellow-accent;
+      font-size: 1.1rem;
+    }
+  }
+
+  .chart-subtitle {
+    color: $gray-medium;
+    font-size: 0.85rem;
+    margin: 0;
+    font-style: italic;
+  }
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 250px;
+  width: 100%;
+
+  .chart-canvas {
+    max-height: 100%;
+    max-width: 100%;
+  }
+}
+
+// Classic Stats Summary
+.classic-stats-summary {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 12px rgba($maroon-primary, 0.08);
+  border: 1px solid rgba($maroon-primary, 0.1);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, $maroon-primary 0%, $yellow-accent 50%, $maroon-primary 100%);
+  }
+
+  .stat-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    position: relative;
+    min-width: 120px;
+    justify-content: center;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+
+    .stat-icon {
+      margin-right: 0.75rem;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .stat-content {
+      text-align: center;
+
+      .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.25rem;
+        font-family: 'Inter', 'Segoe UI', sans-serif;
+      }
+
+      .stat-label {
+        font-size: 0.8rem;
+        font-weight: 500;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+
+    &.expired {
+      background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    }
+
+    &.critical {
+      background: linear-gradient(135deg, #fd7e14 0%, #e55a00 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(253, 126, 20, 0.3);
+    }
+
+    &.warning {
+      background: linear-gradient(135deg, $yellow-accent 0%, #d4a843 100%);
+      color: $gray-dark;
+      box-shadow: 0 4px 12px rgba($yellow-accent, 0.3);
+    }
+
+    &.info {
+      background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .charts-section {
+    padding: 1rem;
+  }
+
+  .classic-chart-container {
+    height: 300px;
+    margin-bottom: 1rem;
+  }
+
+  .chart-wrapper {
+    height: 200px;
+  }
+
+  .classic-stats-summary {
+    flex-direction: column;
+    gap: 0.75rem;
+
+    .stat-item {
+      width: 100%;
+      min-width: auto;
+    }
+  }
+
+  .chart-header .chart-title {
+    font-size: 0.9rem;
+  }
+
+  .chart-header .chart-subtitle {
+    font-size: 0.8rem;
+  }
+}
+
+.quantity {
+  font-weight: 500;
+  color: $gray-dark;
+}
+
+.purchase-ref {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: $gray-medium;
+  background-color: rgba($maroon-primary, 0.05);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+// Status-specific styling
+.text-danger.fw-bold {
+  color: $maroon-primary !important;
+  font-weight: 700 !important;
+}
+
+.text-warning {
+  color: $yellow-accent !important;
+  font-weight: 600;
+}
+
+.text-info {
+  color: #17a2b8 !important;
+  font-weight: 500;
 }

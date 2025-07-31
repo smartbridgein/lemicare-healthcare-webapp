@@ -3,6 +3,7 @@ import { PatientListComponent } from './patient-list/patient-list.component';
 import { PatientRegistrationComponent } from './patient-registration/patient-registration.component';
 import { PatientMedicalHistoryComponent } from './patient-medical-history/patient-medical-history.component';
 import { PatientVisitHistoryComponent } from './patient-visit-history/patient-visit-history.component';
+import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
 
 export const PATIENTS_ROUTES: Routes = [
   {
@@ -16,6 +17,14 @@ export const PATIENTS_ROUTES: Routes = [
   {
     path: 'registration/:id',
     component: PatientRegistrationComponent
+  },
+  {
+    path: 'bulk-upload',
+    component: BulkUploadComponent
+  },
+  {
+    path: ':id',
+    component: PatientListComponent // This will show patient details when ID is provided
   },
   {
     path: 'medical-history/:id',

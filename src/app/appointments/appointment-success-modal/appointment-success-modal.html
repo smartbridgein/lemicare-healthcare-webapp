@@ -4,7 +4,9 @@
   <div class="success-modal-dialog">
     <!-- Header with title and close button -->
     <div class="success-modal-header">
-      <h4 class="success-modal-title">Appointment Confirmation</h4>
+      <h4 class="success-modal-title">
+        <i class="bi bi-calendar-check"></i> Appointment Confirmation
+      </h4>
       <button class="success-modal-close" (click)="closeModal('close')">×</button>
     </div>
     
@@ -19,23 +21,24 @@
       
       <!-- Success message -->
       <div class="success-message">
-        <h4>Appointment Booked Successfully!</h4>
+        <h4><i class="bi bi-check-circle-fill"></i> Appointment Booked Successfully!</h4>
+        <p><i class="bi bi-info-circle"></i> Your appointment has been scheduled and confirmed.</p>
       </div>
       
       <!-- Patient info -->
       <div class="info-card">
         <h5 class="info-card-title">
-          <i class="bi bi-person text-primary"></i> Patient
+          <i class="bi bi-person-fill"></i> Patient Information
         </h5>
         <div class="info-card-content">
-          <p>{{patientName}}</p>
+          <p><i class="bi bi-person-badge"></i> {{patientName}}</p>
         </div>
       </div>
       
       <!-- Appointment details -->
       <div class="info-card">
         <h5 class="info-card-title">
-          <i class="bi bi-calendar-check text-primary"></i> Appointment Details
+          <i class="bi bi-calendar-check"></i> Appointment Details
         </h5>
         <div class="info-card-content">
           <table class="details-table">
@@ -44,12 +47,19 @@
               <td>{{ appointmentDate | date:'EEE, MMM d, y' }}</td>
             </tr>
             <tr>
-              <td><i class="bi bi-clock"></i> Time:</td>
+              <td><i class="bi bi-clock-fill"></i> Time:</td>
               <td>{{ appointmentTime }}</td>
             </tr>
             <tr>
-              <td><i class="bi bi-person-badge"></i> Doctor:</td>
-              <td>{{ doctorName }}</td>
+              <td><i class="bi bi-person-badge-fill"></i> Doctor:</td>
+              <td>
+                <span *ngIf="isLoading"><i class="bi bi-hourglass"></i> Loading...</span>
+                <span *ngIf="!isLoading">{{ displayDoctorName }}</span>
+              </td>
+            </tr>
+            <tr>
+              <td><i class="bi bi-building-fill"></i> Facility:</td>
+              <td>Main Hospital</td>
             </tr>
           </table>
         </div>
@@ -58,7 +68,9 @@
     
     <!-- Footer with buttons -->
     <div class="success-modal-footer">
-      <button class="btn-secondary" (click)="closeModal('close')">Close</button>
+      <button class="btn-secondary" (click)="closeModal('close')">
+        <i class="bi bi-x-circle"></i> Close
+      </button>
       <button class="btn-primary" (click)="closeModal('view')">
         <i class="bi bi-calendar2-week"></i> View Appointments
       </button>

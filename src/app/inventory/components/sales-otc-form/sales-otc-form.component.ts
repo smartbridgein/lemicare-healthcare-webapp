@@ -36,6 +36,7 @@ interface MedicineBatch {
   referenceId?: string;
   packQuantity?: number;
   itemsPerPack?: number;
+  taxProfileId?: string;  // Tax profile from purchase data
 }
 
 @Component({
@@ -82,6 +83,10 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
   // Flag for API vs local search
   useApiSearch = true;
   
+  // Selection flags to prevent double-selection issues
+  isSelectingPatient = false;
+  isSelectingDoctor = false;
+  
   // Medicine search tracking
   activeSearchIndex = -1; // Tracks which row is currently being searched
   
@@ -119,6 +124,7 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
   
   // Totals
   subtotal: number = 0;
+  totalBeforeDiscount: number = 0; // Net amount including tax before discount
   discount: number = 0;
   tax: number = 0;
   total: number = 0;
@@ -134,13 +140,14 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
       // Patient/Customer Information
       patientName: ['', Validators.required],
       phoneNumber: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
-      patientAddress: ['', Validators.required],
+      address: ['', Validators.required],
       dateOfBirth: [''],
       age: [''],
       gender: [''],
       
       // Invoice Information
       doctorName: [''],
+      doctorId: [''], // Added missing doctorId field
       saleDate: [this.getCurrentDate(), Validators.required],
       gstType: ['INCLUSIVE'], // Default to inclusive GST
       printGst: [false],
@@ -152,7 +159,7 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
       
       // Sale Items and Totals
       items: this.fb.array([]),
-      overallDiscount: [0],
+
       subtotal: [0],
       discount: [0],
       tax: [0],
@@ -238,20 +245,38 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
    * @param sale The sale data to populate
    */
   populateFormWithSaleData(sale: any): void {
-    console.log('Populating form with sale data:', sale);
+    console.log('=== DEBUGGING SALE DATA POPULATION ===');
+    console.log('Full sale data received:', JSON.stringify(sale, null, 2));
+    console.log('Doctor name from API:', sale.doctorName);
+    console.log('Available doctor fields:', {
+      doctorName: sale.doctorName,
+      doctorId: sale.doctorId,
+      doctor: sale.doctor
+    });
+    console.log('Additional patient fields:', {
+      age: sale.age,
+      gender: sale.gender,
+      address: sale.address,
+      walkInCustomerName: sale.walkInCustomerName,
+      walkInCustomerMobile: sale.walkInCustomerMobile
+    });
     
     // Map API field names to form field names
-    this.saleForm.patchValue({
+    const formData = {
       patientName: sale.walkInCustomerName || sale.patientName || '',
       phoneNumber: sale.walkInCustomerMobile || sale.phoneNumber || '',
-      patientAddress: sale.patientAddress || sale.address || '',
+      address: sale.address || '',
+      doctorName: sale.doctorName || sale.doctor?.name || (sale.doctorId ? 'Doctor ID: ' + sale.doctorId : ''),
+      dateOfBirth: sale.dateOfBirth || '', // Date of birth if available in API
+      age: sale.age || 0,
+      gender: sale.gender || '',
       saleDate: this.formatDateForInput(this.parseSaleDate(sale.saleDate) || sale.date),
       gstType: sale.gstType || 'INCLUSIVE',
       printGst: !!sale.printGst,
       paymentMethod: sale.paymentMode || sale.paymentMethod || 'CASH',
       paymentStatus: sale.paymentStatus || 'PAID',
       transactionReference: sale.transactionReference || this.generateTransactionReference(),
-      overallDiscount: sale.overallDiscount || 0,
+
       subtotal: sale.totalMrpAmount || sale.subtotal || 0,
       discount: sale.totalDiscountAmount || sale.discount || 0,
       tax: sale.totalTaxAmount || sale.tax || 0,
@@ -259,7 +284,57 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
       sgstTotal: sale.sgstAmount || 0,
       total: sale.grandTotal || sale.totalAmount || sale.netAmount || 0,
       notes: sale.notes || ''
+    };
+    
+    console.log('Enhanced form data to be patched:', formData);
+    
+    // Set patient and doctor fields using direct setValue to avoid triggering search subscriptions
+    const patientNameControl = this.saleForm.get('patientName');
+    const phoneNumberControl = this.saleForm.get('phoneNumber');
+    const addressControl = this.saleForm.get('address');
+    const doctorNameControl = this.saleForm.get('doctorName');
+    const doctorIdControl = this.saleForm.get('doctorId');
+    const genderControl = this.saleForm.get('gender');
+    
+    // Set patient and doctor values directly without triggering valueChanges (same as simple selection methods)
+    if (patientNameControl) patientNameControl.setValue(sale.walkInCustomerName || sale.patientName || '', { emitEvent: false });
+    if (phoneNumberControl) phoneNumberControl.setValue(sale.walkInCustomerMobile || sale.phoneNumber || '', { emitEvent: false });
+    if (addressControl) addressControl.setValue(sale.address || '', { emitEvent: false });
+    if (doctorNameControl) doctorNameControl.setValue(sale.doctorName || sale.doctor?.name || (sale.doctorId ? 'Doctor ID: ' + sale.doctorId : ''), { emitEvent: false });
+    if (doctorIdControl) doctorIdControl.setValue(sale.doctorId || '', { emitEvent: false });
+    if (genderControl) genderControl.setValue(sale.gender || '', { emitEvent: false });
+    
+    console.log('Patient and doctor auto-populated in edit mode (OTC):', {
+      patientName: patientNameControl?.value,
+      phoneNumber: phoneNumberControl?.value,
+      address: addressControl?.value,
+      doctorName: doctorNameControl?.value,
+      doctorId: doctorIdControl?.value,
+      gender: genderControl?.value
     });
+    
+    // Map other API field names to form field names (non-search fields can use patchValue)
+    const otherFormData = {
+      dateOfBirth: sale.dateOfBirth || '', // Date of birth if available in API
+      age: sale.age || 0,
+      saleDate: this.formatDateForInput(this.parseSaleDate(sale.saleDate) || sale.date),
+      gstType: sale.gstType || 'INCLUSIVE',
+      printGst: !!sale.printGst,
+      paymentMethod: sale.paymentMode || sale.paymentMethod || 'CASH',
+      paymentStatus: sale.paymentStatus || 'PAID',
+      transactionReference: sale.transactionReference || this.generateTransactionReference(),
+
+      subtotal: sale.totalMrpAmount || sale.subtotal || 0,
+      discount: sale.totalDiscountAmount || sale.discount || 0,
+      tax: sale.totalTaxAmount || sale.tax || 0,
+      cgstTotal: sale.cgstAmount || 0,
+      sgstTotal: sale.sgstAmount || 0,
+      total: sale.grandTotal || sale.totalAmount || sale.netAmount || 0,
+      notes: sale.notes || ''
+    };
+    
+    console.log('Enhanced form data to be patched (non-search fields):', otherFormData);
+    this.saleForm.patchValue(otherFormData);
     
     // Add sale items
     if (sale.items && Array.isArray(sale.items)) {
@@ -328,7 +403,56 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
    * Add a sale item with data for editing
    */
   addSaleItemWithData(itemData: any): void {
-    console.log('Adding item with data:', itemData);
+    console.log('=== DEBUGGING BATCH ALLOCATION ===');
+    console.log('Full item data received:', JSON.stringify(itemData, null, 2));
+    
+    // Extract batch information from batchAllocations array
+    let batchNo = 'N/A';
+    let expiryDate = '';
+    
+    console.log('Checking batchAllocations:', {
+      exists: !!itemData.batchAllocations,
+      isArray: Array.isArray(itemData.batchAllocations),
+      length: itemData.batchAllocations?.length,
+      data: itemData.batchAllocations
+    });
+    
+    if (itemData.batchAllocations && Array.isArray(itemData.batchAllocations) && itemData.batchAllocations.length > 0) {
+      const firstBatch = itemData.batchAllocations[0];
+      console.log('First batch allocation:', firstBatch);
+      
+      // Extract batch number - API uses 'batchNo' field
+      batchNo = firstBatch.batchNo || 'N/A';
+      console.log('Extracted batchNo:', batchNo);
+      
+      // Extract expiry date - API uses Firestore timestamp format
+      if (firstBatch.expiryDate && firstBatch.expiryDate.seconds) {
+        const date = new Date(firstBatch.expiryDate.seconds * 1000);
+        expiryDate = date.toISOString().split('T')[0];
+        console.log('Converted expiry date from timestamp:', firstBatch.expiryDate.seconds, 'to:', expiryDate);
+      } else if (firstBatch.expiryDate) {
+        // Handle other date formats as fallback
+        if (typeof firstBatch.expiryDate === 'string') {
+          expiryDate = this.formatDateForInput(firstBatch.expiryDate);
+        } else if (firstBatch.expiryDate instanceof Date) {
+          expiryDate = this.formatDate(firstBatch.expiryDate);
+        }
+        console.log('Used fallback date conversion:', expiryDate);
+      }
+      console.log('Final extracted batch info from batchAllocations:', { batchNo, expiryDate });
+    } else {
+      // Fallback to direct fields if batchAllocations not available
+      console.log('Checking direct batch fields:', {
+        batchNo: itemData.batchNo,
+        batchNumber: itemData.batchNumber,
+        expiryDate: itemData.expiryDate
+      });
+      batchNo = itemData.batchNo || itemData.batchNumber || 'N/A';
+      if (itemData.expiryDate) {
+        expiryDate = this.formatDateForInput(itemData.expiryDate);
+      }
+      console.log('Using fallback batch info:', { batchNo, expiryDate });
+    }
     
     // Create a complete item form immediately with default values
     const itemsArray = this.saleForm.get('items') as FormArray;
@@ -338,18 +462,19 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
       medicineId: [itemData.medicineId || '', Validators.required],
       medicineName: ['Loading...', Validators.required],
       manufacturer: [''],
-      batchNo: [itemData.batchNo || 'N/A'],
-      expiryDate: [''],
+      batchNo: [batchNo],
+      expiryDate: [expiryDate],
       quantity: [itemData.quantity || 0, [Validators.required, Validators.min(1)]],
       mrp: [itemData.mrpPerItem || 0, [Validators.required, Validators.min(0)]],
       unitCost: [itemData.salePrice || itemData.mrpPerItem || 0],
       discount: [itemData.discountPercentage || 0, Validators.min(0)],
       taxPercentage: [itemData.taxRateApplied || 0],
       taxableAmount: [itemData.lineItemTaxableAmount || 0],
-      cgstPercentage: [0],
-      sgstPercentage: [0],
+      cgst: [0], // CGST percentage - will be set after tax profile is applied
+      sgst: [0], // SGST percentage - will be set after tax profile is applied
       cgstAmount: [itemData.taxAmount ? itemData.taxAmount / 2 : 0],
       sgstAmount: [itemData.taxAmount ? itemData.taxAmount / 2 : 0],
+      taxProfileId: [itemData.taxProfileId || (this.taxProfiles.length > 0 ? this.taxProfiles[0].id : '')], // Include tax profile ID
       total: [itemData.lineItemTotalAmount || 0]
     });
     
@@ -358,6 +483,90 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
     
     // Then load medicine details asynchronously
     this.loadMedicineDetailsAndUpdate(itemData.medicineId, newItem);
+    
+    // CRITICAL: Populate the medicineBatches array so the dropdown has options
+    if (itemData.medicineId && batchNo !== 'N/A') {
+      if (!this.medicineBatches[itemData.medicineId]) {
+        this.medicineBatches[itemData.medicineId] = [];
+      }
+      
+      // Create batch data object for dropdown
+      const batchData: MedicineBatch = {
+        batchNo: batchNo,
+        expiryDate: expiryDate ? new Date(expiryDate) : null,
+        mrp: itemData.mrpPerItem || 0,
+        unitCost: itemData.salePrice || itemData.mrpPerItem || 0
+      };
+      
+      // Add batch to the dropdown options if not already present
+      const existingBatch = this.medicineBatches[itemData.medicineId].find(b => b.batchNo === batchNo);
+      if (!existingBatch) {
+        this.medicineBatches[itemData.medicineId].push(batchData);
+        console.log('Added batch to dropdown options:', batchData);
+        console.log('Medicine batches for', itemData.medicineId, ':', this.medicineBatches[itemData.medicineId]);
+      }
+    }
+    
+    // Apply tax profile data if available (with delayed retry if tax profiles not loaded yet)
+    const applyTaxProfile = () => {
+      if (itemData.taxProfileId && this.taxProfiles.length > 0) {
+        const taxProfile = this.taxProfiles.find(tp => tp.id === itemData.taxProfileId);
+        if (taxProfile) {
+          console.log('Applying tax profile in edit mode:', taxProfile);
+          
+          // Extract CGST and SGST from tax profile components
+          const cgstComponent = taxProfile.components.find(c => c.componentName === 'CGST');
+          const sgstComponent = taxProfile.components.find(c => c.componentName === 'SGST');
+          
+          const cgstRate = cgstComponent ? cgstComponent.rate : 0;
+          const sgstRate = sgstComponent ? sgstComponent.rate : 0;
+          
+          // Apply CGST and SGST percentages from tax profile
+          newItem.patchValue({
+            cgst: cgstRate,
+            sgst: sgstRate
+          });
+          console.log('Applied tax percentages:', { cgst: cgstRate, sgst: sgstRate });
+          
+          // Trigger recalculation immediately after applying tax profile
+          setTimeout(() => {
+            console.log('Triggering recalculation after tax profile application...');
+            this.calculateItemTotal(newItem);
+            // Also trigger overall totals calculation
+            this.calculateTotals();
+          }, 100);
+          
+          return true; // Successfully applied
+        }
+      }
+      return false; // Not applied
+    };
+    
+    // Try to apply tax profile immediately
+    if (!applyTaxProfile()) {
+      // If tax profiles not loaded yet, retry after a delay
+      console.log('Tax profiles not loaded yet, will retry applying tax profile...');
+      setTimeout(() => {
+        if (applyTaxProfile()) {
+          console.log('Tax profile applied successfully on retry');
+        } else {
+          console.warn('Failed to apply tax profile even after retry');
+        }
+      }, 500);
+    }
+    
+    // Ensure batch information is properly set after form initialization
+    setTimeout(() => {
+      newItem.patchValue({
+        batchNo: batchNo,
+        expiryDate: expiryDate
+      });
+      console.log('Final batch info set in form control:', { batchNo, expiryDate });
+      console.log('Available batches for dropdown:', this.getBatchesForMedicine(itemData.medicineId));
+      
+      // Recalculate totals after all data is set
+      this.calculateItemTotal(newItem);
+    }, 200);
   }
   
   /**
@@ -470,6 +679,12 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
           debounceTime(300),
           distinctUntilChanged(),
           tap(term => {
+            // Don't trigger search if we're currently selecting a doctor (programmatic update)
+            if (this.isSelectingDoctor) {
+              console.log('Ignoring doctor name change during selection (OTC)');
+              return;
+            }
+            
             // Only show dropdown if actively typing and not from selection
             if (term && term.length > 1) {
               this.showDoctorSearch = true;
@@ -515,26 +730,58 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
   }
   
   /**
-   * Select a doctor from search results
+   * Simple direct doctor selection - bypasses all complex logic
    * @param doctor The doctor to select
+   * @param index The index of the doctor in the list (optional)
+   * @param event The event that triggered selection (optional)
+   */
+  selectDoctorSimple(doctor: Doctor, index?: number, event?: Event): void {
+    console.log('=== SIMPLE DOCTOR SELECTION START (OTC) ===');
+    console.log('Doctor data:', doctor);
+    
+    // Prevent all event propagation
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    }
+    
+    // Set flag to prevent search loops during selection
+    this.isSelectingDoctor = true;
+    
+    // Immediately hide dropdown and clear results FIRST
+    this.showDoctorSearch = false;
+    this.doctorSearchResults = [];
+    
+    // Update form with minimal approach - no patchValue to avoid triggering subscriptions
+    const doctorNameControl = this.saleForm.get('doctorName');
+    const doctorIdControl = this.saleForm.get('doctorId');
+    
+    // Set values directly without triggering valueChanges
+    if (doctorNameControl) doctorNameControl.setValue(doctor.name, { emitEvent: false });
+    if (doctorIdControl) doctorIdControl.setValue(doctor.id, { emitEvent: false });
+    
+    // Update local state
+    this.selectedDoctor = doctor;
+    
+    console.log('=== SIMPLE DOCTOR SELECTION COMPLETE (OTC) ===');
+    console.log('Form values after selection:', {
+      doctorName: doctorNameControl?.value,
+      doctorId: doctorIdControl?.value
+    });
+    
+    // Reset flag after processing
+    setTimeout(() => {
+      this.isSelectingDoctor = false;
+      console.log('Doctor selection flag reset (OTC)');
+    }, 200);
+  }
+
+  /**
+   * Legacy doctor selection method - redirects to simple method
    */
   selectDoctor(doctor: Doctor): void {
-    // Set selected doctor name and hide search results
-    if (doctor) {
-      console.log('Selected doctor:', doctor);
-      
-      // Update the form controls
-      this.saleForm.patchValue({
-        doctorName: doctor.name,
-        doctorId: doctor.id
-      });
-      
-      // Update our local doctor reference
-      this.selectedDoctor = doctor;
-      
-      // Hide the dropdown
-      this.showDoctorSearch = false;
-    }
+    this.selectDoctorSimple(doctor);
   }
   
   ngOnDestroy(): void {
@@ -545,13 +792,6 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
    * Setup all form value change subscriptions for automatic calculations
    */
   private setupFormValueChangeSubscriptions(): void {
-    // Subscribe to overall discount changes
-    this.subscriptions.add(
-      this.saleForm.get('overallDiscount')?.valueChanges.subscribe(() => {
-        this.calculateTotals();
-      })
-    );
-    
     // Subscribe to item array changes to recalculate when items are added/removed
     this.subscriptions.add(
       this.itemsFormArray.valueChanges.subscribe(() => {
@@ -599,11 +839,6 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
         this.loadingPatients = false;
         this.showPatientSearch = this.patientSearchResults.length > 0;
         console.log('Patient search results:', this.patientSearchResults);
-        
-        // Auto-select patient if there's exactly one match
-        if (this.patientSearchResults.length === 1) {
-          this.selectPatient(this.patientSearchResults[0]);
-        }
       })
     );
     
@@ -615,6 +850,12 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
           debounceTime(300),
           distinctUntilChanged()
         ).subscribe(term => {
+          // Don't trigger search if we're currently selecting a patient (programmatic update)
+          if (this.isSelectingPatient) {
+            console.log('Ignoring patient name change during selection (OTC)');
+            return;
+          }
+          
           if (term && term.length >= 2) {
             this.patientSearchTerms.next(term);
           } else {
@@ -632,6 +873,12 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
           debounceTime(300),
           distinctUntilChanged(),
           tap((phoneNumber: string) => {
+            // Don't trigger search if we're currently selecting a patient (programmatic update)
+            if (this.isSelectingPatient) {
+              console.log('Ignoring phone number change during selection (OTC)');
+              return;
+            }
+            
             console.log('Phone number changed:', phoneNumber);
             if (phoneNumber && phoneNumber.length >= 5) {
               // Use the search terms subject for consistency
@@ -746,32 +993,64 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
   }
   
   /**
-   * Select a patient from search results
+   * Simple direct patient selection - bypasses all complex logic
+   * @param patient The patient to select
+   * @param index The index of the patient in the list (optional)
+   * @param event The event that triggered selection (optional)
+   */
+  selectPatientSimple(patient: Patient, index?: number, event?: Event): void {
+    console.log('=== SIMPLE PATIENT SELECTION START (OTC) ===');
+    console.log('Patient data:', patient);
+    
+    // Prevent all event propagation
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    }
+    
+    // Set flag to prevent search loops during selection
+    this.isSelectingPatient = true;
+    
+    // Immediately hide dropdown and clear results FIRST
+    this.showPatientSearch = false;
+    this.patientSearchResults = [];
+    
+    // Update form with minimal approach - no patchValue to avoid triggering subscriptions
+    const patientNameControl = this.saleForm.get('patientName');
+    const phoneNumberControl = this.saleForm.get('phoneNumber');
+    const addressControl = this.saleForm.get('address');
+    const genderControl = this.saleForm.get('gender');
+    
+    // Set values directly without triggering valueChanges
+    if (patientNameControl) patientNameControl.setValue(patient.name || '', { emitEvent: false });
+    if (phoneNumberControl) phoneNumberControl.setValue(patient.phoneNumber || '', { emitEvent: false });
+    if (addressControl) addressControl.setValue(patient.address || '', { emitEvent: false });
+    if (genderControl) genderControl.setValue(patient.gender || '', { emitEvent: false });
+    
+    // Update local state
+    this.selectedPatient = patient;
+    
+    console.log('=== SIMPLE PATIENT SELECTION COMPLETE (OTC) ===');
+    console.log('Form values after selection:', {
+      patientName: patientNameControl?.value,
+      phoneNumber: phoneNumberControl?.value,
+      address: addressControl?.value,
+      gender: genderControl?.value
+    });
+    
+    // Reset flag after processing
+    setTimeout(() => {
+      this.isSelectingPatient = false;
+      console.log('Patient selection flag reset (OTC)');
+    }, 200);
+  }
+
+  /**
+   * Legacy patient selection method - redirects to simple method
    */
   selectPatient(patient: Patient): void {
-    if (patient) {
-      console.log('Selected patient:', patient);
-      
-      // Update the form controls
-      this.saleForm.patchValue({
-        patientName: patient.name,
-        phoneNumber: patient.phoneNumber || ''
-      });
-      
-      // Fill in other patient details if available
-      if (patient.address) {
-        this.saleForm.get('patientAddress')?.setValue(patient.address);
-      }
-      if (patient.gender) {
-        this.saleForm.get('patientGender')?.setValue(patient.gender);
-      }
-      
-      // Update local state
-      this.selectedPatient = patient;
-      
-      // Hide dropdown
-      this.showPatientSearch = false;
-    }
+    this.selectPatientSimple(patient);
   }
   
   getCurrentDate(): string {
@@ -798,7 +1077,7 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
       mrp: [0, Validators.required], // Not disabled for better value handling
       quantity: [1, [Validators.required, Validators.min(1)]],
       discount: [0],
-      taxProfileId: [''], // For selecting the tax profile
+      taxProfileId: [this.taxProfiles.length > 0 ? this.taxProfiles[0].id : ''], // For selecting the tax profile - default to first available
       cgst: [0],
       sgst: [0],
       taxPercentage: [0], // Total tax percentage (CGST+SGST) for backward compatibility
@@ -819,8 +1098,16 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
       this.calculateItemTotal(itemGroup);
     });
     
+    // Subscribe to batch changes to update related fields
+    const batchSub = itemGroup.get('batchNo')?.valueChanges.subscribe((selectedBatchNo) => {
+      if (selectedBatchNo) {
+        this.onBatchChange(itemGroup, String(selectedBatchNo));
+      }
+    });
+    
     if (quantitySub) this.subscriptions.add(quantitySub);
     if (discountSub) this.subscriptions.add(discountSub);
+    if (batchSub) this.subscriptions.add(batchSub);
     
     this.itemsFormArray.push(itemGroup);
     
@@ -833,47 +1120,7 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
     this.calculateTotals();
   }
 
-  /**
-   * Handles batch selection change
-   * @param itemGroup The form group representing the item
-   * @param medicineId The ID of the selected medicine
-   */
-  onBatchChange(itemGroup: AbstractControl): void {
-    const formGroup = itemGroup as FormGroup;
-    const medicineId = itemGroup.get('medicineId')?.value;
-    const batchNo = itemGroup.get('batchNo')?.value;
-    
-    if (!medicineId || !batchNo || !this.medicineBatches[medicineId]) {
-      console.warn('Cannot update batch details: missing medicine ID, batch number, or batch data');
-      return;
-    }
-    
-    console.log(`Batch changed to ${batchNo} for medicine ${medicineId}`);
-    
-    // Find the selected batch in the batches array
-    const selectedBatch = this.medicineBatches[medicineId].find(batch => batch.batchNo === batchNo);
-    
-    if (selectedBatch) {
-      console.log('Found batch data:', selectedBatch);
-      
-      // Update form with batch details
-      const currentQty = formGroup.get('quantity')?.value || 1;
-      
-      formGroup.patchValue({
-        expiryDate: selectedBatch.expiryDate ? this.formatDate(selectedBatch.expiryDate) : '',
-        unitCost: selectedBatch.unitCost,
-        mrp: selectedBatch.mrp * currentQty
-      });
-      
-      // Trigger tax calculation
-      this.onTaxProfileChange(formGroup);
-      
-      // Update total for this item
-      this.calculateItemTotal(formGroup);
-    } else {
-      console.warn(`Batch ${batchNo} not found for medicine ${medicineId}`);
-    }
-  }
+  
   
   /**
    * Gets available batches for a given medicine ID
@@ -1024,6 +1271,7 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
     
     // Reset totals
     this.subtotal = 0;
+    this.totalBeforeDiscount = 0;
     this.discount = 0;
     this.tax = 0;
     this.total = 0;
@@ -1034,6 +1282,7 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
     // Initialize tax totals
     let totalCGST = 0;
     let totalSGST = 0;
+    let totalBeforeAnyDiscount = 0; // This will be the true "Total Before Discount"
     
     // Sum up all items
     console.log(`Processing ${this.itemsFormArray.controls.length} items in total calculation`);
@@ -1047,6 +1296,29 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
       const total = Number(itemGroup.get('total')?.value || 0);
       const taxableAmount = Number(itemGroup.get('taxableAmount')?.value || 0);
       const totalDiscountAmount = (mrp * quantity * discount) / 100;
+      
+      // Calculate gross amount before any discount (MRP * quantity)
+      const grossAmount = mrp * quantity;
+      
+      // Calculate tax on gross amount for "Total Before Discount"
+      const taxProfileId = itemGroup.get('taxProfileId')?.value;
+      const taxProfile = this.taxProfiles.find(tp => tp.id === taxProfileId);
+      let grossTaxAmount = 0;
+      
+      if (taxProfile && gstType !== 'NON_GST') {
+        const taxRate = taxProfile.totalRate;
+        if (gstType === 'INCLUSIVE') {
+          // For inclusive GST, tax is already included in MRP
+          grossTaxAmount = (grossAmount * taxRate) / (100 + taxRate);
+        } else {
+          // For exclusive GST, tax is added to MRP
+          grossTaxAmount = (grossAmount * taxRate) / 100;
+        }
+      }
+      
+      // Calculate true total before any discount (gross amount + tax for exclusive, or just gross amount for inclusive)
+      const grossTotalWithTax = gstType === 'EXCLUSIVE' ? grossAmount + grossTaxAmount : grossAmount;
+      totalBeforeAnyDiscount += grossTotalWithTax;
       
       console.log(`Item ${index}: qty=${quantity}, mrp=${mrp}, discount=${discount}%, taxableAmount=${taxableAmount}, total=${total}`);
       
@@ -1070,30 +1342,37 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
       this.total += total;
     });
     
-    // Apply overall discount
-    const overallDiscountPercent = Number(this.saleForm.get('overallDiscount')?.value || 0);
-    const overallDiscountValue = (this.subtotal * overallDiscountPercent) / 100;
-    this.discount += overallDiscountValue;
+    // Set total before discount to show the true amount before ANY discounts
+    this.totalBeforeDiscount = totalBeforeAnyDiscount;
     
-    // Recalculate final total based on GST type
+    // Calculate final total based on GST type (without overall discount)
     if (gstType === 'INCLUSIVE') {
       // For inclusive GST, tax is already included in the item totals
-      // We need to adjust the total by the overall discount
-      this.total = this.total - overallDiscountValue;
+      this.total = this.total;
     } else if (gstType === 'EXCLUSIVE') {
-      // For exclusive GST, subtract overall discount and add tax
-      this.total = this.subtotal - overallDiscountValue + this.tax;
+      // For exclusive GST, add tax to subtotal
+      this.total = this.subtotal + this.tax;
     } else { // NON_GST
       // For NON_GST, no tax is applied
       this.tax = 0;
-      this.total = this.subtotal - overallDiscountValue;
+      this.total = this.subtotal;
     }
     
     // Format to 2 decimal places
     this.subtotal = Number(this.subtotal.toFixed(2));
+    this.totalBeforeDiscount = Number(this.totalBeforeDiscount.toFixed(2));
     this.discount = Number(this.discount.toFixed(2));
     this.tax = Number(this.tax.toFixed(2));
     this.total = Number(this.total.toFixed(2));
+    
+    // Debug discount calculation
+    console.log('=== DISCOUNT CALCULATION DEBUG ===');
+    console.log('Total discount amount:', this.discount);
+
+    console.log('Subtotal:', this.subtotal);
+    console.log('Tax:', this.tax);
+    console.log('Final total:', this.total);
+    console.log('===================================');
     
     // Update form controls including tax breakdown
     this.saleForm.patchValue({
@@ -1311,6 +1590,16 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
       manufacturer: medicine.manufacturer || ''
     });
     
+    // Ensure a tax profile is assigned - use the first available tax profile as default
+    const currentTaxProfileId = itemGroup.get('taxProfileId')?.value;
+    if (!currentTaxProfileId && this.taxProfiles.length > 0) {
+      const defaultTaxProfile = this.taxProfiles[0];
+      console.log('Assigning default tax profile:', defaultTaxProfile.id);
+      itemGroup.patchValue({
+        taxProfileId: defaultTaxProfile.id
+      });
+    }
+    
     // Default price and quantity
     const currentQty = itemGroup.get('quantity')?.value || 1;
     
@@ -1399,7 +1688,8 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
                       packQuantity: item.packQuantity,
                       itemsPerPack: item.itemsPerPack,
                       purchaseId: purchase.purchaseId || purchase.id,
-                      referenceId: purchase.referenceId || purchase.reference
+                      referenceId: purchase.referenceId || purchase.reference,
+                      taxProfileId: item.taxProfileId || ''  // Map tax profile from purchase data
                     };
                     
                     console.log('Adding batch data:', batchData);
@@ -1469,7 +1759,67 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
     this.activeSearchIndex = -1;
   }
 
-  
+  /**
+   * Handle batch selection change - update related fields based on selected batch
+   * @param itemGroup The form group for the item
+   * @param selectedBatchNo The selected batch number
+   */
+  onBatchChange(itemGroup: FormGroup, selectedBatchNo: string): void {
+    console.log('OTC Batch changed to:', selectedBatchNo);
+    
+    // Get the medicine ID to find the correct batches
+    const medicineId = itemGroup.get('medicineId')?.value;
+    if (!medicineId) {
+      console.log('No medicine ID found, cannot update batch info');
+      return;
+    }
+    
+    // Get batches for this medicine
+    const batches = this.medicineBatches[medicineId] || [];
+    console.log('Available batches for medicine:', batches);
+    
+    // Find the selected batch
+    const selectedBatch = batches.find(batch => batch.batchNo === selectedBatchNo);
+    if (!selectedBatch) {
+      console.log('Selected batch not found:', selectedBatchNo);
+      return;
+    }
+    
+    console.log('Updating OTC fields for selected batch:', selectedBatch);
+    
+    // Get current quantity to calculate total MRP
+    const currentQty = itemGroup.get('quantity')?.value || 1;
+    
+    // Update all related fields based on the selected batch
+    itemGroup.patchValue({
+      expiryDate: selectedBatch.expiryDate ? this.formatDate(selectedBatch.expiryDate) : '',
+      unitCost: selectedBatch.unitCost,
+      mrp: selectedBatch.mrp * currentQty
+    });
+    
+    // Update tax profile if available in batch data
+    if (selectedBatch.taxProfileId) {
+      itemGroup.patchValue({
+        taxProfileId: selectedBatch.taxProfileId
+      });
+      console.log('Updated tax profile to:', selectedBatch.taxProfileId);
+      
+      // Trigger tax profile change to update tax calculations
+      this.onTaxProfileChange(itemGroup);
+    }
+    
+    console.log('Updated OTC fields for batch change:', {
+      batchNo: selectedBatchNo,
+      expiryDate: selectedBatch.expiryDate ? this.formatDate(selectedBatch.expiryDate) : '',
+      unitCost: selectedBatch.unitCost,
+      mrp: selectedBatch.mrp * currentQty,
+      taxProfileId: selectedBatch.taxProfileId
+    });
+    
+    // Recalculate totals after updating prices
+    this.calculateItemTotal(itemGroup);
+  }
+
   markFormGroupTouched(formGroup: FormGroup): void {
     Object.keys(formGroup.controls).forEach(key => {
       const control = formGroup.get(key);
@@ -1489,6 +1839,51 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Calculate age from date of birth
+   */
+  calculateAgeFromDOB(dateOfBirth: string): number {
+    if (!dateOfBirth) return 0;
+    
+    try {
+      const dob = new Date(dateOfBirth);
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      const monthDiff = today.getMonth() - dob.getMonth();
+      
+      // Adjust age if birthday hasn't occurred this year
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+        age--;
+      }
+      
+      return Math.max(0, age); // Ensure age is not negative
+    } catch (error) {
+      console.error('Error calculating age from DOB:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Handle date of birth change and automatically calculate age
+   */
+  onDateOfBirthChange(event: any): void {
+    const dateOfBirth = event.target.value;
+    if (dateOfBirth) {
+      const calculatedAge = this.calculateAgeFromDOB(dateOfBirth);
+      console.log(`DOB changed to: ${dateOfBirth}, calculated age: ${calculatedAge}`);
+      
+      // Update the age field in the form
+      this.saleForm.patchValue({
+        age: calculatedAge
+      });
+    } else {
+      // Clear age if DOB is cleared
+      this.saleForm.patchValue({
+        age: 0
+      });
+    }
+  }
+
   onSubmit(): void {
     if (this.saleForm.invalid) {
       this.markFormGroupTouched(this.saleForm);
@@ -1503,6 +1898,25 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
     this.submitting = true;
     const formValue = this.saleForm.getRawValue(); // Get values including disabled fields
     
+    // Calculate age from date of birth if DOB is provided
+    let calculatedAge = formValue.age || 0;
+    if (formValue.dateOfBirth) {
+      calculatedAge = this.calculateAgeFromDOB(formValue.dateOfBirth);
+      console.log(`Calculated age from DOB (${formValue.dateOfBirth}): ${calculatedAge}`);
+    }
+    
+    // Validate that all items have required taxProfileId
+    const itemsWithoutTaxProfile = this.itemsFormArray.controls.filter((control: AbstractControl) => {
+      const item = (control as FormGroup).value;
+      return !item.taxProfileId || item.taxProfileId.trim() === '';
+    });
+    
+    if (itemsWithoutTaxProfile.length > 0) {
+      alert(`Tax Profile ID is required for all items. Please select a tax profile for each item.`);
+      this.submitting = false;
+      return;
+    }
+    
     // Format items for API to match Java backend SaleItemDto with tax details
     const saleItems: SaleItemDto[] = this.itemsFormArray.controls.map((control: AbstractControl) => {
       const item = (control as FormGroup).value;
@@ -1510,6 +1924,9 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
         medicineId: item.medicineId,
         quantity: item.quantity,
         discountPercentage: item.discount || 0,
+        taxProfileId: item.taxProfileId, // Include required taxProfileId
+        batchNumber: item.batchNo || 'N/A',
+        expiryDate: null, // Set to null to avoid deserialization issues
         // Add required mrp field to fix TypeScript error
         mrp: item.mrp || 0,
         // Include tax details
@@ -1531,10 +1948,10 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
       // Patient details
       patientName: formValue.patientName || 'Walk-in Customer',
       patientMobile: formValue.phoneNumber || '',
-      patientAddress: formValue.patientAddress || '',
+      address: formValue.address || '',
       patientDob: formValue.dateOfBirth || null,
-      patientAge: formValue.age || null,
-      patientGender: formValue.gender || null,
+      patientAge: calculatedAge, // Use calculated age instead of form value
+      gender: formValue.gender || null,
       
       // Invoice details
       date: dateStr, // ISO format date string as required
@@ -1700,7 +2117,7 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
     this.saleForm.patchValue({
       patientName: '',
       phoneNumber: '',
-      patientAddress: '',
+      address: '',
       dateOfBirth: '',
       age: '',
       gender: '',
@@ -1714,7 +2131,7 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
     
     // Reset totals
     this.saleForm.patchValue({
-      overallDiscount: 0,
+
       subtotal: 0,
       discount: 0,
       tax: 0,
@@ -1749,6 +2166,23 @@ export class SalesOtcFormComponent implements OnInit, OnDestroy {
       next: (profiles) => {
         this.taxProfiles = profiles;
         console.log('Loaded tax profiles:', this.taxProfiles);
+        
+        // Assign default tax profile to any existing items that don't have one
+        if (this.taxProfiles.length > 0) {
+          const defaultTaxProfileId = this.taxProfiles[0].id;
+          this.itemsFormArray.controls.forEach((control: AbstractControl) => {
+            const formGroup = control as FormGroup;
+            const currentTaxProfileId = formGroup.get('taxProfileId')?.value;
+            if (!currentTaxProfileId || currentTaxProfileId.trim() === '') {
+              console.log('Assigning default tax profile to existing item:', defaultTaxProfileId);
+              formGroup.patchValue({
+                taxProfileId: defaultTaxProfileId
+              });
+              // Trigger tax calculation for this item
+              this.onTaxProfileChange(formGroup);
+            }
+          });
+        }
       },
       error: (error) => {
         console.error('Error loading tax profiles:', error);

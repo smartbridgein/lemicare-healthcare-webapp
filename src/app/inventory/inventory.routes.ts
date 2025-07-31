@@ -22,6 +22,10 @@ export const INVENTORY_ROUTES: Routes = [
     loadComponent: () => import('./components/purchase-form').then(c => c.PurchaseFormComponent)
   },
   {
+    path: 'purchases/edit/:id',
+    loadComponent: () => import('./components/purchase-form').then(c => c.PurchaseFormComponent)
+  },
+  {
     path: 'sales',
     loadComponent: () => import('./components/sales/sales.component').then(c => c.SalesComponent)
   },
@@ -38,6 +42,10 @@ export const INVENTORY_ROUTES: Routes = [
     loadComponent: () => import('./components/sales-prescription-form/sales-prescription-form.component').then(c => c.SalesPrescriptionFormComponent)
   },
   {
+    path: 'sales/prescription/edit/:id',
+    loadComponent: () => import('./components/sales-prescription-form/sales-prescription-form.component').then(c => c.SalesPrescriptionFormComponent)
+  },
+  {
     path: 'returns',
     loadComponent: () => import('./components/returns-list/returns-list.component').then(c => c.ReturnsListComponent)
   },
@@ -48,6 +56,10 @@ export const INVENTORY_ROUTES: Routes = [
   {
     path: 'returns/purchase/new',
     loadComponent: () => import('./components/purchase-return-form/purchase-return-form.component').then(c => c.PurchaseReturnFormComponent)
+  },
+  {
+    path: 'stock',
+    loadComponent: () => import('./components/stock/stock.component').then(c => c.StockComponent)
   },
   {
     path: 'suppliers',
@@ -61,6 +73,10 @@ export const INVENTORY_ROUTES: Routes = [
   {
     path: 'reports/dashboard',
     loadComponent: () => import('./components/reports-dashboard/reports-dashboard.component').then(c => c.ReportsDashboardComponent)
+  },
+  {
+    path: 'alerts',
+    loadChildren: () => import('./components/inventory-alerts-dashboard/inventory-alerts-dashboard.module').then(m => m.InventoryAlertsDashboardModule)
   },
   {
     path: 'masters',

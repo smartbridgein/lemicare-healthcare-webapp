@@ -21,153 +21,262 @@
           <div class="col-md-6">
             <!-- Purchase Selection -->
             <div class="form-group mb-3">
-              <label for="purchaseSearch" class="form-label">Search Purchase</label>
+              <label for="purchaseSearch" class="form-label">Search Purchase *</label>
               <div class="input-group">
                 <input 
                   type="text" 
                   class="form-control" 
                   id="purchaseSearch" 
-                  [value]="purchaseSearchText"
-                  (input)="searchPurchases($event)" 
-                  placeholder="Search by purchase ID or supplier" />
+                  [formControl]="searchControl"
+                  placeholder="Search by purchase ID, reference, or supplier" />
                 <button 
                   class="btn btn-outline-secondary" 
                   type="button"
                   [disabled]="isSearching">
-                  <i class="fas fa-search"></i>
+                  <i class="fas fa-search" *ngIf="!isSearching"></i>
+                  <i class="fas fa-spinner fa-spin" *ngIf="isSearching"></i>
                 </button>
               </div>
               <!-- Purchase Search Results -->
-              <div class="position-relative">
+              <div class="position-relative" *ngIf="searchResults$ | async as results">
                 <ul class="list-group position-absolute w-100" style="z-index: 1000;" 
-                    *ngIf="filteredPurchases.length > 0">
+                    *ngIf="results.length > 0">
                   <li 
-                    *ngFor="let purchase of filteredPurchases" 
+                    *ngFor="let purchase of results" 
                     class="list-group-item list-group-item-action"
                     (click)="selectPurchase(purchase)">
                     <div class="d-flex justify-content-between">
-                      <span>{{ returnsService.formatPurchaseId(purchase.id || purchase.purchaseId || '') }}</span>
-                      <span>{{ purchase.referenceId || '' }}</span>
-                      <span>{{ purchase.supplier?.name || 'Supplier ID: ' + (purchase.supplierId || '').substring(4, 12) }}</span>
-                      <span>{{ purchase.totalAmount | currency:'INR' }}</span>
+                      <span><strong>{{ returnsService.formatPurchaseId(purchase.id || purchase.purchaseId || '') }}</strong></span>
+                      <span class="badge bg-primary">{{ purchase.referenceId || 'No Ref' }}</span>
                     </div>
+                    <small class="text-muted d-block">{{ purchase.supplier?.name || 'Unknown Supplier' }}</small>
+                    <small class="text-success">₹{{ purchase.totalAmount | number:'1.2-2' }}</small>
                   </li>
                 </ul>
               </div>
             </div>
-
+          </div>
+          <div class="col-md-6">
             <!-- Return Date -->
             <div class="form-group mb-3">
-              <label for="returnDate" class="form-label">Return Date</label>
+              <label for="returnDate" class="form-label">Return Date *</label>
               <input 
-                type="datetime-local" 
-                id="returnDate" 
-                formControlName="returnDate"
+                type="date" 
                 class="form-control" 
-                [class.is-invalid]="returnForm.get('returnDate')?.invalid && returnForm.get('returnDate')?.touched" />
-              <div class="invalid-feedback" 
-                   *ngIf="returnForm.get('returnDate')?.invalid && returnForm.get('returnDate')?.touched">
-                Return date is required
-              </div>
+                id="returnDate" 
+                formControlName="returnDate" 
+                required />
             </div>
           </div>
+        </div>
 
+        <!-- Supplier -->
+        <div class="form-group mb-3">
+          <label for="supplierName" class="form-label">Supplier</label>
+          <input 
+            type="text" 
+            id="supplierName" 
+            formControlName="supplierName"
+            class="form-control" 
+            readonly />
+        </div>
+        
+        <!-- Return Details -->
+        <div class="row mb-4">
           <div class="col-md-6">
-            <!-- Supplier -->
-            <div class="form-group mb-3">
-              <label for="supplierName" class="form-label">Supplier</label>
-              <input 
-                type="text" 
-                id="supplierName" 
-                formControlName="supplierName"
-                class="form-control" 
-                readonly />
-            </div>
-            
-            <!-- Reason -->
-            <div class="form-group mb-3">
-              <label for="reason" class="form-label">Reason for Return</label>
-              <textarea 
-                id="reason" 
-                formControlName="reason"
-                class="form-control" 
-                rows="3"
-                [class.is-invalid]="returnForm.get('reason')?.invalid && returnForm.get('reason')?.touched"></textarea>
-              <div class="invalid-feedback" 
-                   *ngIf="returnForm.get('reason')?.invalid && returnForm.get('reason')?.touched">
-                Reason is required
-              </div>
-            </div>
+            <label for="reason" class="form-label">Return Reason *</label>
+            <textarea 
+              class="form-control" 
+              id="reason" 
+              formControlName="reason" 
+              rows="3" 
+              placeholder="Please specify the reason for return"
+              required></textarea>
+          </div>
+          <div class="col-md-3">
+            <label for="refundMode" class="form-label">Refund Mode *</label>
+            <select class="form-control" id="refundMode" formControlName="refundMode" required>
+              <option value="CASH">Cash</option>
+              <option value="CARD">Card</option>
+              <option value="UPI">UPI</option>
+              <option value="BANK_TRANSFER">Bank Transfer</option>
+              <option value="CHEQUE">Cheque</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="refundReference" class="form-label">Refund Reference</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="refundReference" 
+              formControlName="refundReference" 
+              placeholder="Transaction/Reference ID" />
           </div>
         </div>
 
         <!-- Purchase Items -->
-        <div class="mb-3" *ngIf="selectedPurchase">
-          <h5>Purchase Items</h5>
+        <div class="mb-4" *ngIf="selectedPurchase">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Purchase Items for Return</h5>
+            <span class="badge bg-info">{{ itemsArray.length }} items available</span>
+          </div>
           <div class="table-responsive">
-            <table class="table table-bordered table-striped">
-              <thead>
+            <table class="table table-bordered table-hover">
+              <thead class="table-dark">
                 <tr>
                   <th>Medicine</th>
                   <th>Batch No</th>
-                  <th>Purchase Price</th>
+                  <th>Expiry Date</th>
                   <th>Original Qty</th>
+                  <th>Purchase Price</th>
+                  <th>MRP</th>
                   <th>Return Qty</th>
+                  <th>Return Value</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr *ngFor="let item of itemsArray.controls; let i = index" [formGroup]="getFormGroup(item)">
-                  <td>{{ item.get('medicineName')?.value }}</td>
+              <tbody formArrayName="items">
+                <tr *ngFor="let item of itemsArray.controls; let i = index" [formGroupName]="i" class="align-middle">
                   <td>
-                    <input 
-                      type="text" 
-                      formControlName="batchNo"
-                      class="form-control form-control-sm"
-                      [class.is-invalid]="item.get('batchNo')?.invalid && item.get('batchNo')?.touched" />
-                    <div class="invalid-feedback" *ngIf="item.get('batchNo')?.invalid && item.get('batchNo')?.touched">Batch number is required</div>
+                    <div class="fw-bold">{{ getFormGroup(item).get('medicineName')?.value }}</div>
+                    <small class="text-muted">ID: {{ getFormGroup(item).get('medicineId')?.value?.substring(0, 8) }}...</small>
                   </td>
-                  <td>{{ item.get('purchasePrice')?.value | currency:'INR' }}</td>
-                  <td>{{ item.get('originalQuantity')?.value }}</td>
+                  <td>
+                    <span class="badge bg-secondary">{{ getFormGroup(item).get('batchNo')?.value }}</span>
+                  </td>
+                  <td>
+                    <small>{{ getFormGroup(item).get('expiryDate')?.value | date:'dd/MM/yyyy' }}</small>
+                  </td>
+                  <td>
+                    <span class="badge bg-primary">{{ getFormGroup(item).get('originalQuantity')?.value }}</span>
+                  </td>
+                  <td>
+                    <span class="text-success fw-bold">₹{{ getFormGroup(item).get('purchasePrice')?.value | number:'1.2-2' }}</span>
+                  </td>
+                  <td>
+                    <span class="text-info">₹{{ getFormGroup(item).get('mrpPerItem')?.value | number:'1.2-2' }}</span>
+                  </td>
                   <td>
                     <input 
                       type="number" 
-                      formControlName="returnQuantity"
-                      class="form-control form-control-sm" 
-                      min="0"
-                      [max]="item.get('originalQuantity')?.value"
-                      [class.is-invalid]="item.get('returnQuantity')?.invalid && item.get('returnQuantity')?.touched" />
+                      class="form-control" 
+                      formControlName="returnQuantity" 
+                      min="0" 
+                      [max]="getFormGroup(item).get('originalQuantity')?.value" 
+                      step="1" 
+                      placeholder="0"
+                      (input)="onReturnQuantityChange(getFormGroup(item), $event)"
+                      (change)="onReturnQuantityChange(getFormGroup(item), $event)" />
+                  </td>
+                  <td>
+                    <span class="fw-bold text-danger">₹{{ getFormGroup(item).get('returnValue')?.value | number:'1.2-2' }}</span>
                   </td>
                 </tr>
               </tbody>
+              <tfoot class="table-light">
+                <tr>
+                  <td colspan="7" class="text-end fw-bold">Total Return Amount:</td>
+                  <td class="fw-bold text-danger fs-5">₹{{ returnForm.get('totalReturnAmount')?.value | number:'1.2-2' }}</td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
 
-        <div class="card-footer bg-light d-flex justify-content-between mt-4">
-          <button 
-            type="button" 
-            class="btn btn-outline-secondary"
-            routerLink="/inventory/returns">
-            <i class="fas fa-times me-2"></i>Cancel
+        <!-- Additional Notes -->
+        <div class="row mb-4" *ngIf="selectedPurchase">
+          <div class="col-md-12">
+            <label for="notes" class="form-label">Additional Notes</label>
+            <textarea 
+              class="form-control" 
+              id="notes" 
+              formControlName="notes" 
+              rows="2" 
+              placeholder="Any additional notes or comments about the return"></textarea>
+          </div>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="d-flex justify-content-between align-items-center">
+          <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+            <i class="fas fa-arrow-left me-2"></i>Back to Returns
           </button>
-          <div>
-            <button 
-              type="button" 
-              class="btn btn-outline-danger me-2"
-              (click)="resetForm()">
-              <i class="fas fa-redo me-2"></i>Reset Form
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-warning" (click)="resetForm()" *ngIf="selectedPurchase">
+              <i class="fas fa-undo me-2"></i>Reset Form
             </button>
             <button 
               type="submit" 
-              class="btn btn-primary"
-              [disabled]="isSubmitting || returnForm.invalid">
-              <i class="fas fa-save me-2" *ngIf="!isSubmitting"></i>
-              <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
-              Create Return
+              class="btn btn-success btn-lg" 
+              [disabled]="returnForm.invalid || isLoading || itemsArray.length === 0 || !hasItemsToReturn()">
+              <i class="fas fa-spinner fa-spin me-2" *ngIf="isLoading"></i>
+              <i class="fas fa-check-circle me-2" *ngIf="!isLoading"></i>
+              {{ isLoading ? 'Processing Return...' : 'Create Purchase Return' }}
             </button>
           </div>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Purchase Details -->
+  <div class="card mb-4" *ngIf="selectedPurchase">
+    <div class="card-header bg-light">
+      <h5 class="mb-0">Selected Purchase Details</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Purchase ID</label>
+          <input type="text" class="form-control" [value]="returnsService.formatPurchaseId(selectedPurchase.id || selectedPurchase.purchaseId || '')" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Supplier</label>
+          <input type="text" class="form-control" [value]="selectedPurchase.supplier?.name || 'Unknown Supplier'" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Purchase Date</label>
+          <input type="text" class="form-control" [value]="selectedPurchase.invoiceDate | date:'dd/MM/yyyy'" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Total Amount</label>
+          <input type="text" class="form-control" [value]="'₹' + (selectedPurchase.totalAmount | number:'1.2-2')" readonly />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Return Summary Card -->
+  <div class="card border-success" *ngIf="selectedPurchase && returnForm.get('totalReturnAmount')?.value > 0">
+    <div class="card-header bg-success text-white">
+      <h5 class="mb-0">Return Summary</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-3">
+          <div class="text-center">
+            <h6 class="text-muted">Total Return Amount</h6>
+            <h4 class="text-success">₹{{ returnForm.get('totalReturnAmount')?.value | number:'1.2-2' }}</h4>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center">
+            <h6 class="text-muted">Items to Return</h6>
+            <h4 class="text-info">{{ getItemsToReturnCount() }}</h4>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center">
+            <h6 class="text-muted">Refund Mode</h6>
+            <h4 class="text-warning">{{ returnForm.get('refundMode')?.value }}</h4>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="text-center">
+            <h6 class="text-muted">Return Date</h6>
+            <h4 class="text-primary">{{ returnForm.get('returnDate')?.value | date:'dd/MM/yyyy' }}</h4>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InventoryService, Patient } from '../../services/inventory.service';
+import { Medicine } from '../../models/inventory.models';
 import { Sale } from '../../models/inventory.models';
 import { Observable } from 'rxjs';
 import { SaleDetailDialogComponent } from './sale-detail-dialog/sale-detail-dialog.component';
@@ -28,6 +29,11 @@ export class SalesComponent implements OnInit {
   // Store patient details for prescription sales
   patientDetailsMap: Map<string, Patient> = new Map<string, Patient>();
 
+  // Medicine list optimization - load once and share
+  medicines: Medicine[] = [];
+  loadingMedicines = false;
+  medicinesLoaded = false;
+
   // Filter options
   filterDate: string = '';
   filterType: string = 'all'; // 'all', 'otc', or 'prescription'
@@ -40,6 +46,7 @@ export class SalesComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadSales();
+    this.loadMedicines();
   }
   
   @ViewChild(SaleDetailDialogComponent) saleDetailDialog?: SaleDetailDialogComponent;
@@ -92,7 +99,49 @@ export class SalesComponent implements OnInit {
   }
   
   /**
-   * Navigate to edit form for an OTC sale
+   * Load medicines once for optimization - shared across OTC and prescription forms
+   */
+  loadMedicines(): void {
+    if (this.medicinesLoaded || this.loadingMedicines) {
+      return; // Already loaded or loading
+    }
+    
+    this.loadingMedicines = true;
+    console.log('Loading medicines for sales optimization...');
+    
+    this.inventoryService.getMedicines().subscribe({
+      next: (medicines) => {
+        this.medicines = medicines;
+        this.medicinesLoaded = true;
+        this.loadingMedicines = false;
+        console.log(`Loaded ${medicines.length} medicines for sales forms`);
+      },
+      error: (error) => {
+        console.error('Error loading medicines:', error);
+        this.loadingMedicines = false;
+        // Don't set medicinesLoaded to true on error, allow retry
+      }
+    });
+  }
+  
+  /**
+   * Get the shared medicine list for forms
+   * @returns Array of medicines or empty array if not loaded
+   */
+  getSharedMedicines(): Medicine[] {
+    return this.medicines;
+  }
+  
+  /**
+   * Check if medicines are loaded and ready
+   * @returns boolean indicating if medicines are available
+   */
+  areMedicinesLoaded(): boolean {
+    return this.medicinesLoaded && this.medicines.length > 0;
+  }
+
+  /**
+   * Navigate to edit form for both OTC and prescription sales
    * @param sale The sale to edit
    */
   editSale(sale: Sale): void {
@@ -102,8 +151,16 @@ export class SalesComponent implements OnInit {
       return;
     }
     
-    // Navigate to the OTC form with the sale ID
-    this.router.navigate(['/inventory/sales/otc/edit', saleId]);
+    console.log('Editing sale:', sale.saleId, 'Type:', sale.saleType);
+    
+    // Navigate to the appropriate form based on sale type
+    // The forms can access the shared medicine list via parent component or service
+    if (sale.saleType === 'PRESCRIPTION') {
+      this.router.navigate(['/inventory/sales/prescription/edit', saleId]);
+    } else {
+      // Default to OTC for OTC sales or undefined sale types
+      this.router.navigate(['/inventory/sales/otc/edit', saleId]);
+    }
   }
 
   // Get patient name for a sale
@@ -219,18 +276,54 @@ export class SalesComponent implements OnInit {
           return mappedSale;
         });
         
-        // Sort sales in descending order by createdAt timestamp
+        // Sort sales in descending order by saleDate timestamp (newest first)
         this.sales.sort((a, b) => {
-          // Extract timestamps for comparison
-          const timestampA = this.getTimestampFromSale(a);
-          const timestampB = this.getTimestampFromSale(b);
+          // Get saleDate timestamps directly for more reliable sorting
+          let timestampA = 0;
+          let timestampB = 0;
           
-          // Sort in descending order (newest first)
+          // Extract timestamp from saleDate (primary field)
+          if (a.saleDate && typeof a.saleDate === 'object' && 'seconds' in a.saleDate) {
+            timestampA = a.saleDate.seconds * 1000;
+          } else if (a.saleDate && typeof a.saleDate === 'string') {
+            timestampA = new Date(a.saleDate).getTime();
+          }
+          
+          if (b.saleDate && typeof b.saleDate === 'object' && 'seconds' in b.saleDate) {
+            timestampB = b.saleDate.seconds * 1000;
+          } else if (b.saleDate && typeof b.saleDate === 'string') {
+            timestampB = new Date(b.saleDate).getTime();
+          }
+          
+          // Debug the timestamps
+          console.log('Comparing sales:', {
+            saleA: a.saleId || a.id,
+            timestampA: timestampA,
+            dateA: new Date(timestampA).toLocaleString(),
+            saleB: b.saleId || b.id,
+            timestampB: timestampB,
+            dateB: new Date(timestampB).toLocaleString(),
+            comparison: timestampB - timestampA,
+            result: timestampB - timestampA > 0 ? 'B comes first' : 'A comes first'
+          });
+          
+          // Sort in descending order (newest first) - larger timestamp comes first
           return timestampB - timestampA;
         });
         
+        // Debug: Show final sorted order
+        console.log('Final sorted sales order:', this.sales.map(sale => ({
+          id: sale.saleId || sale.id,
+          timestamp: sale.saleDate && typeof sale.saleDate === 'object' && 'seconds' in sale.saleDate ? sale.saleDate.seconds * 1000 : 0,
+          date: this.formatTimestampDateWithTime(sale.saleDate)
+        })));
+        
         this.filteredSales = [...this.sales];
         this.filterSales();
+        
+        // Ensure filtered sales are also sorted in descending order
+        this.sortFilteredSales();
+        
         this.loading = false;
         
         // Once sales are loaded and filtered, fetch patient details
@@ -293,13 +386,42 @@ export class SalesComponent implements OnInit {
     });
   }
 
+  /**
+   * Sort filtered sales in descending order by saleDate (newest first)
+   */
+  sortFilteredSales(): void {
+    this.filteredSales.sort((a, b) => {
+      // Get saleDate timestamps directly for more reliable sorting
+      let timestampA = 0;
+      let timestampB = 0;
+      
+      // Extract timestamp from saleDate (primary field)
+      if (a.saleDate && typeof a.saleDate === 'object' && 'seconds' in a.saleDate) {
+        timestampA = a.saleDate.seconds * 1000;
+      } else if (a.saleDate && typeof a.saleDate === 'string') {
+        timestampA = new Date(a.saleDate).getTime();
+      }
+      
+      if (b.saleDate && typeof b.saleDate === 'object' && 'seconds' in b.saleDate) {
+        timestampB = b.saleDate.seconds * 1000;
+      } else if (b.saleDate && typeof b.saleDate === 'string') {
+        timestampB = new Date(b.saleDate).getTime();
+      }
+      
+      // Sort in descending order (newest first) - larger timestamp comes first
+      return timestampB - timestampA;
+    });
+  }
+
   search(): void {
     if (!this.searchTerm) {
       this.filterSales();
+      this.sortFilteredSales(); // Ensure sorting after filtering
       return;
     }
     if (!this.searchTerm.trim() && !this.filterDate && this.filterType === 'all') {
       this.filteredSales = [...this.sales];
+      this.sortFilteredSales(); // Ensure sorting
       return;
     }
     
@@ -336,6 +458,9 @@ export class SalesComponent implements OnInit {
       
       return matchesSearch && matchesDate && matchesType;
     });
+    
+    // Ensure filtered results are sorted in descending order
+    this.sortFilteredSales();
   }
 
   resetFilters(): void {
@@ -343,6 +468,9 @@ export class SalesComponent implements OnInit {
     this.filterDate = '';
     this.filterType = 'all';
     this.filteredSales = [...this.sales];
+    
+    // Ensure sorting is maintained after resetting filters
+    this.sortFilteredSales();
   }
 
   formatDate(dateValue: any): string {
@@ -369,6 +497,40 @@ export class SalesComponent implements OnInit {
     } catch (e) {
       console.error('Invalid date format:', dateValue);
       return 'Invalid Date';
+    }
+  }
+
+  formatTimestampDateWithTime(timestamp: any): string {
+    if (!timestamp) return 'N/A';
+    
+    try {
+      let date: Date;
+      
+      // Handle Firestore timestamp format with seconds and nanos
+      if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp) {
+        date = new Date(timestamp.seconds * 1000);
+      } else if (typeof timestamp === 'string') {
+        // Handle regular date string
+        date = new Date(timestamp);
+      } else if (timestamp instanceof Date) {
+        date = timestamp;
+      } else {
+        return 'N/A';
+      }
+      
+      // Format as "MMM dd, yyyy h:mm a" (e.g., "Jul 26, 2025 6:25 PM")
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: '2-digit', 
+        year: 'numeric'
+      }) + ' ' + date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (e) {
+      console.error('Error formatting timestamp:', timestamp, e);
+      return 'N/A';
     }
   }
   
@@ -425,22 +587,11 @@ export class SalesComponent implements OnInit {
   
   /**
    * Extract timestamp in milliseconds from a sale object for sorting
-   * Uses createdAt if available, otherwise falls back to saleDate
+   * Uses saleDate as primary field, with fallbacks to createdAt and date
    */
   getTimestampFromSale(sale: any): number {
     try {
-      // First try to get createdAt timestamp
-      if (sale.createdAt) {
-        if (typeof sale.createdAt === 'object' && 'seconds' in sale.createdAt) {
-          return sale.createdAt.seconds * 1000;
-        } else if (typeof sale.createdAt === 'string') {
-          return new Date(sale.createdAt).getTime();
-        } else if (sale.createdAt instanceof Date) {
-          return sale.createdAt.getTime();
-        }
-      }
-      
-      // Fall back to saleDate if createdAt is not available
+      // First try to get saleDate timestamp (primary field for sales)
       if (sale.saleDate) {
         if (typeof sale.saleDate === 'object' && 'seconds' in sale.saleDate) {
           return sale.saleDate.seconds * 1000;
@@ -448,6 +599,17 @@ export class SalesComponent implements OnInit {
           return new Date(sale.saleDate).getTime();
         } else if (sale.saleDate instanceof Date) {
           return sale.saleDate.getTime();
+        }
+      }
+      
+      // Fall back to createdAt if saleDate is not available
+      if (sale.createdAt) {
+        if (typeof sale.createdAt === 'object' && 'seconds' in sale.createdAt) {
+          return sale.createdAt.seconds * 1000;
+        } else if (typeof sale.createdAt === 'string') {
+          return new Date(sale.createdAt).getTime();
+        } else if (sale.createdAt instanceof Date) {
+          return sale.createdAt.getTime();
         }
       }
       

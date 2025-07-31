@@ -24,10 +24,10 @@
                         <div class="input-group mb-2">
                             <input type="text" class="form-control" placeholder="Search Patient by ID, Name or Contact Number" 
                                 [formControl]="searchField" 
-                                (keyup)="searchPatients()" 
+                                (keyup)="searchPatients(searchField.value || '')" 
                                 (click)="showPatientSearch = true" 
                                 (blur)="hidePatientSearch()">
-                            <button class="btn btn-outline-secondary" type="button" (click)="searchPatients()">
+                            <button class="btn btn-outline-secondary" type="button" (click)="searchPatients(searchField.value || '')">
                                 <i class="fas fa-search"></i>
                             </button>
                         </div>
@@ -84,31 +84,6 @@
 
                 <!-- Invoice Fields Row -->
                 <div class="row mb-4">
-                    <!-- Taxation Field -->
-                    <div class="col-md-3">
-                        <div class="mb-3">
-                            <label class="form-label text-muted small fw-medium">Taxation *</label>
-                            <select class="form-select" formControlName="taxationType">
-                                <option value="Non-Gst">Non-Gst</option>
-                                <option value="Exclusive">Exclusive</option>
-                                <option value="Inclusive">Inclusive</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <!-- Tax Profile Field (only visible when taxation is not Non-Gst) -->
-                    <div class="col-md-3" *ngIf="invoiceForm.get('taxationType')?.value !== 'Non-Gst'">
-                        <div class="mb-3">
-                            <label class="form-label text-muted small fw-medium">Tax Profile *</label>
-                            <select class="form-select" formControlName="taxProfileId">
-                                <option value="">Select Tax Profile</option>
-                                <option *ngFor="let profile of taxProfiles" [value]="profile.taxProfileId">{{ profile.profileName }} ({{ profile.totalRate }}%)</option>
-                            </select>
-                            <div *ngIf="invoiceForm.get('taxProfileId')?.hasError('required') && invoiceForm.get('taxProfileId')?.touched" class="text-danger small mt-1">
-                                Tax profile is required
-                            </div>
-                        </div>
-                    </div>
                     
                     <!-- Patient ID Field -->
                     <div class="col-md-3">
@@ -141,6 +116,18 @@
                             </select>
                         </div>
                     </div>
+                    
+                    <!-- Common Tax Type Field -->
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-medium">GST Type *</label>
+                            <select class="form-select" formControlName="commonTaxationType" (change)="onCommonTaxationTypeChange()">
+                                <option value="Non-Gst">Non-Gst</option>
+                                <option value="Exclusive">Exclusive</option>
+                                <option value="Inclusive">Inclusive</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Second Row with Account and Invoice Date -->
@@ -148,9 +135,7 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label text-muted small fw-medium">Account *</label>
-                            <select class="form-select" formControlName="createdBy">
-                                <option [value]="currentUser">{{ currentUser }}</option>
-                            </select>
+                            <input type="text" class="form-control" formControlName="createdBy" placeholder="Enter account name">
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -172,9 +157,9 @@
                                     <th class="text-secondary small fw-medium">Description</th>
                                     <th class="text-secondary small fw-medium">Quantity</th>
                                     <th class="text-secondary small fw-medium">Rate (₹)</th>
-                                    <th class="text-secondary small fw-medium">Amount</th>
                                     <th class="text-secondary small fw-medium">Discount</th>
-                                    <th class="text-secondary small fw-medium">Tax</th>
+                                    <th class="text-secondary small fw-medium" *ngIf="invoiceForm.get('commonTaxationType')?.value !== 'Non-Gst'">Tax Profile</th>
+                                    <th class="text-secondary small fw-medium" *ngIf="invoiceForm.get('commonTaxationType')?.value !== 'Non-Gst'">Tax</th>
                                     <th class="text-secondary small fw-medium">Total</th>
                                     <th></th>
                                 </tr>
@@ -187,16 +172,19 @@
                                                formControlName="serviceDate">
                                     </td>
                                     
-                                    <!-- Service Type -->
+                                    <!-- Service Selection -->
                                     <td>
-                                        <select class="form-select form-select-sm" formControlName="serviceType" (change)="onServiceTypeChange(i)">
-                                            <option value="">Select</option>
-                                            <option value="OPD">OPD</option>
-                                            <option value="CONSULTATION">CONSULTATION</option>
-                                            <option value="MNRF">MNRF</option>
-                                            <option value="Hydra Package">Hydra Package</option>
-                                            <option value="Whole Body LHR Package">Whole Body LHR Package</option>
-                                            <option value="UnderArm LHR Package">UnderArm LHR Package</option>
+                                        <select class="form-select form-select-sm" formControlName="serviceId" (change)="onServiceChange(i, $event)">
+                                            <option value="">Select Service</option>
+                                            <ng-container *ngFor="let group of serviceGroups">
+                                                <optgroup [label]="group">
+                                                    <ng-container *ngFor="let service of services">
+                                                        <option *ngIf="service.group === group" [value]="service.id">
+                                                            {{ service.name }} - ₹{{ service.rate }}
+                                                        </option>
+                                                    </ng-container>
+                                                </optgroup>
+                                            </ng-container>
                                         </select>
                                     </td>
                                     
@@ -210,37 +198,41 @@
                                     <td>
                                         <input type="number" class="form-control form-control-sm" 
                                                formControlName="quantity" min="1"
-                                               (change)="calculateItemTotal(i)">
+                                               (change)="onQuantityChange(i)">
                                     </td>
                                     
                                     <!-- Rate -->
                                     <td>
                                         <input type="number" class="form-control form-control-sm" 
                                                formControlName="rate" min="0"
-                                               (change)="calculateItemTotal(i)">
+                                               (change)="onRateChange(i)">
                                     </td>
                                     
-                                    <!-- Amount -->
-                                    <td>
-                                        <input type="number" class="form-control form-control-sm" 
-                                               formControlName="amount" readonly>
-                                    </td>
+                                   
                                     
                                     <!-- Discount -->
                                     <td>
                                         <input type="number" class="form-control form-control-sm" 
                                                formControlName="discount" min="0"
-                                               (change)="calculateItemTotal(i)">
+                                               (change)="onDiscountChange(i)">
                                     </td>
                                     
-                                    <!-- Tax -->
-                                    <td>
-                                        <select class="form-select form-select-sm"
-                                               formControlName="tax"
+                                    <!-- Tax Profile -->
+                                    <td *ngIf="invoiceForm.get('commonTaxationType')?.value !== 'Non-Gst'">
+                                        <select class="form-select form-select-sm" 
+                                               formControlName="taxProfileId"
                                                (change)="onTaxProfileChange(i)">
-                                            <option value="0">No Tax</option>
-                                            <option *ngFor="let profile of taxProfiles" [value]="profile.totalRate">{{ profile.profileName }} ({{ profile.totalRate }}%)</option>
+                                            <option value="">Select Tax Profile</option>
+                                            <option *ngFor="let profile of taxProfiles" [value]="profile.taxProfileId">
+                                                {{ profile.profileName }} ({{ profile.totalRate }}%)
+                                            </option>
                                         </select>
+                                    </td>
+                                    
+                                    <!-- Tax Amount -->
+                                    <td *ngIf="invoiceForm.get('commonTaxationType')?.value !== 'Non-Gst'">
+                                        <input type="number" class="form-control form-control-sm" 
+                                               formControlName="tax" readonly>
                                     </td>
                                     
                                     <!-- Total Amount -->

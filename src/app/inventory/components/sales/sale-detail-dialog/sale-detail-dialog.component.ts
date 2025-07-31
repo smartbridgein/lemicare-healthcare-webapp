@@ -162,6 +162,49 @@ export class SaleDetailDialogComponent implements OnInit, AfterViewInit {
     }
   }
 
+  // Get batch number from batchAllocations array
+  getBatchNumber(item: any): string {
+    if (!item || !item.batchAllocations || !Array.isArray(item.batchAllocations) || item.batchAllocations.length === 0) {
+      return 'N/A';
+    }
+    
+    // Get the first batch allocation's batch number
+    const firstBatch = item.batchAllocations[0];
+    return firstBatch.batchNo || 'N/A';
+  }
+
+  // Get expiry date from batchAllocations array
+  getExpiryDate(item: any): string {
+    if (!item || !item.batchAllocations || !Array.isArray(item.batchAllocations) || item.batchAllocations.length === 0) {
+      return 'N/A';
+    }
+    
+    // Get the first batch allocation's expiry date
+    const firstBatch = item.batchAllocations[0];
+    if (!firstBatch.expiryDate) {
+      return 'N/A';
+    }
+    
+    return this.formatDate(firstBatch.expiryDate);
+  }
+
+  // Get all batch information for display (in case multiple batches)
+  getBatchInfo(item: any): string {
+    if (!item || !item.batchAllocations || !Array.isArray(item.batchAllocations) || item.batchAllocations.length === 0) {
+      return 'N/A';
+    }
+    
+    // If single batch, return batch number
+    if (item.batchAllocations.length === 1) {
+      return item.batchAllocations[0].batchNo || 'N/A';
+    }
+    
+    // If multiple batches, return comma-separated list
+    return item.batchAllocations
+      .map((batch: any) => `${batch.batchNo || 'N/A'} (${batch.quantityTaken || 0})`)
+      .join(', ');
+  }
+
   // Format sale ID for display
   /**
    * Fetch patient details from the API
@@ -280,6 +323,24 @@ export class SaleDetailDialogComponent implements OnInit, AfterViewInit {
         console.error('Error fetching doctor details:', err);
       }
     });
+  }
+  
+  // Get doctor name from either doctorDetails (API lookup) or direct doctorName field
+  getDoctorName(): string {
+    if (!this.sale) return 'N/A';
+    
+    // First priority: Doctor details loaded from API (for prescription sales)
+    if (this.doctorDetails && this.doctorDetails.name) {
+      return 'Dr. ' + this.doctorDetails.name;
+    }
+    
+    // Second priority: Direct doctor name from sale object (for OTC sales)
+    if (this.sale.doctorName) {
+      return this.sale.doctorName.startsWith('Dr.') ? this.sale.doctorName : 'Dr. ' + this.sale.doctorName;
+    }
+    
+    // Fallback: No doctor information available
+    return 'N/A';
   }
   
   // Get patient name from either walkInCustomerName or patient details

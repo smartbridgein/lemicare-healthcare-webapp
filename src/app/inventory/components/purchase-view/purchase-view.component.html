@@ -45,15 +45,15 @@
               <div class="col-md-12">
                 <div class="info-group">
                   <label>Invoice Date</label>
-                  <div class="info-value">{{ formatTimestampDate(purchase.invoiceDate) }}</div>
+                  <div class="info-value">{{ formatTimestampDateWithTime(purchase.invoiceDate) }}</div>
                 </div>
               </div>
-              <div class="col-md-12">
+              <!--<div class="col-md-12">
                 <div class="info-group">
                   <label>Invoice Number</label>
                   <div class="info-value">{{ purchase.referenceId || 'N/A' }}</div>
                 </div>
-              </div>
+              </div>--->
               <div class="col-md-12">
                 <div class="info-group">
                   <label>Purchase ID</label>
@@ -63,7 +63,7 @@
               <div class="col-md-12">
                 <div class="info-group">
                   <label>Created At</label>
-                  <div class="info-value">{{ formatTimestampDate(purchase.createdAt) }}</div>
+                  <div class="info-value">{{ formatTimestampDateWithTime(purchase.createdAt) }}</div>
                 </div>
               </div>
             </div>

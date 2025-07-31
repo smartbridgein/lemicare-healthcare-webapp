@@ -29,9 +29,17 @@
           <i class="fas fa-search text-primary"></i>
         </span>
       </div>
-      <button class="btn shadow-sm" style="background-color: #6b1d14; color: white; font-family: 'Roboto', sans-serif;" (click)="openAddModal()">
-        <i class="fas fa-plus-circle me-2"></i> Add New Medicine
-      </button>
+      <div class="d-flex gap-2">
+        <!--<button class="btn" (click)="bulkInsertMedicines()" 
+                [disabled]="loading"
+                style="background: linear-gradient(to right, #e6c157, #d4af37); color: #6b1d14; border: none; font-family: 'Roboto', sans-serif; font-size: 14px; border-radius: 6px; padding: 8px 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); font-weight: 600;">
+          <i class="fas fa-upload me-2"></i>Bulk Insert Medicines (394)
+        </button>-->
+        <button class="btn" (click)="openAddModal()" 
+                style="background: linear-gradient(to right, #6b1d14, #8c2c21); color: white; border: none; font-family: 'Roboto', sans-serif; font-size: 14px; border-radius: 6px; padding: 8px 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <i class="fas fa-plus me-2"></i>Add Medicine
+        </button>
+      </div>
     </div>
   </div>
 
@@ -59,12 +67,12 @@
                 <span class="ms-2">Loading medicines...</span>
               </td>
             </tr>
-            <tr *ngIf="!loading && filteredMedicines.length === 0">
+            <tr *ngIf="!loading && paginatedMedicines.length === 0">
               <td colspan="9" class="text-center py-4">
                 <i class="fas fa-info-circle text-muted me-2"></i>No medicines found
               </td>
             </tr>
-            <tr *ngFor="let medicine of filteredMedicines">
+            <tr *ngFor="let medicine of paginatedMedicines">
               <td style="font-family: 'Roboto', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">{{ medicine.name }}</td>
               <td style="font-family: 'Roboto', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ medicine.category || '-' }}</td>
               <td style="font-family: 'Roboto', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ medicine.manufacturer || '-' }}</td>
@@ -125,6 +133,66 @@
             </tr>
           </tbody>
         </table>
+      </div>
+      
+      <!-- Pagination Controls -->
+      <div class="d-flex justify-content-between align-items-center p-3 border-top" *ngIf="!loading && totalItems > 0">
+        <div class="text-muted" style="font-family: 'Roboto', sans-serif; font-size: 14px;">
+          {{ getPaginationInfo() }}
+        </div>
+        
+        <nav aria-label="Medicine pagination">
+          <ul class="pagination pagination-sm mb-0">
+            <!-- Previous Button -->
+            <li class="page-item" [class.disabled]="currentPage === 1">
+              <button class="page-link" (click)="goToPreviousPage()" [disabled]="currentPage === 1"
+                      style="color: #6b1d14; border-color: #6b1d14; font-family: 'Roboto', sans-serif;">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+            </li>
+            
+            <!-- First Page -->
+            <li class="page-item" *ngIf="getPageNumbers()[0] > 1">
+              <button class="page-link" (click)="goToPage(1)"
+                      style="color: #6b1d14; border-color: #6b1d14; font-family: 'Roboto', sans-serif;">1</button>
+            </li>
+            
+            <!-- Ellipsis -->
+            <li class="page-item disabled" *ngIf="getPageNumbers()[0] > 2">
+              <span class="page-link" style="color: #6b1d14; border-color: #6b1d14;">...</span>
+            </li>
+            
+            <!-- Page Numbers -->
+            <li class="page-item" *ngFor="let page of getPageNumbers()" [class.active]="page === currentPage">
+              <button class="page-link" (click)="goToPage(page)"
+                      [ngStyle]="{
+                        'color': page === currentPage ? 'white' : '#6b1d14',
+                        'background-color': page === currentPage ? '#6b1d14' : 'white',
+                        'border-color': '#6b1d14',
+                        'font-family': 'Roboto, sans-serif'
+                      }">{{ page }}</button>
+            </li>
+            
+            <!-- Ellipsis -->
+            <li class="page-item disabled" *ngIf="getPageNumbers()[getPageNumbers().length - 1] < totalPages - 1">
+              <span class="page-link" style="color: #6b1d14; border-color: #6b1d14;">...</span>
+            </li>
+            
+            <!-- Last Page -->
+            <li class="page-item" *ngIf="getPageNumbers()[getPageNumbers().length - 1] < totalPages">
+              <button class="page-link" (click)="goToPage(totalPages)"
+                      style="color: #6b1d14; border-color: #6b1d14; font-family: 'Roboto', sans-serif;">{{ totalPages }}</button>
+            </li>
+            
+            <!-- Next Button -->
+            <li class="page-item" [class.disabled]="currentPage === totalPages">
+              <button class="page-link" (click)="goToNextPage()" [disabled]="currentPage === totalPages"
+                      style="color: #6b1d14; border-color: #6b1d14; font-family: 'Roboto', sans-serif;">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
       </div>
     </div>
   </div>
@@ -231,10 +299,9 @@
               </div>
             </div>
             <div class="col-md-4">
-              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Tax Profile <small class="text-muted">(optional)</small></label>
-              <select class="form-select" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="taxProfileId">
-                <option *ngFor="let taxProfile of taxProfiles" [value]="taxProfile.id">{{ taxProfile.profileName }}</option>
-              </select>
+              <label class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Location <small class="text-muted">(optional)</small></label>
+              <input type="text" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="location" 
+                placeholder="Enter storage location">
             </div>
           </div>
         </form>

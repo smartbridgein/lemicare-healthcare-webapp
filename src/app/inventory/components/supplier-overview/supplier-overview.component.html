@@ -22,9 +22,14 @@
     </div>
 
     <div class="balance-section">
-      <div class="label">Total Balance:</div>
-      <div class="amount" [ngClass]="{'negative': (supplier?.balance || 0) < 0, 'positive': (supplier?.balance || 0) >= 0}">
-        ₹ {{ supplier?.balance | number:'1.2-2' }}
+      <div class="label">Outstanding Balance:</div>
+      <div class="amount classic-red-balance">
+        <span *ngIf="(supplier?.outstandingBalance || supplier?.balance || 0) < 0">
+          ₹-{{ Math.abs(supplier?.outstandingBalance || supplier?.balance || 0) | number:'1.2-2' }}
+        </span>
+        <span *ngIf="(supplier?.outstandingBalance || supplier?.balance || 0) >= 0">
+          ₹{{ (supplier?.outstandingBalance || supplier?.balance || 0) | number:'1.2-2' }}
+        </span>
       </div>
     </div>
   </div>
@@ -61,7 +66,8 @@
           <div class="date">{{ transaction.date | date:'dd/MM/yyyy' }}</div>
           <div class="amount">₹ {{ transaction.amount | number:'1.2-2' }}</div>
           <div class="balance" [ngClass]="{'negative': transaction.balance < 0, 'positive': transaction.balance >= 0}">
-            ₹ {{ transaction.balance | number:'1.2-2' }}
+            <span *ngIf="transaction.balance < 0">₹-{{ Math.abs(transaction.balance) | number:'1.2-2' }}</span>
+            <span *ngIf="transaction.balance >= 0">₹{{ transaction.balance | number:'1.2-2' }}</span>
           </div>
           <div class="created-by">{{ transaction.createdBy }}</div>
           <div class="action">
@@ -91,7 +97,7 @@
             <div>{{ item.expiryDate ? (item.expiryDate.seconds * 1000 | date:'MM/yyyy') : 'N/A' }}</div>
             <div>{{ item.totalReceivedQuantity }}</div>
             <div>₹ {{ item.mrpPerItem | number:'1.2-2' }}</div>
-            <div>₹ {{ item.purchaseCostPerPack / item.packQuantity | number:'1.2-2' }}</div>
+            <div>₹ {{ item.purchaseCostPerPack | number:'1.2-2' }}</div>
             <div>
               <div class="tax-label">{{ item.taxRateApplied }}%</div>
               <div class="tax-components" *ngIf="item.taxComponents && item.taxComponents.length > 0">

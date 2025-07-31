@@ -1,73 +1,211 @@
-<div class="card shadow-sm">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <h5 class="mb-0">Stock by Category</h5>
-    <button class="btn btn-sm btn-outline-primary" (click)="onRefresh()" [disabled]="isLoading">
-      <i class="bi bi-arrow-clockwise me-1"></i> Refresh
-    </button>
-  </div>
-  <div class="card-body">
-    <div *ngIf="isLoading" class="text-center p-4">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
+<div class="stock-category-classic-container">
+  <!-- Header Section -->
+  <div class="classic-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h4 class="header-title">
+          <i class="bi bi-boxes"></i>
+          Stock by Category Report
+        </h4>
+        <p class="header-subtitle">Comprehensive inventory categorization and stock levels</p>
       </div>
-      <p class="mt-2">Loading stock data...</p>
+      <div class="header-actions">
+        <!-- View Mode Toggle -->
+        <div class="view-toggle-group">
+          <button 
+            class="btn-view-toggle" 
+            [class.active]="viewMode === 'table'"
+            (click)="setViewMode('table')"
+            title="Table View">
+            <i class="bi bi-table"></i>
+          </button>
+          <button 
+            class="btn-view-toggle" 
+            [class.active]="viewMode === 'chart'"
+            (click)="setViewMode('chart')"
+            title="Chart View">
+            <i class="bi bi-bar-chart-fill"></i>
+          </button>
+        </div>
+        <button class="btn-refresh" (click)="onRefresh()" [disabled]="isLoading">
+          <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+      </div>
     </div>
+  </div>
 
-    <div *ngIf="error" class="alert alert-danger">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Loading stock data...</p>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-container">
+    <div class="error-message">
+      <i class="bi bi-exclamation-triangle"></i>
       {{ error }}
     </div>
+  </div>
 
-    <div *ngIf="!isLoading && !error" class="row">
-      <!-- Visualization View -->
-      <div class="col-lg-8">
-        <div class="chart-container" *ngIf="stockByCategory.length > 0">
-          <div class="bar-chart">
-            <div *ngFor="let item of chartData" class="bar-item mb-3">
-              <div class="d-flex justify-content-between mb-1">
-                <span>{{ item.name }}</span>
-                <span><strong>{{ item.value }}</strong> units</span>
-              </div>
-              <div class="progress">
-                <div class="progress-bar" role="progressbar" 
-                     [ngStyle]="{'width': (item.value / getMaxStock() * 100) + '%', 
-                                'background-color': getRandomColor(item.name)}"
-                     [attr.aria-valuenow]="item.value" 
-                     aria-valuemin="0" 
-                     [attr.aria-valuemax]="getMaxStock()">
-                </div>
+  <!-- Main Content -->
+  <div *ngIf="!isLoading && !error" class="main-content">
+    <!-- Chart View -->
+    <div *ngIf="viewMode === 'chart'" class="chart-view">
+      <div class="chart-container" *ngIf="stockByCategory.length > 0">
+        <div class="bar-chart">
+          <div *ngFor="let item of chartData" class="bar-item">
+            <div class="bar-label">
+              <span class="category-name">{{ item.name || 'Uncategorized' }}</span>
+              <span class="stock-count"><strong>{{ item.value }}</strong> units</span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar" 
+                   [ngStyle]="{'width': (item.value / getMaxStock() * 100) + '%', 
+                              'background-color': getRandomColor(item.name)}">
               </div>
             </div>
           </div>
         </div>
-        <div *ngIf="stockByCategory.length === 0" class="text-center p-4">
-          <p>No stock data available by category.</p>
+      </div>
+      <div *ngIf="stockByCategory.length === 0" class="empty-state">
+        <i class="bi bi-inbox"></i>
+        <p>No stock data available by category.</p>
+      </div>
+    </div>
+
+    <!-- Table View -->
+    <div *ngIf="viewMode === 'table'" class="table-view">
+      <!-- Search and Controls -->
+      <div class="table-controls">
+        <div class="search-section">
+          <div class="search-input-group">
+            <i class="bi bi-search"></i>
+            <input 
+              #searchInput
+              type="text" 
+              class="search-input" 
+              placeholder="Search categories..."
+              [value]="searchTerm"
+              (input)="onSearchChange(searchInput.value)">
+          </div>
+        </div>
+        
+        <div class="control-section">
+          <div class="items-per-page">
+            <label>Show:</label>
+            <select #pageSizeSelect class="page-size-select" [value]="itemsPerPage" (change)="changeItemsPerPage(+pageSizeSelect.value)">
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+            <span>entries</span>
+          </div>
         </div>
       </div>
-      
-      <!-- Table View -->
-      <div class="col-lg-4">
-        <table class="table table-striped table-hover" *ngIf="stockByCategory.length > 0">
+
+      <!-- Classic Table -->
+      <div class="table-container" *ngIf="stockByCategory.length > 0">
+        <table class="classic-table">
           <thead>
             <tr>
-              <th>Category</th>
-              <th class="text-end">Stock Count</th>
+              <th class="sortable" (click)="sortData('category')">
+                <div class="th-content">
+                  <span>Category</span>
+                  <div class="sort-indicators">
+                    <i class="bi bi-caret-up-fill" 
+                       [class.active]="sortColumn === 'category' && sortDirection === 'asc'"></i>
+                    <i class="bi bi-caret-down-fill" 
+                       [class.active]="sortColumn === 'category' && sortDirection === 'desc'"></i>
+                  </div>
+                </div>
+              </th>
+              <th class="sortable text-end" (click)="sortData('totalStock')">
+                <div class="th-content">
+                  <span>Stock Count</span>
+                  <div class="sort-indicators">
+                    <i class="bi bi-caret-up-fill" 
+                       [class.active]="sortColumn === 'totalStock' && sortDirection === 'asc'"></i>
+                    <i class="bi bi-caret-down-fill" 
+                       [class.active]="sortColumn === 'totalStock' && sortDirection === 'desc'"></i>
+                  </div>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of stockByCategory">
-              <td>{{ item.category || 'Uncategorized' }}</td>
-              <td class="text-end">{{ item.totalStock }}</td>
+            <tr *ngFor="let item of paginatedData; let i = index" 
+                [class.even]="i % 2 === 0" 
+                [class.odd]="i % 2 === 1">
+              <td class="category-cell">
+                <div class="category-info">
+                  <i class="bi bi-tag-fill category-icon"></i>
+                  <span class="category-name">{{ item.category || 'Uncategorized' }}</span>
+                </div>
+              </td>
+              <td class="stock-cell text-end">
+                <span class="stock-badge">{{ item.totalStock }}</span>
+              </td>
             </tr>
           </tbody>
           <tfoot>
-            <tr class="table-secondary">
-              <td><strong>Total</strong></td>
-              <td class="text-end">
-                <strong>{{ stockByCategory | sum: 'totalStock' }}</strong>
+            <tr class="total-row">
+              <td class="total-label">
+                <strong><i class="bi bi-calculator"></i> Total</strong>
+              </td>
+              <td class="total-value text-end">
+                <strong class="total-badge">{{ stockByCategory | sum: 'totalStock' }}</strong>
               </td>
             </tr>
           </tfoot>
         </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination-container" *ngIf="totalPages > 1">
+        <div class="pagination-info">
+          <span>Showing {{ getStartIndex() }} to {{ getEndIndex() }} of {{ totalItems }} entries</span>
+        </div>
+        
+        <div class="pagination-controls">
+          <button 
+            class="page-btn" 
+            [disabled]="currentPage === 1" 
+            (click)="previousPage()">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          
+          <button 
+            *ngFor="let page of getPageNumbers()" 
+            class="page-btn" 
+            [class.active]="page === currentPage"
+            (click)="goToPage(page)">
+            {{ page }}
+          </button>
+          
+          <button 
+            class="page-btn" 
+            [disabled]="currentPage === totalPages" 
+            (click)="nextPage()">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="stockByCategory.length === 0" class="empty-state">
+        <i class="bi bi-inbox"></i>
+        <p>No stock data available by category.</p>
+      </div>
+
+      <!-- No Results State -->
+      <div *ngIf="stockByCategory.length > 0 && filteredData.length === 0" class="no-results-state">
+        <i class="bi bi-search"></i>
+        <p>No categories found matching "{{ searchTerm }}"</p>
+        <button class="btn-clear-search" (click)="onSearchChange('')">Clear Search</button>
       </div>
     </div>
   </div>

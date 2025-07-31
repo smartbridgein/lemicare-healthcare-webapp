@@ -28,9 +28,20 @@
       </div>
     </div>
     <div class="col-auto">
-      <button class="btn" style="background-color: #6b1d14; color: white; font-family: 'Roboto', sans-serif;" (click)="openTaxProfileModal(taxProfileModal)">
-        <fa-icon [icon]="faAdd"></fa-icon> Add New Tax Profile
-      </button>
+      <div class="btn-group" role="group">
+        <button class="btn" style="background-color: #6b1d14; color: white; font-family: 'Roboto', sans-serif;" (click)="openTaxProfileModal(taxProfileModal)">
+          <fa-icon [icon]="faAdd"></fa-icon> Add New Tax Profile
+        </button>
+        <button class="btn btn-warning" 
+                style="background-color: #e6c157; color: #333; font-family: 'Roboto', sans-serif; border-color: #e6c157;" 
+                (click)="cleanupTaxProfiles()" 
+                [disabled]="cleanupLoading"
+                title="Delete all tax profiles except 'no tax' profiles">
+          <fa-icon [icon]="cleanupLoading ? faWarning : faCleanup"></fa-icon>
+          <span *ngIf="cleanupLoading" class="spinner-border spinner-border-sm ms-1" role="status"></span>
+          {{ cleanupLoading ? 'Cleaning...' : 'Cleanup Tax Profiles' }}
+        </button>
+      </div>
     </div>
   </div>
 
@@ -94,12 +105,9 @@
     <form [formGroup]="taxProfileForm">
       <div class="mb-3">
         <label for="profileName" class="form-label" style="font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; color: #333;">Profile Name</label>
-        <input type="text" id="profileName" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2;" formControlName="profileName"
-          placeholder="e.g., GST 5%">
-        <div *ngIf="taxProfileForm.get('profileName')?.invalid && taxProfileForm.get('profileName')?.touched"
-          class="text-danger small" style="font-family: 'Roboto', sans-serif; font-size: 12px; color: #e74a3b;">
-          Profile name is required
-        </div>
+        <input type="text" id="profileName" class="form-control" style="font-family: 'Roboto', sans-serif; font-size: 14px; border: 1px solid #d1d3e2; background-color: #f8f9fc;" formControlName="profileName"
+          readonly>
+        <small class="text-muted" style="font-family: 'Roboto', sans-serif; font-size: 12px;">Profile name is automatically generated based on the total rate</small>
       </div>
 
       <div class="mb-3">

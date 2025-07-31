@@ -18,6 +18,24 @@ export class StockByCategoryReportComponent implements OnInit {
   isLoading = false;
   error: string | null = null;
   
+  // View mode toggle
+  viewMode: 'chart' | 'table' = 'table';
+  
+  // Pagination properties
+  currentPage = 1;
+  itemsPerPage = 10;
+  totalItems = 0;
+  totalPages = 0;
+  paginatedData: StockByCategoryItem[] = [];
+  
+  // Sorting properties
+  sortColumn: 'category' | 'totalStock' = 'category';
+  sortDirection: 'asc' | 'desc' = 'asc';
+  
+  // Search functionality
+  searchTerm = '';
+  filteredData: StockByCategoryItem[] = [];
+  
   // Color palette for bars
   colorPalette = ['#5AA454', '#A10A28', '#C7B42C', '#AAAAAA', '#2980b9', '#8e44ad', '#d35400'];
 
@@ -37,6 +55,11 @@ export class StockByCategoryReportComponent implements OnInit {
     this.inventoryService.getStockByCategory().subscribe({
       next: (data) => {
         this.stockByCategory = data;
+        this.filteredData = [...data];
+        this.totalItems = data.length;
+        this.calculatePagination();
+        this.updatePaginatedData();
+        
         this.chartData = data.map(item => ({
           name: item.category,
           value: item.totalStock
@@ -74,5 +97,133 @@ export class StockByCategoryReportComponent implements OnInit {
 
   onRefresh(): void {
     this.loadStockByCategoryData();
+  }
+  
+  // View mode methods
+  setViewMode(mode: 'chart' | 'table'): void {
+    this.viewMode = mode;
+  }
+  
+  // Pagination methods
+  calculatePagination(): void {
+    this.totalPages = Math.ceil(this.totalItems / this.itemsPerPage);
+    if (this.currentPage > this.totalPages) {
+      this.currentPage = 1;
+    }
+  }
+  
+  updatePaginatedData(): void {
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    this.paginatedData = this.filteredData.slice(startIndex, endIndex);
+  }
+  
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePaginatedData();
+    }
+  }
+  
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.updatePaginatedData();
+    }
+  }
+  
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.updatePaginatedData();
+    }
+  }
+  
+  changeItemsPerPage(newSize: number): void {
+    this.itemsPerPage = newSize;
+    this.currentPage = 1;
+    this.calculatePagination();
+    this.updatePaginatedData();
+  }
+  
+  // Sorting methods
+  sortData(column: 'category' | 'totalStock'): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+    
+    this.filteredData.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+      
+      if (column === 'category') {
+        aValue = (a.category || 'Uncategorized').toLowerCase();
+        bValue = (b.category || 'Uncategorized').toLowerCase();
+      } else {
+        aValue = a.totalStock;
+        bValue = b.totalStock;
+      }
+      
+      if (aValue < bValue) {
+        return this.sortDirection === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return this.sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+    
+    this.currentPage = 1;
+    this.updatePaginatedData();
+  }
+  
+  // Search methods
+  onSearchChange(searchTerm: string): void {
+    this.searchTerm = searchTerm.toLowerCase();
+    this.filterData();
+  }
+  
+  filterData(): void {
+    if (!this.searchTerm) {
+      this.filteredData = [...this.stockByCategory];
+    } else {
+      this.filteredData = this.stockByCategory.filter(item => 
+        (item.category || 'Uncategorized').toLowerCase().includes(this.searchTerm)
+      );
+    }
+    
+    this.totalItems = this.filteredData.length;
+    this.currentPage = 1;
+    this.calculatePagination();
+    this.updatePaginatedData();
+  }
+  
+  // Helper methods
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage < maxVisiblePages - 1) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
+  }
+  
+  getStartIndex(): number {
+    return (this.currentPage - 1) * this.itemsPerPage + 1;
+  }
+  
+  getEndIndex(): number {
+    return Math.min(this.currentPage * this.itemsPerPage, this.totalItems);
   }
 }

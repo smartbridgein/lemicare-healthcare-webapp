@@ -30,13 +30,13 @@ export class AdvanceListComponent implements OnInit {
 
   loadAdvances(): void {
     this.billingService.getAllAdvances().subscribe({
-      next: (data) => {
+      next: (data: Advance[]) => {
         this.advances = data;
         this.filteredAdvances = [...this.advances];
         this.calculateSummary();
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading advance payments', error);
         this.loading = false;
       }

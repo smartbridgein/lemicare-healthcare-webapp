@@ -395,6 +395,27 @@ export class PurchaseViewComponent implements OnInit {
   }
 
   /**
+   * Format timestamp date with time in AM/PM format
+   */
+  formatTimestampDateWithTime(timestamp: any): string {
+    if (!timestamp) return 'N/A';
+    
+    // Handle Firestore timestamp format with seconds and nanos
+    if (timestamp && timestamp.seconds) {
+      const date = new Date(timestamp.seconds * 1000);
+      return this.datePipe.transform(date, 'MMM dd, yyyy h:mm a') || 'N/A';
+    }
+    
+    // Handle regular date string or Date object
+    try {
+      const date = new Date(timestamp);
+      return this.datePipe.transform(date, 'MMM dd, yyyy h:mm a') || 'N/A';
+    } catch {
+      return 'N/A';
+    }
+  }
+
+  /**
    * Calculates the total quantity for a purchase item
    * Total quantity = (Pack Quantity + Free Pack Quantity) * Items per Pack
    */

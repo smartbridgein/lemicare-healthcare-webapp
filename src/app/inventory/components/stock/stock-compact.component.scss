@@ -1,0 +1,302 @@
+// Compact, Minimal, Professional Category Cards Design
+// Variables for consistent styling
+$primary-blue: #3b82f6;
+$border-color: #e2e8f0;
+$text-primary: #1e293b;
+$text-secondary: #64748b;
+$success-color: #10b981;
+$warning-color: #f59e0b;
+$danger-color: #ef4444;
+
+// Compact Category Cards
+.category-card {
+  &.classic-card {
+    background: #ffffff;
+    border: 1px solid $border-color;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+    position: relative;
+    margin-bottom: 0.5rem;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: $primary-blue;
+      border-radius: 6px 6px 0 0;
+    }
+    
+    &:hover {
+      border-color: $primary-blue;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+      
+      &::before {
+        background: darken($primary-blue, 10%);
+      }
+    }
+  }
+  
+  .category-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    cursor: pointer;
+    
+    .category-info {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      
+      .category-icon {
+        font-size: 1.1rem;
+        color: $primary-blue;
+        margin-right: 0.5rem;
+        transition: color 0.2s ease;
+      }
+      
+      .category-details {
+        .category-title {
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: $text-primary;
+          margin: 0;
+          line-height: 1.2;
+        }
+        
+        .category-subtitle {
+          font-size: 0.7rem;
+          color: $text-secondary;
+          margin: 0;
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          margin-top: 0.1rem;
+        }
+      }
+    }
+    
+    .category-metrics {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      
+      .metric-item {
+        text-align: center;
+        
+        .metric-value {
+          font-size: 1rem;
+          font-weight: 700;
+          color: $text-primary;
+          margin: 0;
+          line-height: 1;
+          
+          &.currency {
+            color: $success-color;
+            font-size: 0.9rem;
+          }
+        }
+        
+        .metric-label {
+          font-size: 0.55rem;
+          color: $text-secondary;
+          text-transform: uppercase;
+          font-weight: 500;
+          margin-top: 0.1rem;
+        }
+      }
+    }
+    
+    .expand-indicator {
+      font-size: 0.75rem;
+      color: $text-secondary;
+      margin-left: 0.4rem;
+      transition: transform 0.2s ease;
+      
+      &.expanded {
+        transform: rotate(90deg);
+      }
+    }
+  }
+  
+  // Compact status bar
+  .status-bar {
+    height: 3px;
+    background: #f8fafc;
+    border-radius: 0 0 6px 6px;
+    overflow: hidden;
+    
+    .status-fill {
+      height: 100%;
+      transition: all 0.3s ease;
+      
+      &.in-stock {
+        background: $success-color;
+      }
+      
+      &.low-stock {
+        background: $warning-color;
+      }
+      
+      &.out-of-stock {
+        background: $danger-color;
+      }
+    }
+  }
+}
+
+// Compact medicine list styling
+.medicine-list {
+  .medicine-item {
+    border-top: 1px solid #f1f5f9;
+    padding: 0.5rem 0.75rem;
+    
+    &:last-child {
+      border-radius: 0 0 6px 6px;
+    }
+    
+    .medicine-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      
+      .medicine-info {
+        flex: 1;
+        
+        .medicine-name {
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: $text-primary;
+          margin: 0;
+        }
+        
+        .medicine-details {
+          font-size: 0.65rem;
+          color: $text-secondary;
+          margin-top: 0.1rem;
+        }
+      }
+      
+      .medicine-stock {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        
+        .stock-badge {
+          padding: 0.1rem 0.3rem;
+          border-radius: 3px;
+          font-size: 0.6rem;
+          font-weight: 500;
+          
+          &.in-stock {
+            background: rgba(16, 185, 129, 0.1);
+            color: $success-color;
+          }
+          
+          &.low-stock {
+            background: rgba(245, 158, 11, 0.1);
+            color: $warning-color;
+          }
+          
+          &.out-of-stock {
+            background: rgba(239, 68, 68, 0.1);
+            color: $danger-color;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Compact summary cards
+.stock-header {
+  .summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    
+    .summary-card {
+      background: white;
+      border: 1px solid $border-color;
+      border-radius: 6px;
+      padding: 0.5rem;
+      text-align: center;
+      
+      .card-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: $text-primary;
+        margin: 0;
+      }
+      
+      .card-label {
+        font-size: 0.6rem;
+        color: $text-secondary;
+        text-transform: uppercase;
+        font-weight: 500;
+        margin-top: 0.1rem;
+      }
+      
+      &.total-value .card-value {
+        color: $success-color;
+      }
+      
+      &.low-stock .card-value {
+        color: $warning-color;
+      }
+      
+      &.out-of-stock .card-value {
+        color: $danger-color;
+      }
+    }
+  }
+}
+
+// Compact controls
+.stock-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  
+  .search-input {
+    flex: 1;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid $border-color;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    
+    &:focus {
+      outline: none;
+      border-color: $primary-blue;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+  }
+  
+  .control-btn {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid $border-color;
+    background: white;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      border-color: $primary-blue;
+      color: $primary-blue;
+    }
+    
+    &.active {
+      background: $primary-blue;
+      color: white;
+      border-color: $primary-blue;
+    }
+  }
+}

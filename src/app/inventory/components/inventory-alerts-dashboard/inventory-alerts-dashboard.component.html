@@ -1,0 +1,107 @@
+<div class="inventory-alerts-container">
+  <div class="alerts-header">
+    <h2>Inventory Alerts Dashboard</h2>
+  </div>
+
+  <div class="alerts-grid">
+    <!-- Expiring Medicines Report Card -->
+    <div class="alerts-card">
+      <div class="card-header">
+        <h3 class="expiring-header">Expiring Medicines Report</h3>
+        <button class="export-btn" (click)="exportExpiringMedicines()">
+          Export to CSV
+        </button>
+      </div>
+      <div class="card-body">
+        <div *ngIf="loadingExpiring" class="loader-container">
+          <div class="loader"></div>
+          <span>Loading data...</span>
+        </div>
+
+        <div *ngIf="!loadingExpiring && expiringMedicines.length === 0" class="empty-state">
+          <div class="empty-icon">
+            <i class="fas fa-calendar-check"></i>
+          </div>
+          <p>No expiring medicines found</p>
+        </div>
+
+        <div *ngIf="!loadingExpiring && expiringMedicines.length > 0" class="report-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Medicine ID</th>
+                <th>Medicine Name</th>
+                <th>Batch No</th>
+                <th>Expiry Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let medicine of expiringMedicines">
+                <td>{{ medicine.medicineId || medicine.id }}</td>
+                <td>{{ medicine.name }}</td>
+                <td>{{ medicine.batchNo }}</td>
+                <td>{{ medicine.expiryDate | date:'dd-MMM-yyyy' }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="getExpiryStatusClass(medicine.expiryDate)">
+                    {{ getExpiryStatus(medicine.expiryDate) }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Low Stock Medicines Report Card -->
+    <div class="alerts-card">
+      <div class="card-header">
+        <h3 class="low-stock-header">Low Stock Medicines Report</h3>
+        <button class="export-btn" (click)="exportLowStockMedicines()">
+          Export to CSV
+        </button>
+      </div>
+      <div class="card-body">
+        <div *ngIf="loadingLowStock" class="loader-container">
+          <div class="loader"></div>
+          <span>Loading data...</span>
+        </div>
+
+        <div *ngIf="!loadingLowStock && lowStockMedicines.length === 0" class="empty-state">
+          <div class="empty-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <p>No low stock medicines found</p>
+        </div>
+
+        <div *ngIf="!loadingLowStock && lowStockMedicines.length > 0" class="report-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Medicine ID</th>
+                <th>Medicine Name</th>
+                <th>Current Stock</th>
+                <th>Min Stock Level</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let medicine of lowStockMedicines">
+                <td>{{ medicine.medicineId || medicine.id }}</td>
+                <td>{{ medicine.name }}</td>
+                <td>{{ medicine.currentStock }}</td>
+                <td>{{ medicine.threshold || medicine.lowStockThreshold }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="getStockStatusClass(medicine.currentStock, medicine.threshold || medicine.lowStockThreshold)">
+                    {{ getStockStatus(medicine.currentStock, medicine.threshold || medicine.lowStockThreshold) }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

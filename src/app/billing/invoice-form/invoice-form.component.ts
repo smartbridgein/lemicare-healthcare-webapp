@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, FormControl, Validators, FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -6,10 +6,23 @@ import { BillingService } from '../shared/billing.service';
 import { Invoice, InvoiceItem, TaxProfile } from '../shared/billing.model';
 import { PatientService } from '../../patients/shared/patient.service';
 import { Patient } from '../../patients/shared/patient.model';
-import { finalize, debounceTime, switchMap, catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { finalize, debounceTime, switchMap, catchError, takeUntil, distinctUntilChanged } from 'rxjs/operators';
+import { of, Subject, Subscription } from 'rxjs';
 import { AuthService } from '../../auth/shared/auth.service';
 import { ServiceModalComponent } from '../service-modal/service-modal.component';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+
+// Define service interface
+interface Service {
+  id: string;
+  name: string;
+  price: number;
+  description?: string;
+  group: string;
+  rate?: number;
+  active?: boolean;
+}
 
 @Component({
   selector: 'app-invoice-form',
@@ -24,7 +37,7 @@ import { ServiceModalComponent } from '../service-modal/service-modal.component'
     ServiceModalComponent
   ]
 })
-export class InvoiceFormComponent implements OnInit {
+export class InvoiceFormComponent implements OnInit, OnDestroy {
   invoiceForm!: FormGroup;
   isEditMode = false;
   invoiceId: string | null = null;
@@ -46,12 +59,18 @@ export class InvoiceFormComponent implements OnInit {
     { name: 'UnderArm LHR Package', quantity: 6, rate: 3333.33333 }
   ];
   
-  // Service options
-  serviceOptions = ['OPD', 'CONSULTATION', 'MNRF'];
-  
-  // Tax profiles
+  // Service and tax profile data from API
+  services: Service[] = [];
   taxProfiles: TaxProfile[] = [];
   selectedTaxProfile: TaxProfile | null = null;
+  serviceGroups: string[] = [];
+  
+  // For improved search and cleanup
+  private searchTerms = new Subject<string>();
+  private destroy$ = new Subject<void>();
+  private searchSubscription?: Subscription;
+  private hidePatientSearchTimeout?: any;
+  private apiUrl = environment.apiUrl;
   
   currentUser = '';
   
@@ -61,7 +80,8 @@ export class InvoiceFormComponent implements OnInit {
     private patientService: PatientService,
     private route: ActivatedRoute,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private http: HttpClient
   ) {
     // Get current user
     const user = this.authService.getCurrentUser();
@@ -69,52 +89,166 @@ export class InvoiceFormComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.createForm();
+    // First load tax profiles so they're available when creating the form
+    this.loadTaxProfiles().then(() => {
+      this.createForm();
+      this.loadServices();
+      
+      // Check for invoice ID for edit mode
+      this.invoiceId = this.route.snapshot.paramMap.get('id');
+      if (this.invoiceId) {
+        this.isEditMode = true;
+        this.loadInvoice(this.invoiceId);
+      }
+    });
     
-    this.invoiceId = this.route.snapshot.paramMap.get('id');
-    if (this.invoiceId) {
-      this.isEditMode = true;
-      this.loadInvoice(this.invoiceId);
+    // Set up patient search with debouncing
+    this.searchSubscription = this.searchTerms.pipe(
+      takeUntil(this.destroy$),
+      debounceTime(300),
+      distinctUntilChanged()
+    ).subscribe(term => {
+      this.searchPatients(term);
+    });
+  }
+  
+  ngOnDestroy(): void {
+    // Clean up subscriptions
+    this.destroy$.next(undefined);
+    this.destroy$.complete();
+    
+    if (this.hidePatientSearchTimeout) {
+      clearTimeout(this.hidePatientSearchTimeout);
     }
-    
-    // Load tax profiles
-    this.loadTaxProfiles();
   }
   
   /**
    * Load tax profiles from the API
    */
-  loadTaxProfiles(): void {
-    this.billingService.getTaxProfiles().subscribe({
-      next: (profiles) => {
-        this.taxProfiles = profiles;
-        console.log('Tax profiles loaded:', this.taxProfiles);
+  loadTaxProfiles(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      // If tax profiles are already loaded, resolve immediately
+      if (this.taxProfiles && this.taxProfiles.length > 0) {
+        resolve();
+        return;
+      }
+      // Use the exact API URL as specified
+      const apiUrl = `${environment.apiUrlInventory}/api/inventory/masters/tax-profiles`;
+      
+      this.http.get<any[]>(apiUrl).subscribe({
+        next: (data) => {
+          // Map the response data to our TaxProfile interface based on the provided format
+          this.taxProfiles = data.map(profile => ({
+            taxProfileId: profile.taxProfileId,
+            profileName: profile.profileName,
+            totalRate: profile.totalRate,
+            components: profile.components || []
+          }));
+          
+          console.log('Loaded tax profiles:', this.taxProfiles);
+          resolve();
+        },
+        error: (error: any) => {
+          console.error('Failed to load tax profiles:', error);
+          
+          // Provide fallback dummy data similar to the expected format
+          this.taxProfiles = [
+            {
+              taxProfileId: 'tax_gst_6%',
+              profileName: 'GST 6%',
+              totalRate: 12.0,
+              components: [
+                { name: 'CGST', rate: 6.0 },
+                { name: 'SGST', rate: 6.0 }
+              ]
+            },
+            {
+              taxProfileId: 'tax_gst_9%',
+              profileName: 'GST 9%',
+              totalRate: 18.0,
+              components: [
+                { name: 'CGST', rate: 9.0 },
+                { name: 'SGST', rate: 9.0 }
+              ]
+            },
+            {
+              taxProfileId: 'tax_gst_2.5%',
+              profileName: 'GST 2.5%',
+              totalRate: 5.0,
+              components: [
+                { name: 'CGST', rate: 2.5 },
+                { name: 'SGST', rate: 2.5 }
+              ]
+            }
+          ];
+          
+          console.log('Using fallback tax profiles:', this.taxProfiles);
+          resolve();
+        }
+      });
+    });
+  }
+  
+  /**
+   * Load services from the API
+   */
+  loadServices(): void {
+    // Make API call to get actual services
+    this.http.get<any>(`${environment.apiUrl}/api/services`).subscribe({
+      next: (response: any) => {
+        console.log('Services API response:', response);
+        // Check if response has the expected structure
+        if (response && response.data && Array.isArray(response.data)) {
+          // Map API response to Service interface
+          this.services = response.data.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            price: item.rate || 0,
+            description: item.description || '',
+            group: item.group || 'GENERAL',
+            rate: item.rate || 0,
+            active: item.active !== undefined ? item.active : true
+          }));
+          
+          // Extract unique groups
+          this.extractServiceGroups();
+          console.log('Services loaded:', this.services.length);
+          console.log('Service groups:', this.serviceGroups);
+        } else {
+          console.warn('Unexpected API response format for services');
+          this.loadFallbackServices();
+        }
       },
-      error: (error) => {
-        console.error('Error loading tax profiles:', error);
-        // Set default tax profiles in case API fails
-        this.taxProfiles = [
-          {
-            taxProfileId: 'tax_gst_10%',
-            profileName: 'GST 10%',
-            totalRate: 12.0,
-            components: [
-              { name: 'CGST', rate: 6.0 },
-              { name: 'SGST', rate: 6.0 }
-            ]
-          },
-          {
-            taxProfileId: 'tax_gst_5%',
-            profileName: 'GST 5%',
-            totalRate: 5.0,
-            components: [
-              { name: 'CGST', rate: 2.5 },
-              { name: 'SGST', rate: 2.5 }
-            ]
-          }
-        ];
+      error: (error: any) => {
+        console.error('Error loading services', error);
+        this.loadFallbackServices();
       }
     });
+  }
+  
+  /**
+   * Load fallback services when API fails
+   */
+  private loadFallbackServices(): void {
+    console.log('Loading fallback service data');
+    this.services = [
+      { id: 'SVC001', name: 'General Consultation', price: 500, description: 'General doctor consultation', group: 'CONSULTATION', rate: 500, active: true },
+      { id: 'SVC002', name: 'Specialist Consultation', price: 1000, description: 'Specialist doctor consultation', group: 'CONSULTATION', rate: 1000, active: true },
+      { id: 'SVC003', name: 'Blood Test - Basic', price: 800, description: 'Basic blood test panel', group: 'OPD', rate: 800, active: true },
+      { id: 'SVC004', name: 'X-Ray', price: 1200, description: 'X-Ray imaging', group: 'OPD', rate: 1200, active: true },
+      { id: 'SVC005', name: 'Health Checkup Basic', price: 2500, description: 'Basic health checkup', group: 'PACKAGE', rate: 2500, active: true },
+      { id: 'SVC006', name: 'Health Checkup Premium', price: 5000, description: 'Premium health checkup', group: 'PACKAGE', rate: 5000, active: true }
+    ];
+    
+    // Extract unique groups from fallback data
+    this.extractServiceGroups();
+  }
+  
+  /**
+   * Extract unique service groups from the services array
+   */
+  extractServiceGroups(): void {
+    this.serviceGroups = [...new Set(this.services.map(service => service.group))];
   }
 
   createForm(): void {
@@ -129,40 +263,31 @@ export class InvoiceFormComponent implements OnInit {
       paidAmount: [0],
       balanceAmount: [0],
       totalPaid: [0], // Added missing totalPaid control
-      taxationType: ['Non-Gst', [Validators.required]],
-      taxProfileId: ['', []],
+
       package: ['', []],
       category: ['SERVICES', [Validators.required]],
+      // Common tax type for all line items
+      commonTaxationType: ['Non-Gst', [Validators.required]],
       subtotal: [0, []],
       overallDiscount: [0, []],
       overallDiscountType: ['PERCENT', []],
       notes: ['', []],
+      // Tax breakdown and total tax for display
+      taxBreakdown: [[]],
+      totalTax: [0],
       items: this.fb.array([this.createItem()]),
       payments: this.fb.array([])
     });
     
-    // Listen for changes in taxation type
-    this.invoiceForm.get('taxationType')?.valueChanges.subscribe(value => {
-      if (value !== 'Non-Gst') {
-        this.invoiceForm.get('taxProfileId')?.setValidators([Validators.required]);
-      } else {
-        this.invoiceForm.get('taxProfileId')?.clearValidators();
-        this.invoiceForm.get('taxProfileId')?.setValue('');
-      }
-      this.invoiceForm.get('taxProfileId')?.updateValueAndValidity();
-      this.calculateTotals();
-    });
-    
-    // Listen for changes in tax profile
-    this.invoiceForm.get('taxProfileId')?.valueChanges.subscribe(value => {
-      this.selectedTaxProfile = this.taxProfiles.find(profile => profile.taxProfileId === value) || null;
-      this.calculateTotals();
-    });
+
   }
 
   createItem(): FormGroup {
     return this.fb.group({
       serviceDate: [this.formatDate(new Date()), [Validators.required]],
+      serviceId: ['', [Validators.required]],
+      serviceName: [''],
+      serviceGroup: [''],
       serviceType: ['', [Validators.required]],
       serviceDescription: ['', [Validators.required]],
       incentive: ['NO', []],
@@ -170,8 +295,12 @@ export class InvoiceFormComponent implements OnInit {
       rate: [0, [Validators.required, Validators.min(0)]],
       amount: [0, [Validators.required]],
       discount: [0, [Validators.min(0)]],
+      // Removed taxationType from line items - now using common tax type
+      taxProfileId: [''],
       tax: [0, [Validators.min(0)]],
-      totalAmount: [0, [Validators.required]]
+      totalAmount: [0, [Validators.required]],
+      // Tax details for CGST/SGST breakdown
+      taxDetails: [[]]
     });
   }
 
@@ -197,6 +326,91 @@ export class InvoiceFormComponent implements OnInit {
     this.items.push(this.createItem());
     this.calculateTotals();
   }
+  
+  /**
+   * Handle service selection for a line item
+   */
+  onServiceChange(index: number, event: Event): void {
+    const serviceId = (event.target as HTMLSelectElement).value;
+    const item = this.items.at(index) as FormGroup;
+    
+    if (serviceId) {
+      const selectedService = this.services.find(s => s.id === serviceId);
+      if (selectedService) {
+        item.patchValue({
+          serviceId: selectedService.id,
+          serviceName: selectedService.name,
+          serviceGroup: selectedService.group,
+          serviceType: selectedService.group,
+          serviceDescription: selectedService.description || selectedService.name,
+          rate: selectedService.rate || selectedService.price
+        });
+        
+        // Recalculate totals after service selection
+        this.updateItemTotal(index);
+        this.calculateTotals();
+      }
+    } else {
+      // Clear service-related fields if no service selected
+      item.patchValue({
+        serviceId: '',
+        serviceName: '',
+        serviceGroup: '',
+        serviceType: '',
+        serviceDescription: '',
+        rate: 0
+      });
+      
+      this.updateItemTotal(index);
+      this.calculateTotals();
+    }
+  }
+  
+  /**
+   * Handle quantity change for a line item
+   */
+  onQuantityChange(index: number): void {
+    this.updateItemTotal(index);
+    this.calculateTotals();
+  }
+  
+  /**
+   * Handle rate change for a line item
+   */
+  onRateChange(index: number): void {
+    this.updateItemTotal(index);
+    this.calculateTotals();
+  }
+  
+  /**
+   * Handle discount change for a line item
+   */
+  onDiscountChange(index: number): void {
+    this.updateItemTotal(index);
+    this.calculateTotals();
+  }
+  
+  /**
+   * Handle common taxation type change - affects all line items
+   */
+  onCommonTaxationTypeChange(): void {
+    const commonTaxationType = this.invoiceForm.get('commonTaxationType')?.value;
+    
+    // Update all line items based on common tax type
+    this.items.controls.forEach((item, index) => {
+      if (commonTaxationType === 'Non-Gst') {
+        item.patchValue({
+          taxProfileId: '',
+          tax: 0
+        });
+      }
+      item.get('taxProfileId')?.updateValueAndValidity();
+      this.updateItemTotal(index);
+    });
+    
+    this.calculateTotals();
+  }
+ 
 
   removeItem(index: number): void {
     if (this.items.length > 1) {
@@ -229,44 +443,134 @@ export class InvoiceFormComponent implements OnInit {
    * Calculate invoice totals using the new taxation types
    */
   calculateTotals(): void {
-    // Calculate subtotal from all items
-    const subtotal = this.items.controls
-      .reduce((sum, item) => sum + (+item.get('amount')?.value || 0), 0);
+    // First, update all line item totals
+    for (let i = 0; i < this.items.length; i++) {
+      this.updateItemTotal(i);
+    }
     
-    // Get discount amount using the appropriate method
-    const discountAmount = this.getDiscountAmount();
+    let subtotal = 0;
+    let totalTaxAmount = 0;
+    let taxBreakdown: { [key: string]: number } = {};
     
-    // Calculate after-discount amount
-    const afterDiscount = subtotal - discountAmount;
+    // Loop through each line item and add up the totals
+    for (let i = 0; i < this.items.length; i++) {
+      const lineItem = this.items.at(i) as FormGroup;
+      const totalAmount = +lineItem.get('totalAmount')?.value || 0;
+      
+      subtotal += totalAmount;
+      
+      // Accumulate tax details for the breakdown
+      const taxDetails = lineItem.get('taxDetails')?.value || [];
+      if (taxDetails && taxDetails.length > 0) {
+        taxDetails.forEach((detail: any) => {
+          taxBreakdown[detail.name] = (taxBreakdown[detail.name] || 0) + detail.amount;
+          totalTaxAmount += detail.amount;
+        });
+      }
+    }
     
-    // Calculate tax by summing up taxes from each line item
-    const lineTaxesTotal = this.items.controls
-      .reduce((sum, item) => {
-        const itemAmount = +item.get('amount')?.value || 0;
-        const itemDiscount = +item.get('discount')?.value || 0;
-        const itemTaxRate = +item.get('tax')?.value || 0;
-        
-        const afterItemDiscount = itemAmount - (itemAmount * itemDiscount / 100);
-        const itemTaxAmount = afterItemDiscount * (itemTaxRate / 100);
-        
-        return sum + itemTaxAmount;
-      }, 0);
+    // Get overall discount amount
+    const overallDiscount = +this.invoiceForm.get('overallDiscount')?.value || 0;
+    const overallDiscountType = this.invoiceForm.get('overallDiscountType')?.value || 'PERCENT';
     
-    // Calculate grand total
-    const grandTotal = afterDiscount + lineTaxesTotal;
+    let discountAmount = 0;
+    if (overallDiscountType === 'PERCENT') {
+      discountAmount = subtotal * (overallDiscount / 100);
+    } else {
+      discountAmount = overallDiscount;
+    }
+    
+    // Calculate final total
+    const grandTotal = subtotal - discountAmount;
     
     // Update form values
     this.invoiceForm.patchValue({
-      subtotal: subtotal.toFixed(2),
-      amount: grandTotal.toFixed(2),
-      grandTotal: grandTotal.toFixed(2),
-      balanceAmount: grandTotal.toFixed(2)
-    });
+      subtotal: +subtotal.toFixed(2),
+      amount: +grandTotal.toFixed(2),
+      balanceAmount: +grandTotal.toFixed(2),
+      // Store tax breakdown in a way that's accessible to the template
+      taxBreakdown: Object.entries(taxBreakdown).map(([name, amount]) => ({
+        name,
+        amount: parseFloat(amount.toFixed(2))
+      })),
+      // Update total tax in the form
+      totalTax: totalTaxAmount
+    }, { emitEvent: false });
     
     // Update payment-related fields if we have payments
     if (this.payments && this.payments.length > 0) {
       this.updatePaymentTotals();
     }
+    
+    console.log(`Calculated subtotal: ${subtotal}, Taxes: ${totalTaxAmount}, Grand total: ${grandTotal}`);
+    console.log('Tax breakdown:', taxBreakdown);
+  }
+  
+  /**
+   * Update individual item total based on quantity, rate, discount and tax
+   */
+  updateItemTotal(index: number): void {
+    const item = this.items.at(index) as FormGroup;
+    const quantity = +item.get('quantity')?.value || 0;
+    const rate = +item.get('rate')?.value || 0;
+    const discount = +item.get('discount')?.value || 0;
+    const taxProfileId = item.get('taxProfileId')?.value;
+    
+    const baseAmount = quantity * rate - discount;
+    let totalAmount = baseAmount;
+    let taxDetails: { name: string; rate: number; amount: number; }[] = [];
+    
+    // Get taxation type from common form field
+    const taxationType = this.invoiceForm.get('commonTaxationType')?.value || 'Non-Gst';
+    
+    // For Non-Gst, no tax calculation is needed
+    if (taxationType === 'Non-Gst') {
+      totalAmount = baseAmount;
+      taxDetails = [];
+    } 
+    // For Exclusive and Inclusive, calculate taxes if a tax profile is selected
+    else if (taxProfileId) {
+      const taxProfile = this.taxProfiles.find(p => p.taxProfileId === taxProfileId);
+      
+      if (taxProfile && taxProfile.components && taxProfile.components.length > 0) {
+        if (taxationType === 'Exclusive') {
+          // For exclusive tax, calculate tax amount and add to base
+          const totalTaxAmount = baseAmount * (taxProfile.totalRate / 100);
+          totalAmount = baseAmount + totalTaxAmount;
+          
+          // Calculate individual tax components
+          taxProfile.components.forEach(component => {
+            const componentAmount = baseAmount * (component.rate / 100);
+            taxDetails.push({
+              name: component.name,
+              rate: component.rate,
+              amount: +componentAmount.toFixed(2)
+            });
+          });
+        } else if (taxationType === 'Inclusive') {
+          // For inclusive tax, extract tax from total amount
+          const taxableAmount = baseAmount / (1 + taxProfile.totalRate / 100);
+          const totalTaxAmount = baseAmount - taxableAmount;
+          totalAmount = baseAmount; // Total remains the same for inclusive
+          
+          // Calculate individual tax components
+          taxProfile.components.forEach(component => {
+            const componentAmount = taxableAmount * (component.rate / 100);
+            taxDetails.push({
+              name: component.name,
+              rate: component.rate,
+              amount: +componentAmount.toFixed(2)
+            });
+          });
+        }
+      }
+    }
+    
+    // Update the line item with calculated values
+    item.patchValue({
+      totalAmount: +totalAmount.toFixed(2),
+      taxDetails: taxDetails
+    }, { emitEvent: false });
   }
   
   /**
@@ -397,14 +701,7 @@ export class InvoiceFormComponent implements OnInit {
     this.calculateItemTotal(index);
   }
   
-  /**
-   * Handle tax profile change in line items
-   * @param index Index of the item in the form array
-   */
-  onTaxProfileChange(index: number): void {
-    // When tax profile changes, recalculate the item total
-    this.calculateItemTotal(index);
-  }
+
   
   /**
    * Opens the service creation modal
@@ -529,62 +826,20 @@ export class InvoiceFormComponent implements OnInit {
   }
   
   /**
+   * Handle tax profile change for a line item
+   */
+  onTaxProfileChange(index: number): void {
+    this.updateItemTotal(index);
+    this.calculateTotals();
+  }
+
+  /**
    * Get tax breakdown for display in UI
    */
   getTaxBreakdown(): { name: string, amount: number }[] {
-    // Get tax type
-    const taxationType = this.invoiceForm.get('taxationType')?.value;
-    
-    // If Non-GST, return empty array
-    if (taxationType === 'Non-Gst') {
-      return [];
-    }
-    
-    // Get the selected tax profile
-    const taxProfileId = this.invoiceForm.get('taxProfileId')?.value;
-    const taxProfile = this.taxProfiles.find(profile => profile.taxProfileId === taxProfileId);
-    
-    // If no tax profile is selected, return empty array
-    if (!taxProfile) {
-      return [];
-    }
-    
-    // Get the subtotal (after discount)
-    const subtotal = this.items.controls
-      .reduce((sum, item) => sum + (+item.get('amount')?.value || 0), 0);
-    const discountAmount = this.getDiscountAmount();
-    const afterDiscount = subtotal - discountAmount;
-    
-    // Calculate tax breakdown based on taxation type and tax components
-    const breakdown: { name: string, amount: number }[] = [];
-    
-    if (taxationType === 'Exclusive') {
-      // For exclusive tax, calculate each component separately
-      taxProfile.components.forEach(component => {
-        const componentRate = component.rate / 100; // Convert percentage to decimal
-        const componentAmount = afterDiscount * componentRate;
-        breakdown.push({
-          name: component.name,
-          amount: Math.round(componentAmount * 100) / 100 // Round to 2 decimal places
-        });
-      });
-    } else if (taxationType === 'Inclusive') {
-      // For inclusive tax, calculate the proportion of each component in the total tax
-      const totalTaxRate = taxProfile.totalRate / 100;
-      const totalTaxAmount = afterDiscount - (afterDiscount / (1 + totalTaxRate));
-      
-      taxProfile.components.forEach(component => {
-        // Calculate the proportion of this component in the total tax rate
-        const proportion = component.rate / taxProfile.totalRate;
-        const componentAmount = totalTaxAmount * proportion;
-        breakdown.push({
-          name: component.name,
-          amount: Math.round(componentAmount * 100) / 100 // Round to 2 decimal places
-        });
-      });
-    }
-    
-    return breakdown;
+    // Get tax breakdown from the form (calculated in calculateTotals)
+    const taxBreakdown = this.invoiceForm.get('taxBreakdown')?.value || [];
+    return taxBreakdown;
   }
   
   /**
@@ -617,7 +872,7 @@ export class InvoiceFormComponent implements OnInit {
   loadInvoice(id: string): void {
     this.loading = true;
     this.billingService.getInvoiceById(id).subscribe({
-      next: (invoice) => {
+      next: (invoice: Invoice) => {
         console.log('Loaded invoice data:', JSON.stringify(invoice, null, 2));
         
         // Important - handle invoice data first before clearing items
@@ -737,7 +992,7 @@ export class InvoiceFormComponent implements OnInit {
             this.selectedPatient = patient;
             console.log('Patient data loaded:', patient);
           },
-          error: (error) => {
+          error: (error: any) => {
             console.error('Error fetching patient details:', error);
             // Fallback to basic patient info if detailed fetch fails
             this.selectedPatient = {
@@ -796,7 +1051,7 @@ export class InvoiceFormComponent implements OnInit {
         
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error loading invoice', error);
         this.loading = false;
       }
@@ -871,7 +1126,8 @@ export class InvoiceFormComponent implements OnInit {
         amount: Number(formValue.amount) || 0,
         subtotal: Number(formValue.subtotal) || 0,
         tax: Number(formValue.tax) || 0,
-        taxationType: formValue.taxationType || 'Non-Gst',
+        // Use commonTaxationType instead of taxationType for backend compatibility
+        commonTaxationType: formValue.commonTaxationType || 'Non-Gst',
         category: formValue.category || 'SERVICES',
         discount: Number(formValue.overallDiscount) || 0,
         overallDiscount: Number(formValue.overallDiscount) || 0,
@@ -880,23 +1136,28 @@ export class InvoiceFormComponent implements OnInit {
         balanceAmount: Number(formValue.balanceAmount) || Number(formValue.amount) || 0,
         grandTotal: Number(formValue.grandTotal) || Number(formValue.amount) || 0,
         totalAmount: Number(formValue.amount) || 0,
-        notes: formValue.notes || ''
+        notes: formValue.notes || '',
+        // Include the calculated tax breakdown and total tax
+        taxBreakdown: formValue.taxBreakdown || [],
+        totalTax: Number(formValue.totalTax) || 0,
+        // Include line items in the main invoice object
+        items: formValue.items || []
       };
       
       // Call API to create invoice
-      console.log('Calling createInvoice API with data:', { ...invoice, items: formValue.items });
-      this.billingService.createInvoice({ ...invoice, items: formValue.items })
+      console.log('Calling createInvoice API with data:', invoice);
+      this.billingService.createInvoice(invoice)
         .pipe(finalize(() => {
           console.log('API call finalized');
           this.loading = false;
         }))
         .subscribe({
-          next: (response) => {
+          next: (response: any) => {
             console.log('Invoice created successfully:', response);
             alert('Invoice created successfully');
             this.router.navigate(['/billing/invoices']);
           },
-          error: (error) => {
+          error: (error: any) => {
             console.error('Error creating invoice', error);
             // Check for specific error types to give better feedback
             if (error.status === 404) {
@@ -939,12 +1200,12 @@ export class InvoiceFormComponent implements OnInit {
       this.billingService.updateInvoice(this.invoiceId!, { ...invoice, items: formValue.items })
         .pipe(finalize(() => this.loading = false))
         .subscribe({
-          next: (response) => {
+          next: (response: any) => {
             console.log('Invoice updated successfully:', response);
             alert('Invoice updated successfully');
             this.router.navigate(['/billing/invoices']);
           },
-          error: (error) => {
+          error: (error: any) => {
             console.error('Error updating invoice', error);
             alert('Failed to update invoice: ' + (error.message || 'Unknown error'));
           }
@@ -952,9 +1213,9 @@ export class InvoiceFormComponent implements OnInit {
     }
   }
 
-  searchPatients(): void {
-    // Get the search term from the search field
-    this.patientSearchTerm = this.searchField.value || '';
+  searchPatients(term: string): void {
+    // Use the provided search term
+    this.patientSearchTerm = term;
     
     // Allow search by ID (numbers only) even if shorter than 3 characters
     // or by name if length is greater than 2 characters

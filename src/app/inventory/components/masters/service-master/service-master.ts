@@ -75,7 +75,14 @@ export class ServiceMasterComponent implements OnInit {
       )
       .subscribe(response => {
         if (response.success && response.data) {
-          this.services = response.data;
+          // Sort services by name in ascending order
+          const sortedServices = response.data.sort((a: Service, b: Service) => {
+            const nameA = (a.name || '').toLowerCase();
+            const nameB = (b.name || '').toLowerCase();
+            return nameA.localeCompare(nameB);
+          });
+          
+          this.services = sortedServices;
           this.applyFilter();
           console.log('Services loaded:', this.services);
         } else {
@@ -88,11 +95,19 @@ export class ServiceMasterComponent implements OnInit {
 
   // Apply group filter
   applyFilter(): void {
+    let filtered: Service[];
     if (this.selectedGroup === 'ALL') {
-      this.filteredServices = this.services;
+      filtered = this.services;
     } else {
-      this.filteredServices = this.services.filter(s => s.group === this.selectedGroup);
+      filtered = this.services.filter(s => s.group === this.selectedGroup);
     }
+    
+    // Sort filtered results by name in ascending order
+    this.filteredServices = filtered.sort((a, b) => {
+      const nameA = (a.name || '').toLowerCase();
+      const nameB = (b.name || '').toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
   }
 
   // Change filter
@@ -192,6 +207,147 @@ export class ServiceMasterComponent implements OnInit {
         error: (error) => {
           console.error('Error updating service status:', error);
           alert('Error updating service status: ' + (error.message || 'Unknown error'));
+        }
+      });
+  }
+
+  // Bulk insert OPD services
+  bulkInsertOpdServices(): void {
+    const opdServices = [
+      { name: 'advance exo', rate: 75000 },
+      { name: 'ADVANCE EXO EXOSOMES', rate: 15000 },
+      { name: 'AQ', rate: 10000 },
+      { name: 'BLACK PEEL', rate: 3000 },
+      { name: 'BOTOX', rate: 30000 },
+      { name: 'CARBON LASER PEEL', rate: 7000 },
+      { name: 'CO2 LASER', rate: 3000 },
+      { name: 'CONSULTATION', rate: 700 },
+      { name: 'DRESSING', rate: 300 },
+      { name: 'DRS', rate: 10000 },
+      { name: 'EAR LOBE REPAIR (PER EAR)', rate: 3000 },
+      { name: 'EXCIMER', rate: 700 },
+      { name: 'EXCISION', rate: 3000 },
+      { name: 'EXCISION BIOPSY', rate: 5000 },
+      { name: 'EYE LID SURGERY', rate: 9000 },
+      { name: 'EZACNE', rate: 45 },
+      { name: 'FACE WASH', rate: 320 },
+      { name: 'FERRULAC PEEL', rate: 4000 },
+      { name: 'FERULAC BOOSTER PEEL', rate: 5000 },
+      { name: 'FILLERS', rate: 25000 },
+      { name: 'fractinal co2 laser', rate: 8000 },
+      { name: 'GFC', rate: 7000 },
+      { name: 'GLUTA WHITENING PEEL', rate: 4000 },
+      { name: 'GLYCOLIC', rate: 3000 },
+      { name: 'HIFU FACE', rate: 10000 },
+      { name: 'HIFU DOUBLE CHIN', rate: 7000 },
+      { name: 'HYDRA FACIAL', rate: 12000 },
+      { name: 'HYDRA FACIEAL', rate: 5000 },
+      { name: 'HYDRA FACIEAL (Premium)', rate: 7000 },
+      { name: 'ILS', rate: 1000 },
+      { name: 'ils injection', rate: 2000 },
+      { name: 'INJECTION LIPOLYSIS', rate: 15000 },
+      { name: 'IV GLUATHIONE', rate: 6000 },
+      { name: 'IV GLUTA', rate: 40000 },
+      { name: 'LHR', rate: 7000 },
+      { name: 'LHR CHIN', rate: 3000 },
+      { name: 'LHR UPPERLIP', rate: 3000 },
+      { name: 'LIDOCAINE', rate: 112 },
+      { name: 'LIP FLIP', rate: 9000 },
+      { name: 'MANDELIC T PEEL', rate: 4000 },
+      { name: 'Medi Facial', rate: 15000 },
+      { name: 'MEDIFACIAL', rate: 8000 },
+      { name: 'melanostop peel', rate: 5000 },
+      { name: 'MICRONEEDLING', rate: 5000 },
+      { name: 'MNRF', rate: 7000 },
+      { name: 'NAIL SURGERY (PER NAIL)', rate: 7000 },
+      { name: 'NMF PEEL', rate: 4000 },
+      { name: 'PROCEDURE', rate: 6000 },
+      { name: 'PRP', rate: 5000 },
+      { name: 'PUMPKIN PEEL', rate: 4000 },
+      { name: 'PUNCH BIOPSY', rate: 6000 },
+      { name: 'RAPLITE FACE WASH', rate: 450 },
+      { name: 'RF', rate: 3000 },
+      { name: 'SESGLYCOPEEL', rate: 4000 },
+      { name: 'SKIN HYDRATION BOOSTER', rate: 20000 },
+      { name: 'TATTO REMOVAL', rate: 8000 },
+      { name: 'THREAD LIFTING', rate: 45000 },
+      { name: 'TRIPLE COMBO', rate: 2000 },
+      { name: 'TRUFACE FACE WASH', rate: 320 },
+      { name: 'YELLOW PEEL', rate: 5000 }
+    ];
+
+    if (!confirm(`This will insert ${opdServices.length} OPD services. Are you sure?`)) {
+      return;
+    }
+
+    this.loading = true;
+    console.log(`Starting bulk insertion of ${opdServices.length} OPD services...`);
+    
+    this.insertServicesSequentially(opdServices, 0, 0, 0, []);
+  }
+
+  private insertServicesSequentially(
+    services: Array<{name: string, rate: number}>, 
+    index: number, 
+    successCount: number, 
+    failureCount: number, 
+    failures: Array<{service: any, error: any}>
+  ): void {
+    if (index >= services.length) {
+      // All services processed
+      this.loading = false;
+      console.log('\n=== BULK INSERTION SUMMARY ===');
+      console.log(`Total services: ${services.length}`);
+      console.log(`✅ Successfully inserted: ${successCount}`);
+      console.log(`❌ Failed insertions: ${failureCount}`);
+      
+      if (failures.length > 0) {
+        console.log('\n=== FAILED INSERTIONS ===');
+        failures.forEach((failure, i) => {
+          console.log(`${i + 1}. ${failure.service.name} (₹${failure.service.rate})`);
+          console.log(`   Error:`, failure.error);
+        });
+      }
+      
+      alert(`Bulk insertion completed!\n\nSuccessfully inserted: ${successCount}\nFailed: ${failureCount}`);
+      this.loadServices(); // Refresh the list
+      return;
+    }
+
+    const service = services[index];
+    const serviceData = {
+      name: service.name,
+      description: `OPD Service - ${service.name}`,
+      group: 'OPD',
+      rate: service.rate,
+      active: true
+    };
+
+    console.log(`Inserting service ${index + 1}/${services.length}: ${service.name} (₹${service.rate})`);
+
+    this.http.post<any>(`${environment.apiUrl}/api/services`, serviceData)
+      .subscribe({
+        next: (response) => {
+          if (response && response.success) {
+            console.log(`✅ Successfully inserted: ${service.name}`);
+            // Continue with next service
+            setTimeout(() => {
+              this.insertServicesSequentially(services, index + 1, successCount + 1, failureCount, failures);
+            }, 200); // Small delay between requests
+          } else {
+            console.error(`❌ Failed to insert: ${service.name}`, response);
+            failures.push({ service, error: response });
+            setTimeout(() => {
+              this.insertServicesSequentially(services, index + 1, successCount, failureCount + 1, failures);
+            }, 200);
+          }
+        },
+        error: (error) => {
+          console.error(`❌ Error inserting: ${service.name}`, error);
+          failures.push({ service, error });
+          setTimeout(() => {
+            this.insertServicesSequentially(services, index + 1, successCount, failureCount + 1, failures);
+          }, 200);
         }
       });
   }

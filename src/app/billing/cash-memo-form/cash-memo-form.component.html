@@ -152,12 +152,13 @@
                         </td>
                         <td>
                             <!-- Service Group Dropdown -->
-                            <select class="form-select form-select-sm" [attr.id]="'serviceGroup_' + i" (change)="onGroupChange($event, i)">
+                            <select class="form-select form-select-sm" 
+                                    formControlName="serviceGroup"
+                                    [attr.id]="'serviceGroup_' + i" 
+                                    (change)="onGroupChange($event, i)">
                                 <option value="">Select Service Group</option>
                                 <option *ngFor="let group of serviceGroups" [value]="group">{{group}}</option>
                             </select>
-                            <!-- Hidden field for serviceGroup -->
-                            <input type="hidden" formControlName="serviceGroup">
                         </td>
                         <td>
                             <!-- Service Subcategory Dropdown -->
@@ -254,6 +255,12 @@
                                         <option value="PCT">%</option>
                                     </select>
                                 </div>
+                            </div>
+                            
+                            <!-- Show calculated discount amount -->
+                            <div class="d-flex justify-content-between mb-2" *ngIf="discountAmount > 0">
+                                <div class="text-muted">Discount Amount</div>
+                                <div class="text-danger">-₹{{discountAmount | number:'1.2-2'}}</div>
                             </div>
 
                             <!-- Tax Breakdown -->

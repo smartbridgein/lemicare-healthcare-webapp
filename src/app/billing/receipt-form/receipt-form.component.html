@@ -48,7 +48,7 @@
                                     <div class="col-md-6">
                                         <label for="amount" class="form-label">Amount (₹)*</label>
                                         <input type="number" class="form-control" formControlName="amount" 
-                                            [ngClass]="{'is-invalid': submitted && receiptForm.get('amount')?.errors}">
+                                            [ngClass]="{'is-invalid': submitted && receiptForm.get('amount')?.errors}" readonly>
                                         <div *ngIf="submitted && receiptForm.get('amount')?.errors" class="invalid-feedback">
                                             <div *ngIf="receiptForm.get('amount')?.errors?.['required']">Amount is required</div>
                                             <div *ngIf="receiptForm.get('amount')?.errors?.['min']">Amount should be greater than 0</div>
@@ -152,10 +152,11 @@
                                 </div>
                                 
                                 <div class="mb-3 position-relative">
-                                    <label for="invoiceId" class="form-label">Invoice ID (Optional)</label>
+                                    <label for="invoiceId" class="form-label">Invoice ID*</label>
                                     <div class="input-group">
                                         <input type="text" class="form-control" 
                                             id="invoiceSearchInput"
+                                            [ngClass]="{'is-invalid': submitted && receiptForm.get('invoiceId')?.errors}"
                                             [value]="invoiceSearchTerm || receiptForm.get('invoiceId')?.value"
                                             (input)="onInvoiceSearchInput($event)"
                                             (focus)="showInvoiceSearch = true"
@@ -188,6 +189,16 @@
                                         </div>
                                     </div>
                                     
+                                    <div *ngIf="submitted && receiptForm.get('invoiceId')?.errors" class="invalid-feedback">
+                                        Invoice ID is required
+                                    </div>
+                                    
+                                    <!-- Paid Invoice Alert -->
+                                    <div *ngIf="isInvoiceAlreadyPaid" class="alert alert-warning mt-2 d-flex align-items-center" style="background-color: #fff3cd; border-color: #ffeaa7; color: #856404;">
+                                        <i class="fas fa-exclamation-triangle me-2" style="color: #856404;"></i>
+                                        <strong>Invoice Already Paid:</strong> This invoice has been fully paid. You can print the existing receipt.
+                                    </div>
+                                    
                                     <div class="form-text">
                                         If this payment is for a specific invoice, enter the invoice number or search for it.
                                     </div>
@@ -200,9 +211,21 @@
                 <!-- Form Actions -->
                 <div class="d-flex justify-content-end">
                     <button type="button" class="btn me-2" style="background-color: #e6c157; color: #333; border: none;" (click)="cancelForm()">Cancel</button>
-                    <button type="submit" class="btn" style="background-color: #6b1d14; color: white; border: none;" [disabled]="loading">
+                    
+                    <!-- Print Button - Show when invoice is already paid OR when viewing existing receipt -->
+                    <button *ngIf="isInvoiceAlreadyPaid || isEditMode" type="button" class="btn me-2" 
+                            style="background-color: #28a745; color: white; border: none;" 
+                            (click)="printReceipt()">
+                        <i class="fas fa-print me-1"></i>
+                        Print Receipt
+                    </button>
+                    
+                    <!-- Create/Update Receipt Button - Show only for new receipts and when invoice is not paid -->
+                    <button *ngIf="!isEditMode" type="submit" class="btn" 
+                            style="background-color: #6b1d14; color: white; border: none;" 
+                            [disabled]="loading || isInvoiceAlreadyPaid">
                         <span *ngIf="loading" class="spinner-border spinner-border-sm me-1" style="color: white;" role="status" aria-hidden="true"></span>
-                        {{ isEditMode ? 'Update Receipt' : 'Create Receipt' }}
+                        Create Receipt
                     </button>
                 </div>
             </form>

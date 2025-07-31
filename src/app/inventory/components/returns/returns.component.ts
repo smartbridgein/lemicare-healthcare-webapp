@@ -40,16 +40,19 @@ export class ReturnsComponent implements OnInit {
   loadReturns(): void {
     this.loading = true;
     this.inventoryService.getReturns().subscribe({
-      next: (data: Return[]) => {
-        this.returns = data;
-        this.filteredReturns = [...data];
+      next: (data: any[]) => {
+        console.log('Raw API response:', data);
+        this.returns = this.mapApiResponseToReturns(data);
+        this.filteredReturns = [...this.returns];
         this.applyFilters();
         this.loading = false;
       },
       error: (err: Error) => {
         console.error('Error loading returns', err);
         this.loading = false;
-        this.loadSampleReturns();
+        // Don't fall back to sample data - show empty state instead
+        this.returns = [];
+        this.filteredReturns = [];
       }
     });
   }
@@ -61,39 +64,48 @@ export class ReturnsComponent implements OnInit {
     // Make specific API call based on the active tab
     if (tab === 'SALES') {
       this.inventoryService.getSalesReturns().subscribe({
-        next: (data) => {
-          this.returns = data;
+        next: (data: any[]) => {
+          console.log('Sales returns API response:', data);
+          this.returns = this.mapSalesReturnsToReturns(data);
           this.applyFilters();
           this.loading = false;
         },
         error: (err) => {
           console.error('Error loading sales returns', err);
           this.loading = false;
+          this.returns = [];
+          this.filteredReturns = [];
         }
       });
     } else if (tab === 'PURCHASE') {
       this.inventoryService.getPurchaseReturns().subscribe({
-        next: (data) => {
-          this.returns = data;
+        next: (data: any[]) => {
+          console.log('Purchase returns API response:', data);
+          this.returns = this.mapPurchaseReturnsToReturns(data);
           this.applyFilters();
           this.loading = false;
         },
         error: (err) => {
           console.error('Error loading purchase returns', err);
           this.loading = false;
+          this.returns = [];
+          this.filteredReturns = [];
         }
       });
     } else {
       // ALL tab - load all returns
       this.inventoryService.getReturns().subscribe({
-        next: (data) => {
-          this.returns = data;
+        next: (data: any[]) => {
+          console.log('All returns API response:', data);
+          this.returns = this.mapApiResponseToReturns(data);
           this.applyFilters();
           this.loading = false;
         },
         error: (err) => {
           console.error('Error loading all returns', err);
           this.loading = false;
+          this.returns = [];
+          this.filteredReturns = [];
         }
       });
     }
@@ -172,63 +184,137 @@ export class ReturnsComponent implements OnInit {
     }
   }
 
-  // Sample data for development
-  private loadSampleReturns(): void {
-    const currentDate = new Date().toISOString().split('T')[0];
-    
-    this.returns = [
-      {
-        id: 'RTN-2023-001',
-        type: 'SALES',
-        referenceId: 'SL-2023-105',
-        date: currentDate,
-        customerOrSupplier: 'Rahul Sharma',
-        amount: 1250.50,
-        status: 'COMPLETED',
-        reason: 'Medicine expired'
-      },
-      {
-        id: 'RTN-2023-002',
-        type: 'PURCHASE',
-        referenceId: 'PO-2023-057',
-        date: currentDate,
-        customerOrSupplier: 'AJAX PHARMACEUTICALS',
-        amount: 3540.25,
-        status: 'PENDING',
-        reason: 'Wrong delivery'
-      },
-      {
-        id: 'RTN-2023-003',
-        type: 'SALES',
-        referenceId: 'SL-2023-112',
-        date: '2023-06-25',
-        customerOrSupplier: 'Preeti Verma',
-        amount: 460.00,
-        status: 'PROCESSING',
-        reason: 'Customer changed mind'
-      },
-      {
-        id: 'RTN-2023-004',
-        type: 'PURCHASE',
-        referenceId: 'PO-2023-062',
-        date: '2023-06-22',
-        customerOrSupplier: 'UBK DISTRIBUTORS',
-        amount: 2800.75,
-        status: 'COMPLETED',
-        reason: 'Damaged packaging'
-      },
-      {
-        id: 'RTN-2023-005',
-        type: 'SALES',
-        referenceId: 'SL-2023-118',
-        date: '2023-06-20',
-        customerOrSupplier: 'Vikram Singh',
-        amount: 720.30,
-        status: 'COMPLETED',
-        reason: 'Wrong medicine'
+  /**
+   * Map API response data to frontend Return interface
+   * Handles mixed sales and purchase returns from /api/inventory/returns endpoint
+   */
+  private mapApiResponseToReturns(data: any[]): Return[] {
+    return data.map((item: any) => {
+      // Determine if this is a sales return or purchase return based on available fields
+      const isSalesReturn = item.salesReturnId || item.originalSaleId;
+      const isPurchaseReturn = item.purchaseReturnId || item.originalPurchaseId;
+      
+      if (isSalesReturn) {
+        return this.mapSalesReturnToReturn(item);
+      } else if (isPurchaseReturn) {
+        return this.mapPurchaseReturnToReturn(item);
+      } else {
+        // Fallback mapping
+        return {
+          id: item.id || 'UNKNOWN',
+          type: 'SALES' as 'SALES' | 'PURCHASE',
+          referenceId: item.referenceId || 'N/A',
+          date: this.formatApiDate(item.date || item.returnDate),
+          customerOrSupplier: 'Unknown',
+          amount: item.amount || 0,
+          status: 'COMPLETED' as 'COMPLETED' | 'PENDING' | 'PROCESSING',
+          reason: item.reason
+        };
       }
-    ];
+    });
+  }
+
+  /**
+   * Map sales returns API response to frontend Return interface
+   */
+  private mapSalesReturnsToReturns(data: any[]): Return[] {
+    return data.map((item: any) => this.mapSalesReturnToReturn(item));
+  }
+
+  /**
+   * Map purchase returns API response to frontend Return interface
+   */
+  private mapPurchaseReturnsToReturns(data: any[]): Return[] {
+    return data.map((item: any) => this.mapPurchaseReturnToReturn(item));
+  }
+
+  /**
+   * Map individual sales return to Return interface
+   */
+  private mapSalesReturnToReturn(item: any): Return {
+    return {
+      id: this.formatReturnId(item.salesReturnId || item.id),
+      type: 'SALES',
+      referenceId: this.formatSaleId(item.originalSaleId),
+      date: this.formatApiDate(item.returnDate),
+      customerOrSupplier: item.patientId ? `Patient: ${item.patientId}` : 'Walk-in Customer',
+      amount: item.netRefundAmount || item.refundAmount || 0,
+      status: 'COMPLETED' as 'COMPLETED' | 'PENDING' | 'PROCESSING',
+      reason: item.reason
+    };
+  }
+
+  /**
+   * Map individual purchase return to Return interface
+   */
+  private mapPurchaseReturnToReturn(item: any): Return {
+    console.log('Mapping purchase return:', item);
+    return {
+      id: this.formatReturnId(item.purchaseReturnId || item.id),
+      type: 'PURCHASE',
+      referenceId: this.formatPurchaseId(item.originalPurchaseId),
+      date: this.formatApiDate(item.returnDate),
+      customerOrSupplier: this.formatSupplierId(item.supplierId),
+      amount: item.totalReturnedAmount || item.amount || 0, // This is the key fix!
+      status: 'COMPLETED' as 'COMPLETED' | 'PENDING' | 'PROCESSING',
+      reason: item.reason
+    };
+  }
+
+  /**
+   * Format API date response (handles both string and timestamp objects)
+   */
+  private formatApiDate(date: any): string {
+    if (!date) return new Date().toISOString().split('T')[0];
     
-    this.filteredReturns = [...this.returns];
+    if (typeof date === 'string') {
+      return new Date(date).toISOString().split('T')[0];
+    }
+    
+    if (date.seconds) {
+      return new Date(date.seconds * 1000).toISOString().split('T')[0];
+    }
+    
+    return new Date(date).toISOString().split('T')[0];
+  }
+
+  /**
+   * Format return ID for display
+   */
+  private formatReturnId(id: string): string {
+    if (!id) return 'UNKNOWN';
+    if (id.startsWith('PRET') || id.startsWith('SRET')) {
+      return id.replace('PRET', 'RTN-P').replace('SRET', 'RTN-S');
+    }
+    return id;
+  }
+
+  /**
+   * Format sale ID for display
+   */
+  private formatSaleId(id: string): string {
+    if (!id) return 'N/A';
+    return id.startsWith('SALE') ? id.replace('SALE', 'SL') : id;
+  }
+
+  /**
+   * Format purchase ID for display
+   */
+  private formatPurchaseId(id: string): string {
+    if (!id) return 'N/A';
+    return id.startsWith('PUR') ? id.replace('PUR', 'PO') : id;
+  }
+
+  /**
+   * Format supplier ID for display
+   */
+  private formatSupplierId(id: string): string {
+    if (!id) return 'Unknown Supplier';
+    if (id.startsWith('sup_')) {
+      const uuid = id.substring(4);
+      const shortId = uuid.substring(0, 8).toUpperCase();
+      return `SUP-${shortId.substring(0, 4)}-${shortId.substring(4, 8)}`;
+    }
+    return id;
   }
 }

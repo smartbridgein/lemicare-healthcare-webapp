@@ -4,9 +4,7 @@
       <a >
         <i class="fas"></i> Sales
       </a>
-    </div>
-    
-    
+    </div>   
   </div>
   
   <div class="sales-list-container">
@@ -63,7 +61,7 @@
             <th>Invoice ID</th>
             <th>Patient Name</th>
             <th>Phone Number</th>
-            <th>Date</th>
+            <th>Created Date</th>
             <th>Sale Type</th>
             <th>Amount</th>
             <th>Action</th>
@@ -71,10 +69,10 @@
         </thead>
         <tbody *ngIf="!loading && filteredSales.length > 0">
           <tr *ngFor="let sale of filteredSales">
-            <td>{{ formatSaleId(sale.saleId || sale.id) }}</td>
+            <td>{{ sale.saleId || sale.id }}</td>
             <td>{{ getPatientName(sale) }}</td>
             <td>{{ getPatientPhone(sale) }}</td>
-            <td>{{ formatDate(sale.saleDate || sale.date) }}</td>
+            <td>{{ formatTimestampDateWithTime(sale.saleDate) }}</td>
             <td>
               <span class="sale-type" [ngClass]="{'type-otc': sale.saleType === 'OTC', 'type-prescription': sale.saleType === 'PRESCRIPTION'}">
                 {{ sale.saleType }}
@@ -85,10 +83,12 @@
               <button class="action-button view-button" (click)="viewSaleDetails(sale)">
                 <i class="fas fa-eye"></i> 
               </button>
-              <!-- Only show edit button for OTC sales 
-              <button *ngIf="sale.saleType === 'OTC'" class="action-button edit-button" (click)="editSale(sale)">
+              <!-- Edit button for both OTC and prescription sales -->
+              <button class="action-button edit-button" (click)="editSale(sale)" 
+                      style="background-color: #e6c157; color: #6b1d14; border: none; margin-right: 5px;"
+                      title="Edit Sale">
                 <i class="fas fa-edit"></i> 
-              </button>-->
+              </button>
               <button class="action-button print-button" (click)="printSaleInvoice(sale)">
                 <i class="fas fa-print"></i> 
               </button>

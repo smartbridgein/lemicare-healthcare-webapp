@@ -97,6 +97,7 @@ export interface Supplier {
   drugLicense?: string;
   drugLicenseNumber?: string; // Required by backend validation
   balance?: number;
+  outstandingBalance?: number; // Outstanding balance from API response
   createdAt?: any; // Timestamp object with seconds and nanos
   createdBy?: string;
   status?: string;
@@ -406,6 +407,12 @@ export interface ExpiringMedicine {
   daysRemaining?: number;
   quantity: number;
   stockQuantity?: number;
+  // New fields for purchase tracking
+  purchaseId?: string;
+  referenceId?: string;
+  // New fields for supplier information
+  supplierId?: string;
+  supplierName?: string;
 }
 
 export interface LowStockMedicine {

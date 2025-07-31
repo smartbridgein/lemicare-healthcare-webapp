@@ -2,55 +2,78 @@
 <div class="dashboard-content">
   <!-- Stat Cards -->
   <div class="stats-row">
-    <div class="stat-card patients-card">
+    <!-- Patients Today Card -->
+    <div class="stat-card classic-card patients-card">
+      <div class="card-side-accent"></div>
       <div class="stat-content">
         <div class="stat-header">Patients Today</div>
         <div class="stat-value" [ngClass]="{'loading': loadingStats}">
           {{ loadingStats ? '...' : patientCountToday }}
         </div>
         <div class="stat-footer">
-          <i class="fas fa-user-plus"></i>
+          <i class="fas fa-user-clock"></i>
           <span>Today's appointments</span>
         </div>
       </div>
-    </div>
-
-    <div class="stat-card revenue-card">
-      <div class="stat-content">
-        <div class="stat-header">Revenue</div>
-        <div class="stat-value" [ngClass]="{'loading': loadingStats}">
-          ₹{{ loadingStats ? '...' : (revenueToday | number:'1.0-0') }}
-        </div>
-        <div class="stat-footer">
-          <i class="fas fa-chart-line"></i>
-          <span>Today's collections</span>
-        </div>
+      <div class="card-icon">
+        <i class="fas fa-user-md"></i>
       </div>
     </div>
 
-    <div class="stat-card pending-card">
+    <!-- Revenue Card -->
+    <div class="stat-card classic-card revenue-card">
+      <div class="card-side-accent"></div>
       <div class="stat-content">
-        <div class="stat-header">Pending Bills</div>
+        <div class="stat-header">Revenue</div>
+        <div class="stat-value" [ngClass]="{'loading': loadingStats}">
+          ₹{{ loadingStats ? '...' : (revenueToday | number:'1.2-2') }}
+        </div>
+        <div class="view-link-container">
+          <button class="view-link-button" (click)="showRevenueDetails()">view</button>
+        </div>
+        <div class="stat-footer">
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>Today's collections</span>
+        </div>
+      </div>
+      <div class="card-icon">
+        <i class="fas fa-chart-pie"></i>
+      </div>
+    </div>
+
+    <!-- Pending Bills Card -->
+    <div class="stat-card classic-card pending-card">
+      <div class="card-side-accent"></div>
+      <div class="stat-content">
+        <div class="stat-header">Unpaid Invoice</div>
         <div class="stat-value" [ngClass]="{'loading': loadingStats}">
           {{ loadingStats ? '...' : pendingBillsCount }}
         </div>
         <div class="stat-footer">
-          <i class="fas fa-file-invoice-dollar"></i>
-          <span>Need attention</span>
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Unpaid invoices</span>
         </div>
+      </div>
+      <div class="card-icon">
+        <i class="fas fa-file-invoice"></i>
       </div>
     </div>
     
-    <div class="stat-card inventory-card">
+    <!-- Low Stock Items Card -->
+    <div class="stat-card classic-card inventory-card">
+      <div class="card-side-accent"></div>
       <div class="stat-content">
         <div class="stat-header">Low Stock Items</div>
-        <div class="stat-value" [ngClass]="{'loading': loadingStats}">
-          {{ loadingStats ? '...' : lowStockItemsCount }}
+        <div class="stat-value" [ngClass]="{'loading': loadingInventory}">
+          {{ loadingInventory ? '...' : lowStockItemsCount }}
         </div>
         <div class="stat-footer warning">
-          <i class="fas fa-exclamation-triangle"></i>
+          <i class="fas fa-exclamation-circle"></i>
           <span>Needs reordering</span>
         </div>
+      </div>
+      <div class="card-icon">
+        <i class="fas fa-boxes"></i>
       </div>
     </div>
   </div>
@@ -71,33 +94,62 @@
         <table class="table classic-table">
           <thead>
             <tr>
-              <th>Patient</th>
+              <th>Patient Details</th>
+              <th>Age/ Gender</th>
               <th>Contact</th>
-              <th>Registered</th>
+             <!-- <th>Address</th> 
+              <th>Registered</th>-->
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngIf="loadingRecent">
-              <td colspan="4" class="text-center">
+              <td colspan="6" class="text-center">
                 <i class="fas fa-spinner fa-spin"></i> Loading patients...
               </td>
             </tr>
             <tr *ngIf="!loadingRecent && recentPatients.length === 0">
-              <td colspan="4" class="text-center">
+              <td colspan="6" class="text-center">
                 No patients found
               </td>
             </tr>
             <tr *ngFor="let patient of recentPatients" class="patient-row">
               <td class="patient-info">
                 <div class="patient-name">{{ patient.firstName }} {{ patient.middleName ? patient.middleName + ' ' : '' }}{{ patient.lastName }}</div>
-                <div class="patient-id">{{ patient.patientId }}</div>
+                <div class="patient-id"><i class="fas fa-id-card"></i> {{ patient.patientId }}</div>
+               <!-- <div class="patient-dob" *ngIf="patient.dateOfBirth">
+                  <i class="fas fa-birthday-cake"></i> {{ patient.dateOfBirth | date:'dd MMM yyyy' }}
+                </div> -->
+              </td>
+              <td class="age-gender-info">
+                <div class="age" *ngIf="patient.age">
+                  <i class="fas fa-user-clock"></i> {{ patient.age }} years
+                </div>
+                <div class="gender">
+                  <i class="fas" [ngClass]="patient.gender === 'Male' ? 'fa-mars' : patient.gender === 'Female' ? 'fa-venus' : 'fa-genderless'"></i>
+                  {{ patient.gender }}
+                </div>
               </td>
               <td class="contact-info">
                 <div class="phone"><i class="fas fa-phone-alt"></i> {{ patient.mobileNumber }}</div>
-                <div class="email" *ngIf="patient.emailId"><i class="fas fa-envelope"></i> {{ patient.emailId }}</div>
+                <div class="email" *ngIf="patient.email"><i class="fas fa-envelope"></i> {{ patient.email }}</div>
+                <div class="emergency" *ngIf="patient.emergencyContactName">
+                  <i class="fas fa-exclamation-triangle"></i> {{ patient.emergencyContactName }}
+                  <span *ngIf="patient.emergencyContactNumber"> ({{ patient.emergencyContactNumber }})</span>
+                </div>
               </td>
-              <td>{{ patient.registrationDate | date:'dd MMM yyyy' }}</td>
+              <!-- <td class="address-info">
+                <div class="address">
+                  <i class="fas fa-map-marker-alt"></i> {{ patient.address }}
+                </div>
+                <div class="city-state" *ngIf="patient.city || patient.state">
+                  {{ patient.city }}{{ patient.city && patient.state ? ', ' : '' }}{{ patient.state }}
+                  <span *ngIf="patient.pinCode"> - {{ patient.pinCode }}</span>
+                </div>
+              </td> 
+              <td class="registration-date">
+                <i class="fas fa-calendar-check"></i> {{ patient.registrationDate | date:'dd MMM yyyy' }}
+              </td>-->
               <td>
                 <div class="action-buttons">
                   <a [routerLink]="['/patients', patient.patientId]" class="btn-action view" title="View Patient Details">
@@ -123,70 +175,89 @@
       </div>
     </div>
 
-    <div class="appointments-panel">
-      <div class="table-header">
+    <div class="appointments-panel classic-panel">
+      <div class="table-header classic-header">
         <h3>Scheduled Appointments</h3>
         <div class="panel-actions">
-          <button class="action-btn" (click)="loadUpcomingAppointments()" [disabled]="loadingUpcoming">
+          <button class="action-btn classic-btn" (click)="loadUpcomingAppointments()" [disabled]="loadingUpcoming">
             <i class="fas fa-sync-alt" [ngClass]="{'fa-spin': loadingUpcoming}"></i>
           </button>
-          <a [routerLink]="['/appointments']" [queryParams]="{view: 'today'}" class="action-btn">
+          <a [routerLink]="['/appointments']" [queryParams]="{view: 'today'}" class="action-btn classic-btn">
             <i class="fas fa-external-link-alt"></i>
           </a>
         </div>
       </div>
-      <div class="appointments-list">
-        <!-- Loading indicator -->
-        <div class="loading-container" *ngIf="loadingUpcoming">
-          <i class="fas fa-spinner fa-spin"></i>
-          <span>Loading appointments...</span>
-        </div>
-        
-        <!-- Empty state -->
-        <div class="empty-state" *ngIf="!loadingUpcoming && upcomingAppointments.length === 0">
-          <i class="fas fa-calendar-day"></i>
-          <span>No scheduled appointments</span>
-        </div>
-        
-        <!-- Appointment cards with classic style -->
-        <div class="appointment-card classic" *ngFor="let appointment of upcomingAppointments">
-          <div class="appointment-header">
-            <div class="appointment-time">
-              <i class="fas fa-clock"></i>
-              {{ appointment.appointmentDateTime | date:'MMM d, yyyy' }} at {{ appointment.appointmentDateTime | date:'h:mm a' }}
-            </div>
-            <div class="appointment-status" [ngClass]="{'status-scheduled': appointment.status === 'SCHEDULED', 'status-engaged': appointment.status === 'ENGAGED', 'status-rescheduled': appointment.status === 'RESCHEDULED'}">
-              {{ appointment.status === 'SCHEDULED' ? 'Scheduled' : appointment.status === 'ENGAGED' ? 'In Progress' : 'Rescheduled' }}
-            </div>
-          </div>
-          <div class="appointment-body">
-            <div class="patient-info">
-              <div class="patient-name">
-                <i class="fas fa-user-circle"></i>
-                <span>{{ getPatientName(appointment.patientId) }}</span>
-              </div>
-              <div class="appointment-category">
-                <span class="category-badge" [ngClass]="{'vip': appointment.category === 'VIP', 'priority': appointment.category === 'Priority', 'regular': appointment.category === 'Regular', 'consultation': appointment.category === 'Consultation'}">
+      
+      <!-- Loading indicator -->
+      <div class="loading-container" *ngIf="loadingUpcoming">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>Loading appointments...</span>
+      </div>
+      
+      <!-- Empty state -->
+      <div class="empty-state" *ngIf="!loadingUpcoming && upcomingAppointments.length === 0">
+        <i class="fas fa-calendar-day"></i>
+        <span>No scheduled appointments</span>
+      </div>
+      
+      <!-- Simple Clean Table -->
+      <div class="appointments-table-wrapper" *ngIf="!loadingUpcoming && upcomingAppointments.length > 0">
+        <table class="simple-appointments-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Patient</th>
+              <th>Type</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let appointment of upcomingAppointments">
+              <td class="time-column">
+                <div class="time-display">
+                  <strong>{{ appointment.appointmentDateTime | date:'h:mm a' }}</strong>
+                  <small>{{ appointment.appointmentDateTime | date:'MMM d' }}</small>
+                </div>
+              </td>
+              <td class="patient-column">
+                <div class="patient-display">
+                  <i class="fas fa-user-circle"></i>
+                  <span>{{ getPatientName(appointment.patientId) }}</span>
+                </div>
+              </td>
+              <td class="type-column">
+                <span class="type-badge" 
+                      [class]="'badge-' + (appointment.category?.toLowerCase() || 'regular')">
                   {{ appointment.category }}
                 </span>
-                <span class="subcategory">{{ appointment.subCategory }}</span>
-              </div>
-            </div>
-            <div class="doctor-info" *ngIf="appointment.doctorId">
-              <i class="fas fa-user-md"></i>
-              <span>Dr. {{ appointment.doctorId.split('-').slice(-1)[0] }}</span>
-            </div>
-          </div>
-        </div>
+                <div class="subtype" *ngIf="appointment.subCategory">
+                  {{ appointment.subCategory }}
+                </div>
+              </td>
+              
+              <td class="action-column">
+                <button class="view-button" 
+                        (click)="viewAppointmentDetails(appointment)">
+                  <i class="fas fa-eye"></i>
+                  VIEW
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
       
       <!-- Pagination controls -->
-      <div class="pagination-controls" *ngIf="totalUpcomingAppointments > pageSize">
-        <button class="page-btn" (click)="goToPrevPage('upcoming')" [disabled]="currentUpcomingPage === 0 || loadingUpcoming">
+      <div class="pagination-controls classic-pagination" *ngIf="totalUpcomingAppointments > pageSize">
+        <button class="page-btn classic-page-btn" 
+                (click)="goToPrevPage('upcoming')" 
+                [disabled]="currentUpcomingPage === 0 || loadingUpcoming">
           <i class="fas fa-chevron-left"></i>
         </button>
         <span class="page-info">Page {{ currentUpcomingPage + 1 }}</span>
-        <button class="page-btn" (click)="goToNextPage('upcoming')" [disabled]="(currentUpcomingPage + 1) * pageSize >= totalUpcomingAppointments || loadingUpcoming">
+        <button class="page-btn classic-page-btn" 
+                (click)="goToNextPage('upcoming')" 
+                [disabled]="(currentUpcomingPage + 1) * pageSize >= totalUpcomingAppointments || loadingUpcoming">
           <i class="fas fa-chevron-right"></i>
         </button>
       </div>
@@ -195,18 +266,153 @@
 
   <!-- Patients in Queue section removed -->
 
-  <!-- Inventory Alerts Row -->
-  <div class="inventory-alerts-row">
+  <!-- Inventory Alerts Row - Full Width -->
+  <div class="inventory-alerts-row full-width">
     <h3 class="section-title">Inventory Alerts Dashboard</h3>
-    <div class="alert-panels">
-      <!-- Expiring Medicines Report -->
-      <div class="alert-panel">
+    <div class="alert-panels-full-width">
+      <!-- Expiring Medicines Report - Full Width -->
+      <div class="alert-panel-full">
         <app-expiring-medicines-report></app-expiring-medicines-report>
       </div>
       
-      <!-- Low Stock Medicines Report -->
-      <div class="alert-panel">
+      <!-- Low Stock Medicines Report - Full Width -->
+      <div class="alert-panel-full">
         <app-low-stock-medicines-report></app-low-stock-medicines-report>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Appointment Details Modal -->
+<div class="modal classic-modal" [ngClass]="{'show': showAppointmentDetailsModal}" *ngIf="showAppointmentDetailsModal && selectedAppointmentDetails">
+  <div class="modal-backdrop" (click)="closeAppointmentDetailsModal()"></div>
+  <div class="modal-dialog classic-modal-dialog">
+    <div class="modal-content classic-modal-content">
+      <div class="modal-header classic-modal-header">
+        <h4 class="modal-title classic-modal-title">Appointment Details</h4>
+        <button type="button" class="close" (click)="closeAppointmentDetailsModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body classic-modal-body">
+        <!-- Patient Information -->
+        <div class="detail-section patient-section">
+          <h5 class="section-title"><i class="fas fa-user"></i> Patient Information</h5>
+          <div class="detail-row">
+            <div class="detail-label">Name:</div>
+            <div class="detail-value">{{ getPatientName(selectedAppointmentDetails.patientId) }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Phone:</div>
+            <div class="detail-value">{{ getPatientPhone(selectedAppointmentDetails.patientId) }}</div>
+          </div>
+        </div>
+
+        <!-- Appointment Information -->
+        <div class="detail-section appointment-section">
+          <h5 class="section-title"><i class="fas fa-calendar-check"></i> Appointment Information</h5>
+          <div class="detail-row">
+            <div class="detail-label">Date:</div>
+            <div class="detail-value">{{ selectedAppointmentDetails.appointmentDateTime | date:'MMMM d, yyyy' }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Time:</div>
+            <div class="detail-value">{{ selectedAppointmentDetails.appointmentDateTime | date:'h:mm a' }}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Status:</div>
+            <div class="detail-value">
+              <span class="status-badge" [ngClass]="getStatusClass(selectedAppointmentDetails.status)">{{ selectedAppointmentDetails.status }}</span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Category:</div>
+            <div class="detail-value">
+              <span class="category-badge" [ngClass]="getCategoryClass(selectedAppointmentDetails.category)">{{ selectedAppointmentDetails.category }}</span>
+            </div>
+          </div>
+          <div class="detail-row" *ngIf="selectedAppointmentDetails.subCategory">
+            <div class="detail-label">Sub-Category:</div>
+            <div class="detail-value">{{ selectedAppointmentDetails.subCategory }}</div>
+          </div>
+          <div class="detail-row" *ngIf="selectedAppointmentDetails.doctorId">
+            <div class="detail-label">Doctor:</div>
+            <div class="detail-value">Dr. {{ getDoctorName(selectedAppointmentDetails.doctorId) }}</div>
+          </div>
+        </div>
+
+        <!-- Notes Section if available -->
+        <div class="detail-section notes-section" *ngIf="selectedAppointmentDetails.notes">
+          <h5 class="section-title"><i class="fas fa-sticky-note"></i> Notes</h5>
+          <div class="notes-content">
+            {{ selectedAppointmentDetails.notes }}
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer classic-modal-footer">
+        <button type="button" class="btn btn-secondary classic-btn" (click)="closeAppointmentDetailsModal()">
+          <i class="fas fa-times"></i> Close
+        </button>
+        <button type="button" class="btn btn-primary classic-btn" (click)="openRescheduleModal(selectedAppointmentDetails); closeAppointmentDetailsModal();">
+          <i class="fas fa-calendar-alt"></i> Reschedule
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reschedule Appointment Modal -->
+<div class="modal classic-modal" [ngClass]="{'show': showRescheduleModal}" *ngIf="showRescheduleModal && selectedAppointmentForReschedule">
+  <div class="modal-backdrop" (click)="closeRescheduleModal()"></div>
+  <div class="modal-dialog classic-modal-dialog">
+    <div class="modal-content classic-modal-content">
+      <div class="modal-header classic-modal-header">
+        <h4 class="modal-title classic-modal-title">Reschedule Appointment</h4>
+        <button type="button" class="close" (click)="closeRescheduleModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body classic-modal-body">
+        <div class="patient-info-summary">
+          <h5>Patient: {{ getPatientName(selectedAppointmentForReschedule.patientId) }}</h5>
+          <p>Current Appointment: {{ selectedAppointmentForReschedule.appointmentDateTime | date:'MMMM d, yyyy' }} at {{ selectedAppointmentForReschedule.appointmentDateTime | date:'h:mm a' }}</p>
+        </div>
+
+        <form class="reschedule-form">
+          <div class="form-group">
+            <label for="rescheduleDate">New Date:</label>
+            <input type="date" id="rescheduleDate" class="form-control classic-form-control" name="rescheduleDate" required>
+          </div>
+
+          <div class="form-group">
+            <label for="rescheduleTime">New Time:</label>
+            <input type="time" id="rescheduleTime" class="form-control classic-form-control" name="rescheduleTime" required>
+          </div>
+
+          <div class="form-group">
+            <label for="rescheduleReason">Reason for Rescheduling:</label>
+            <select id="rescheduleReason" class="form-select classic-form-select" name="rescheduleReason" required>
+              <option value="">Select a reason</option>
+              <option value="Patient Request">Patient Request</option>
+              <option value="Doctor Unavailable">Doctor Unavailable</option>
+              <option value="Clinic Schedule Change">Clinic Schedule Change</option>
+              <option value="Emergency">Emergency</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="rescheduleNotes">Notes:</label>
+            <textarea id="rescheduleNotes" class="form-control classic-form-control" name="rescheduleNotes" rows="3"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer classic-modal-footer">
+        <button type="button" class="btn btn-secondary classic-btn" (click)="closeRescheduleModal()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="button" class="btn btn-primary classic-btn" (click)="saveReschedule()">
+          <i class="fas fa-save"></i> Save Changes
+        </button>
       </div>
     </div>
   </div>

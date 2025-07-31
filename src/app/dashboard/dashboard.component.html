@@ -9,9 +9,12 @@
       <div class="clinic-branding">
         <div class="logo-icon">
           <i class="fas fa-clinic-medical"></i>
+          <div class="premium-star">
+            <i class="fas fa-star"></i>
+          </div>
         </div>
         <div class="clinic-name">
-          <h2>Hanan Clinic</h2>
+          <h2>Hanan Clinic </h2>
           <span class="clinic-tagline">Healthcare Excellence</span>
         </div>
       </div>
@@ -75,6 +78,7 @@
             <li><a [routerLink]="['/inventory/purchases']" routerLinkActive="active"><i class="fas fa-shopping-cart"></i> Purchases</a></li>
             <li><a [routerLink]="['/inventory/sales']" routerLinkActive="active"><i class="fas fa-cash-register"></i> Sales</a></li>
             <li><a [routerLink]="['/inventory/returns']" routerLinkActive="active"><i class="fas fa-undo-alt"></i> Returns</a></li>
+            <li><a [routerLink]="['/inventory/stock']" routerLinkActive="active"><i class="fas fa-boxes"></i> Stocks</a></li>
             <li><a [routerLink]="['/inventory/reports']" routerLinkActive="active"><i class="fas fa-chart-line"></i> Reports</a></li>
           </ul>
         </li>
@@ -103,7 +107,11 @@
   <div class="main-content" [ngClass]="{'sidebar-collapsed': sidebarCollapsed}">
     <!-- Header -->
     <header class="main-header">
-      <div class="page-title">Dashboard</div>
+      <div class="page-title">
+        <i class="fas fa-crown premium-crown-icon"></i>
+        Dashboard
+        <span class="premium-badge">Premium</span>
+      </div>
       <div class="header-actions">
         <!-- Today's Appointment Count Badge -->
         <div class="appointment-count-badge" [routerLink]="['/appointments']" [queryParams]="{view: 'today'}" title="View Today's Appointments">

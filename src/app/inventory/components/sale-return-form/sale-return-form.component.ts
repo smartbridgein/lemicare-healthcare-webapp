@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormArray, FormControl, Validators, AbstractControl } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -34,12 +34,17 @@ export class SaleReturnFormComponent implements OnInit {
     private inventoryService: InventoryService, 
     public returnsService: ReturnsService, // Changed to public for template access
     private toastService: ToastService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.initForm();
-    
+    this.setupSearchObservables();
+  }
+  
+  // Setup search observables for better performance
+  setupSearchObservables(): void {
     // Initialize search controls
     this.searchControl = new FormControl('');
     this.saleIdControl = new FormControl('');
@@ -47,18 +52,23 @@ export class SaleReturnFormComponent implements OnInit {
     // Setup the search with debounce
     this.searchControl.valueChanges.pipe(
       debounceTime(300),
-      distinctUntilChanged(),
-      switchMap((query: string) => {
-        if (!query || query.trim() === '') {
-          this.filteredSales = [];
-          return of([]);
-        }
-        this.isSearching = true;
-        return this.returnsService.searchSales(query);
-      }),
-      finalize(() => this.isSearching = false)
-    ).subscribe(results => {
-      this.filteredSales = results;
+      distinctUntilChanged()
+    ).subscribe(value => {
+      if (value && value.trim().length >= 3) {
+        this.searchSales({ target: { value } } as any);
+      } else {
+        this.filteredSales = [];
+      }
+    });
+    
+    // Setup sale ID search
+    this.saleIdControl.valueChanges.pipe(
+      debounceTime(500),
+      distinctUntilChanged()
+    ).subscribe(saleId => {
+      if (saleId && saleId.trim().length >= 3) {
+        this.searchSaleById();
+      }
     });
   }
 
@@ -68,11 +78,21 @@ export class SaleReturnFormComponent implements OnInit {
       returnDate: [new Date().toISOString().split('T')[0], Validators.required],
       reason: ['', Validators.required],
       refundAmount: [0, [Validators.required, Validators.min(0)]],
-      overallDiscountPercentage: [0, [Validators.required, Validators.min(0)]],
       refundMode: ['CASH', Validators.required],
       refundReference: [''],
-      customerName: [''],
-      customerMobile: [''],
+      overallDiscountPercentage: [0],
+      totalReturnAmount: [0],
+      totalTaxAmount: [0],
+      totalDiscountAmount: [0],
+      netRefundAmount: [0],
+      // Sale details for reference
+      patientName: [''],
+      patientId: [''],
+      doctorName: [''],
+      saleType: [''],
+      originalSaleDate: [''],
+      originalGrandTotal: [0],
+      notes: [''],
       items: this.fb.array([])
     });
   }
@@ -90,31 +110,15 @@ export class SaleReturnFormComponent implements OnInit {
     return [year, month, day].join('-');
   }
   
-  // Format date for display
-  formatDate(dateValue: any): string {
-    if (!dateValue) return 'N/A';
-    
-    try {
-      // If it's a string, parse it directly
-      if (typeof dateValue === 'string') {
-        return new Date(dateValue).toLocaleString();
-      }
-      
-      // If it's an object with seconds and nanos (protobuf timestamp)
-      if (dateValue && typeof dateValue === 'object' && 'seconds' in dateValue) {
-        const milliseconds = Number(dateValue.seconds) * 1000 + Number(dateValue.nanos) / 1000000;
-        return new Date(milliseconds).toLocaleString();
-      }
-      
-      return new Date().toLocaleString();
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Invalid Date';
-    }
-  }
+
 
   get itemsArray(): FormArray {
     return this.returnForm.get('items') as FormArray;
+  }
+
+  // TrackBy function to help Angular track form array items
+  trackByIndex(index: number, item: any): number {
+    return index;
   }
 
   searchSales(event: any): void {
@@ -141,6 +145,8 @@ export class SaleReturnFormComponent implements OnInit {
         this.filteredSales = [];
         this.populateSaleData(enrichedSale);
         this.isLoading = false;
+        // Trigger change detection to ensure UI updates immediately
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Error enriching sale with medicine names:', error);
@@ -152,6 +158,8 @@ export class SaleReturnFormComponent implements OnInit {
         this.filteredSales = [];
         this.populateSaleData(sale);
         this.isLoading = false;
+        // Trigger change detection to ensure UI updates immediately
+        this.cdr.detectChanges();
       }
     });
   }
@@ -168,11 +176,8 @@ export class SaleReturnFormComponent implements OnInit {
     
     this.isSearching = true;
     
-    // Format the saleId if needed (add 'sale_' prefix if missing)
+    // Use the sale ID as-is without adding any prefix
     let formattedSaleId = saleId.trim();
-    if (!formattedSaleId.startsWith('sale_') && !formattedSaleId.includes('-')) {
-      formattedSaleId = `sale_${formattedSaleId}`;
-    }
     
     console.log('Searching for sale with ID:', formattedSaleId);
     
@@ -275,8 +280,48 @@ export class SaleReturnFormComponent implements OnInit {
         };
         
         console.log('Adding item to form array:', formattedItem);
-        this.itemsArray.push(this.createItemFormGroup(formattedItem as any));
+        const formGroup = this.createItemFormGroup(formattedItem as any);
+        console.log('Form group created with values:', {
+          quantity: formGroup.get('quantity')?.value,
+          unitPrice: formGroup.get('unitPrice')?.value,
+          medicineName: formGroup.get('medicineName')?.value
+        });
+        
+        // Force form controls to recognize their values
+        formGroup.get('quantity')?.markAsDirty();
+        formGroup.get('quantity')?.updateValueAndValidity();
+        formGroup.get('unitPrice')?.markAsDirty();
+        formGroup.get('unitPrice')?.updateValueAndValidity();
+        formGroup.get('medicineName')?.markAsDirty();
+        formGroup.get('medicineName')?.updateValueAndValidity();
+        
+        this.itemsArray.push(formGroup);
       });
+      
+      // Trigger change detection to ensure items are displayed immediately
+      this.cdr.detectChanges();
+      
+      // Force the form array to update by marking it as dirty and updating validity
+      this.itemsArray.markAsDirty();
+      this.itemsArray.updateValueAndValidity();
+      
+      // Additional change detection after a short delay to ensure all values are rendered
+      setTimeout(() => {
+        this.cdr.detectChanges();
+        // Force update of all form controls in the array
+        this.itemsArray.controls.forEach((control, index) => {
+          control.markAsDirty();
+          control.updateValueAndValidity();
+          console.log(`Item ${index} values:`, {
+            quantity: control.get('quantity')?.value,
+            unitPrice: control.get('unitPrice')?.value,
+            medicineName: control.get('medicineName')?.value
+          });
+        });
+        console.log('Secondary change detection triggered for form values');
+      }, 0);
+      
+      console.log('Form array populated with', this.itemsArray.length, 'items');
     }
     
     // Update customer info if available
@@ -303,34 +348,142 @@ export class SaleReturnFormComponent implements OnInit {
 
   // Create a form group for an individual sale item
   createItemFormGroup(item: any): FormGroup {
-    // IMPORTANT: Make sure we have the correct medicine name
-    // Priority: 1. item.medicineName (directly from our enrichment) 
-    //           2. item.medicine?.name (from the medicine object)
-    //           3. Fallback to medicine ID-based name
-    const medicineName = item.medicineName || 
-                      (item.medicine?.name) || 
-                      `Medicine ${item.medicineId ? item.medicineId.split('_')[1]?.substring(0, 8) : ''}`;
-                      
-    console.log('Creating form group with medicine name:', medicineName, 'for item:', item);
+    console.log('Creating item form group with data:', item);
     
-    // Set default return quantity to 1 and calculate initial refund amount
-    const defaultReturnQty = 1;
-    const maxReturnQty = item.quantity || 1;
-    const safeReturnQty = Math.min(defaultReturnQty, maxReturnQty);
-    const unitPrice = item.unitPrice || 0;
-    const initialRefundAmount = safeReturnQty * unitPrice;
+    // Extract comprehensive item data
+    const medicineId = item.medicineId || '';
+    const medicineName = item.medicineName || item.medicine?.name || `Medicine ${medicineId.substring(0, 8)}`;
+    const batchNo = item.batchNo || '';
+    const quantity = item.quantity || 0;
+    const unitPrice = item.mrpPerItem || item.unitPrice || item.salePrice || 0;
+    const discountPercentage = item.discountPercentage || 0;
+    const taxRate = item.taxRateApplied || item.taxPercentage || 0;
+    const lineItemTotalAmount = item.lineItemTotalAmount || 0;
+    const lineItemTaxAmount = item.lineItemTaxAmount || 0;
+    const lineItemDiscountAmount = item.lineItemDiscountAmount || item.discountAmount || 0;
     
-    console.log('Setting default return quantity to:', safeReturnQty, 'for item:', medicineName);
-    
-    return this.fb.group({
-      medicineId: [item.medicineId || item.medicine?.id, Validators.required],
-      medicineName: [medicineName], // Use the prepared medicine name
-      batchNo: [item.batchNo || '', Validators.required],
-      quantity: [item.quantity || 0], // Changed from originalQuantity to quantity to match HTML references
-      returnQuantity: [safeReturnQty, [Validators.required, Validators.min(0), Validators.max(maxReturnQty)]],
+    const formGroup = this.fb.group({
+      medicineId: [medicineId, Validators.required],
+      medicineName: [medicineName],
+      batchNo: [batchNo],
+      quantity: [quantity],
       unitPrice: [unitPrice],
-      refundAmount: [initialRefundAmount]
+      returnQuantity: [0, [Validators.required, Validators.min(0), Validators.max(quantity)]],
+      returnValue: [0],
+      // Additional fields for proper calculations
+      discountPercentage: [discountPercentage],
+      taxRate: [taxRate],
+      lineItemTotalAmount: [lineItemTotalAmount],
+      lineItemTaxAmount: [lineItemTaxAmount],
+      lineItemDiscountAmount: [lineItemDiscountAmount],
+      expiryDate: [item.expiryDate || ''],
+      // Original sale data for reference
+      originalQuantity: [quantity],
+      originalUnitPrice: [unitPrice],
+      originalLineTotal: [lineItemTotalAmount]
     });
+    
+    // Set up value change listeners for automatic calculations
+    formGroup.get('returnQuantity')?.valueChanges.subscribe((returnQty: number | null) => {
+      if (returnQty !== null && returnQty !== undefined && returnQty >= 0) {
+        this.calculateReturnValue(formGroup, returnQty);
+        this.calculateTotalReturnAmount();
+      }
+    });
+    
+    return formGroup;
+  }
+  
+  // Calculate return value for a specific item
+  calculateReturnValue(formGroup: FormGroup, returnQuantity: number): void {
+    const unitPrice = formGroup.get('unitPrice')?.value || 0;
+    const discountPercentage = formGroup.get('discountPercentage')?.value || 0;
+    const taxRate = formGroup.get('taxRate')?.value || 0;
+    
+    // Calculate base return value (unit price * return quantity)
+    let returnValue = unitPrice * returnQuantity;
+    
+    // Apply discount if any
+    if (discountPercentage > 0) {
+      returnValue = returnValue * (1 - discountPercentage / 100);
+    }
+    
+    // Add tax if applicable (for sales, tax is usually included in MRP)
+    // For returns, we typically return the amount customer paid
+    if (taxRate > 0) {
+      // Tax calculation depends on whether it was inclusive or exclusive in original sale
+      // For simplicity, we'll use the line item total amount if available
+      const originalLineTotal = formGroup.get('lineItemTotalAmount')?.value;
+      if (originalLineTotal > 0) {
+        const originalQuantity = formGroup.get('originalQuantity')?.value || 1;
+        returnValue = (originalLineTotal / originalQuantity) * returnQuantity;
+      }
+    }
+    
+    // Update the return value in the form
+    formGroup.patchValue({ returnValue: Math.round(returnValue * 100) / 100 });
+  }
+  
+  // Calculate total return amount for all items
+  calculateTotalReturnAmount(): void {
+    let totalReturnAmount = 0;
+    let totalTaxAmount = 0;
+    let totalDiscountAmount = 0;
+    
+    this.itemsArray.controls.forEach(control => {
+      const returnValue = control.get('returnValue')?.value || 0;
+      const returnQuantity = control.get('returnQuantity')?.value || 0;
+      const taxRate = control.get('taxRate')?.value || 0;
+      const discountPercentage = control.get('discountPercentage')?.value || 0;
+      const unitPrice = control.get('unitPrice')?.value || 0;
+      
+      totalReturnAmount += returnValue;
+      
+      // Calculate tax amount for this item
+      if (taxRate > 0 && returnQuantity > 0) {
+        const taxAmount = (unitPrice * returnQuantity * taxRate) / 100;
+        totalTaxAmount += taxAmount;
+      }
+      
+      // Calculate discount amount for this item
+      if (discountPercentage > 0 && returnQuantity > 0) {
+        const discountAmount = (unitPrice * returnQuantity * discountPercentage) / 100;
+        totalDiscountAmount += discountAmount;
+      }
+    });
+    
+    // Apply overall discount if any
+    const overallDiscountPercentage = this.returnForm.get('overallDiscountPercentage')?.value || 0;
+    let netRefundAmount = totalReturnAmount;
+    
+    if (overallDiscountPercentage > 0) {
+      const overallDiscountAmount = (totalReturnAmount * overallDiscountPercentage) / 100;
+      netRefundAmount = totalReturnAmount - overallDiscountAmount;
+      totalDiscountAmount += overallDiscountAmount;
+    }
+    
+    // Update the form with calculated totals
+    this.returnForm.patchValue({ 
+      totalReturnAmount: Math.round(totalReturnAmount * 100) / 100,
+      totalTaxAmount: Math.round(totalTaxAmount * 100) / 100,
+      totalDiscountAmount: Math.round(totalDiscountAmount * 100) / 100,
+      netRefundAmount: Math.round(netRefundAmount * 100) / 100,
+      refundAmount: Math.round(netRefundAmount * 100) / 100
+    });
+  }
+  
+  // Check if there are items to return
+  hasItemsToReturn(): boolean {
+    return this.itemsArray.controls.some(
+      control => (control.get('returnQuantity')?.value || 0) > 0
+    );
+  }
+  
+  // Get count of items to return
+  getItemsToReturnCount(): number {
+    return this.itemsArray.controls.filter(
+      control => (control.get('returnQuantity')?.value || 0) > 0
+    ).length;
   }
 
   // Method called when the form is submitted via template
@@ -440,5 +593,36 @@ export class SaleReturnFormComponent implements OnInit {
       const itemRefund = returnItem.returnQuantity * (originalItem.unitPrice || 0);
       return total + itemRefund;
     }, 0);
+  }
+  
+  // Helper method to get FormGroup from AbstractControl
+  getFormGroup(control: AbstractControl): FormGroup {
+    return control as FormGroup;
+  }
+  
+  // Helper method to format date for display
+  formatDate(dateValue: string | { seconds: number; nanos: number } | undefined): string {
+    if (!dateValue) return '';
+    
+    if (typeof dateValue === 'string') {
+      return new Date(dateValue).toLocaleDateString('en-GB');
+    } else if (dateValue && 'seconds' in dateValue) {
+      return new Date(dateValue.seconds * 1000).toLocaleDateString('en-GB');
+    }
+    
+    return '';
+  }
+  
+  // Helper method to get safe date for Angular date pipe
+  getSafeDate(dateValue: string | { seconds: number; nanos: number } | undefined): Date | null {
+    if (!dateValue) return null;
+    
+    if (typeof dateValue === 'string') {
+      return new Date(dateValue);
+    } else if (dateValue && 'seconds' in dateValue) {
+      return new Date(dateValue.seconds * 1000);
+    }
+    
+    return null;
   }
 }

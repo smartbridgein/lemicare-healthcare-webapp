@@ -1,0 +1,471 @@
+<!-- Header Section -->
+<div class="stock-header">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+      
+      <div>
+        <h3 class="fw-bold mb-1 text-maroon"> Stock Management</h3>
+        <p class="text-muted small mb-0" *ngIf="stockSummary">
+          {{ stockSummary.totalMedicines }} medicines in {{ stockSummary.totalCategories }} categories | 
+          <span class="badge bg-success">{{ formatCurrency(stockSummary.totalStockValue) }} Total Value</span>
+        </p>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <button class="btn btn-outline-primary" (click)="onRefresh()" [disabled]="isLoading">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="isLoading"></i>
+        Refresh
+      </button>
+      <button class="btn btn-success" (click)="exportStock()">
+        <i class="fas fa-download me-1"></i>
+        Export
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row mb-4" *ngIf="stockSummary && !isLoading">
+    <div class="col-md-2">
+      <div class="card border-0 bg-light">
+        <div class="card-body text-center py-2">
+          <h6 class="card-title text-primary mb-1">{{ stockSummary.totalMedicines }}</h6>
+          <small class="text-muted">Total Medicines</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card border-0 bg-light">
+        <div class="card-body text-center py-2">
+          <h6 class="card-title text-warning mb-1">{{ stockSummary.lowStockItems }}</h6>
+          <small class="text-muted">Low Stock</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card border-0 bg-light">
+        <div class="card-body text-center py-2">
+          <h6 class="card-title text-danger mb-1">{{ stockSummary.outOfStockItems }}</h6>
+          <small class="text-muted">Out of Stock</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card border-0 bg-light">
+        <div class="card-body text-center py-2">
+          <h6 class="card-title text-info mb-1">{{ stockSummary.nearExpiryItems }}</h6>
+          <small class="text-muted">Near Expiry</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 bg-light">
+        <div class="card-body text-center py-2">
+          <h6 class="card-title text-success mb-1">{{ formatCurrency(stockSummary.totalStockValue) }}</h6>
+          <small class="text-muted">Total Stock Value</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="row mb-3" *ngIf="!isLoading">
+    <div class="col-md-4">
+      <div class="input-group">
+        <input type="text" 
+               class="form-control" 
+               placeholder="Search medicines, categories, manufacturers..." 
+               [(ngModel)]="searchTerm" 
+               (input)="onSearchChange()">
+        <span class="input-group-text bg-white">
+          <i class="fas fa-search text-primary"></i>
+        </span>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <select class="form-select" [(ngModel)]="selectedCategory" (change)="onCategoryChange()">
+        <option *ngFor="let category of availableCategories" [value]="category">
+          {{ category === 'all' ? 'All Categories' : category }}
+        </option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <select class="form-select" [(ngModel)]="selectedStockStatus" (change)="onStockStatusChange()">
+        <option value="all">All Stock Status</option>
+        <option value="In Stock">In Stock</option>
+        <option value="Low Stock">Low Stock</option>
+        <option value="Out of Stock">Out of Stock</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <select class="form-select" [(ngModel)]="sortBy" (change)="applyFilters()">
+        <option value="name">Sort by Name</option>
+        <option value="stock">Sort by Stock</option>
+        <option value="value">Sort by Value</option>
+        <option value="category">Sort by Category</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="isLoading" class="loading-container">
+  <div class="text-center py-5">
+    <div class="spinner-border text-maroon" style="width: 3rem; height: 3rem;" role="status">
+      <span class="visually-hidden">Loading stock data...</span>
+    </div>
+    <p class="mt-3 text-muted">Loading stock information...</p>
+  </div>
+</div>
+
+<!-- Error State -->
+<div *ngIf="error && !isLoading" class="alert alert-danger" role="alert">
+  <i class="fas fa-exclamation-triangle me-2"></i>
+  {{ error }}
+  <button class="btn btn-sm btn-outline-danger ms-2" (click)="onRefresh()">
+    <i class="fas fa-redo me-1"></i>
+    Retry
+  </button>
+</div>
+
+<!-- Stock Content -->
+<div *ngIf="!isLoading && !error" class="stock-content">
+  <!-- Empty State -->
+  <div *ngIf="filteredStock.length === 0" class="empty-state">
+    <div class="text-center py-5">
+      <i class="fas fa-boxes fa-3x text-muted mb-3"></i>
+      <h5 class="text-muted">No stock data found</h5>
+      <p class="text-muted">Try adjusting your search criteria or refresh the data.</p>
+    </div>
+  </div>
+
+  <!-- Stock Categories -->
+  <div *ngIf="filteredStock.length > 0" class="stock-categories">
+    <div *ngFor="let category of filteredStock; let i = index" class="category-card classic-card mb-4">
+      <!-- Category Header -->
+      <div class="category-header classic-header" (click)="toggleCategory(category)">
+        <div class="category-header-content">
+          <!-- Left Section: Category Info -->
+          <div class="category-info">
+            <div class="category-icon-wrapper">
+              <i class="fas fa-pills category-icon"></i>
+              <div class="expand-indicator">
+                <i class="fas transition-icon" 
+                   [class.fa-chevron-right]="!category.expanded"
+                   [class.fa-chevron-down]="category.expanded"></i>
+              </div>
+            </div>
+            <div class="category-details">
+              <h4 class="category-title">{{ category.category }}</h4>
+              <div class="category-subtitle">
+                <span class="medicine-count">
+                  <i class="fas fa-capsules me-1"></i>
+                  {{ category.medicines?.length || 0 }} medicines
+                </span>
+                <span class="stock-alerts" *ngIf="category.lowStockCount > 0 || category.outOfStockCount > 0">
+                  <span class="alert-item low-stock" *ngIf="category.lowStockCount > 0">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    {{ category.lowStockCount }} low stock
+                  </span>
+                  <span class="alert-item out-of-stock" *ngIf="category.outOfStockCount > 0">
+                    <i class="fas fa-times-circle me-1"></i>
+                    {{ category.outOfStockCount }} out of stock
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right Section: Stock Summary -->
+          <div class="stock-summary">
+            <div class="stock-metrics">
+              <div class="metric-item primary-metric">
+                <div class="metric-value">{{ category.totalStock }}</div>
+                <div class="metric-label">Total Units</div>
+              </div>
+              <div class="metric-item secondary-metric">
+                <div class="metric-value currency">{{ formatCurrency(category.totalValue) }}</div>
+                <div class="metric-label">Total Value</div>
+              </div>
+            </div>
+            <div class="stock-status-indicator">
+              <div class="status-bar">
+                <div class="status-segment in-stock" 
+                     [style.width.%]="getStockPercentage(category, 'in-stock')"></div>
+                <div class="status-segment low-stock" 
+                     [style.width.%]="getStockPercentage(category, 'low-stock')"></div>
+                <div class="status-segment out-of-stock" 
+                     [style.width.%]="getStockPercentage(category, 'out-of-stock')"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Decorative Elements -->
+        <div class="header-decoration">
+          <div class="decoration-line"></div>
+          <div class="decoration-dots">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Expanded Category Content -->
+      <div class="category-content" [class.expanded]="category.expanded" *ngIf="category.expanded">
+        <div class="medicines-container">
+          <!-- No medicines message -->
+          <div *ngIf="!category.medicines || category.medicines.length === 0" class="text-center py-3">
+            <i class="fas fa-info-circle text-muted me-2"></i>
+            <span class="text-muted">No medicines found in this category</span>
+          </div>
+
+          <!-- Medicines List -->
+          <div *ngFor="let medicine of category.medicines" class="medicine-item">
+            <!-- Medicine Header -->
+            <div class="medicine-header" (click)="toggleMedicine(medicine)">
+              <div class="row align-items-center">
+                <div class="col-md-3">
+                  <div class="d-flex align-items-center">
+                    <i class="fas" 
+                       [class.fa-chevron-right]="!medicine.expanded"
+                       [class.fa-chevron-down]="medicine.expanded"
+                       class="me-2 text-secondary"></i>
+                    <div>
+                      <h6 class="mb-0 fw-bold">{{ medicine.name }}</h6>
+                      <small class="text-muted">{{ medicine.genericName }}</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <span class="badge" 
+                        [class.bg-success]="medicine.stockStatusColor === 'success'"
+                        [class.bg-warning]="medicine.stockStatusColor === 'warning'"
+                        [class.bg-danger]="medicine.stockStatusColor === 'danger'">
+                    {{ medicine.stockStatus }}
+                  </span>
+                </div>
+                <div class="col-md-2">
+                  <strong>{{ medicine.quantityInStock }} {{ medicine.unitOfMeasurement }}</strong>
+                </div>
+                <div class="col-md-2">
+                  <span class="text-success fw-bold">{{ formatCurrency(medicine.unitPrice) }}</span>
+                </div>
+                <div class="col-md-2">
+                  <span class="text-primary fw-bold">{{ formatCurrency(medicine.stockValue || 0) }}</span>
+                </div>
+                <div class="col-md-1">
+                  <i class="fas fa-angle-down transition-icon" 
+                     [class.rotated]="medicine.expanded"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- Expanded Medicine Content -->
+            <div class="medicine-details" [class.expanded]="medicine.expanded" *ngIf="medicine.expanded">
+              <!-- Tab Navigation -->
+              <div class="tab-navigation">
+                <ul class="nav nav-tabs custom-tabs">
+                  <li class="nav-item">
+                    <button class="nav-link" 
+                            [class.active]="medicine.activeTab === 'details'"
+                            (click)="setActiveTab(medicine, 'details')">
+                      <i class="fas fa-info-circle me-1"></i>
+                      Details
+                    </button>
+                  </li>
+                  <li class="nav-item">
+                    <button class="nav-link" 
+                            [class.active]="medicine.activeTab === 'supplier'"
+                            (click)="setActiveTab(medicine, 'supplier')">
+                      <i class="fas fa-truck me-1"></i>
+                      Supplier
+                    </button>
+                  </li>
+                  <li class="nav-item">
+                    <button class="nav-link" 
+                            [class.active]="medicine.activeTab === 'batches'"
+                            (click)="setActiveTab(medicine, 'batches')">
+                      <i class="fas fa-boxes me-1"></i>
+                      Batches
+                    </button>
+                  </li>
+                  <li class="nav-item">
+                    <button class="nav-link" 
+                            [class.active]="medicine.activeTab === 'transactions'"
+                            (click)="setActiveTab(medicine, 'transactions')">
+                      <i class="fas fa-history me-1"></i>
+                      Transactions
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="tab-content">
+                <!-- Details Tab -->
+                <div class="tab-pane" [class.active]="medicine.activeTab === 'details'" *ngIf="medicine.activeTab === 'details'">
+                  <div class="details-view p-3">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="info-group mb-3">
+                          <label class="form-label text-muted small">Generic Name</label>
+                          <p class="mb-0">{{ medicine.genericName || 'N/A' }}</p>
+                        </div>
+                        <div class="info-group mb-3">
+                          <label class="form-label text-muted small">Manufacturer</label>
+                          <p class="mb-0">{{ medicine.manufacturer || 'N/A' }}</p>
+                        </div>
+                        <div class="info-group mb-3">
+                          <label class="form-label text-muted small">Category</label>
+                          <p class="mb-0">{{ medicine.category }}</p>
+                        </div>
+                        <div class="info-group mb-3">
+                          <label class="form-label text-muted small">HSN Code</label>
+                          <p class="mb-0">{{ medicine.hsnCode || 'N/A' }}</p>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="info-group mb-3">
+                          <label class="form-label text-muted small">SKU</label>
+                          <p class="mb-0">{{ medicine.sku || 'N/A' }}</p>
+                        </div>
+                        <div class="info-group mb-3">
+                          <label class="form-label text-muted small">Location</label>
+                          <p class="mb-0">{{ medicine.location || 'N/A' }}</p>
+                        </div>
+                        <div class="info-group mb-3">
+                          <label class="form-label text-muted small">Low Stock Threshold</label>
+                          <p class="mb-0">{{ medicine.lowStockThreshold }} {{ medicine.unitOfMeasurement }}</p>
+                        </div>
+                        <div class="info-group mb-3">
+                          <label class="form-label text-muted small">Tax Profile</label>
+                          <p class="mb-0">{{ medicine.taxProfileName || 'No Tax' }}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Supplier Tab -->
+                <div class="tab-pane" [class.active]="medicine.activeTab === 'supplier'" *ngIf="medicine.activeTab === 'supplier'">
+                  <div class="supplier-view p-3" *ngIf="medicine.supplierInfo">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="info-group mb-3">
+                          <label class="form-label text-muted small">Supplier Name</label>
+                          <p class="mb-0 fw-bold">{{ medicine.supplierInfo.supplierName }}</p>
+                        </div>
+                        <div class="info-group mb-3">
+                          <label class="form-label text-muted small">Contact Number</label>
+                          <p class="mb-0">{{ medicine.supplierInfo.contactNumber }}</p>
+                        </div>
+                        <div class="info-group mb-3">
+                          <label class="form-label text-muted small">Email</label>
+                          <p class="mb-0">{{ medicine.supplierInfo.email }}</p>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="info-group mb-3">
+                          <label class="form-label text-muted small">Last Purchase Date</label>
+                          <p class="mb-0">{{ medicine.supplierInfo?.lastPurchaseDate ? formatDate(medicine.supplierInfo.lastPurchaseDate!) : 'N/A' }}</p>
+                        </div>
+                        <div class="info-group mb-3">
+                          <label class="form-label text-muted small">Average Purchase Price</label>
+                          <p class="mb-0 text-success fw-bold">{{ medicine.supplierInfo?.averagePurchasePrice !== undefined ? formatCurrency(medicine.supplierInfo.averagePurchasePrice!) : 'N/A' }}</p>
+                        </div>
+                        <div class="info-group mb-3">
+                          <label class="form-label text-muted small">Total Purchases</label>
+                          <p class="mb-0">{{ medicine.supplierInfo.totalPurchases }} orders</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Batches Tab -->
+                <div class="tab-pane" [class.active]="medicine.activeTab === 'batches'" *ngIf="medicine.activeTab === 'batches'">
+                  <div class="batches-view p-3">
+                    <div class="table-responsive">
+                      <table class="table table-sm">
+                        <thead>
+                          <tr>
+                            <th>Batch Number</th>
+                            <th>Quantity</th>
+                            <th>Expiry Date</th>
+                            <th>Days to Expiry</th>
+                            <th>MRP</th>
+                            <th>Purchase Price</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let batch of medicine.batchInfo">
+                            <td class="fw-bold">{{ batch.batchNumber }}</td>
+                            <td>{{ batch.quantity }} {{ medicine.unitOfMeasurement }}</td>
+                            <td>{{ formatDate(batch.expiryDate) }}</td>
+                            <td>
+                              <span [class]="(batch.daysToExpiry || 0) < 30 ? 'text-danger' : (batch.daysToExpiry || 0) < 90 ? 'text-warning' : 'text-success'">
+                                {{ batch.daysToExpiry || 0 }} days
+                              </span>
+                            </td>
+                            <td>{{ formatCurrency(batch.mrp) }}</td>
+                            <td>{{ formatCurrency(batch.purchasePrice) }}</td>
+                            <td>
+                              <span class="badge" 
+                                    [class.bg-success]="batch.expiryStatus === 'FRESH'"
+                                    [class.bg-warning]="batch.expiryStatus === 'NEAR_EXPIRY'"
+                                    [class.bg-danger]="batch.expiryStatus === 'EXPIRED'">
+                                {{ batch.expiryStatus?.replace('_', ' ') || 'Unknown' }}
+                              </span>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Transactions Tab -->
+                <div class="tab-pane" [class.active]="medicine.activeTab === 'transactions'" *ngIf="medicine.activeTab === 'transactions'">
+                  <div class="transactions-view p-3">
+                    <div class="table-responsive">
+                      <table class="table table-sm">
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Reference</th>
+                            <th>Quantity</th>
+                            <th>Amount</th>
+                            <th>Customer/Supplier</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let transaction of medicine.recentTransactions">
+                            <td>{{ formatDate(transaction.date) }}</td>
+                            <td>
+                              <span class="badge" 
+                                    [class.bg-primary]="transaction.type === 'PURCHASE'"
+                                    [class.bg-success]="transaction.type === 'SALE'"
+                                    [class.bg-warning]="transaction.type === 'RETURN'">
+                                {{ transaction.type }}
+                              </span>
+                            </td>
+                            <td class="fw-bold">{{ transaction.reference }}</td>
+                            <td>{{ transaction.quantity }} {{ medicine.unitOfMeasurement }}</td>
+                            <td class="fw-bold">{{ formatCurrency(transaction.amount) }}</td>
+                            <td>{{ transaction.customerOrSupplier }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

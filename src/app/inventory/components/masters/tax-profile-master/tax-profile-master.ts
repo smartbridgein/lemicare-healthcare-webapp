@@ -5,7 +5,7 @@ import { InventoryService } from '../../../services/inventory.service';
 import { TaxProfile, TaxComponent } from '../../../models/inventory.models';
 import { NgbModal, NgbModalRef, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { faPencilAlt, faPlus, faTimes, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faPencilAlt, faPlus, faTimes, faTrash, faBroom, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
 
 @Component({
   selector: 'app-tax-profile-master',
@@ -20,11 +20,14 @@ export class TaxProfileMasterComponent implements OnInit {
   faAdd = faPlus;
   faRemove = faTimes;
   faDelete = faTrash;
+  faCleanup = faBroom;
+  faWarning = faExclamationTriangle;
   
   // Data
   taxProfiles: TaxProfile[] = [];
   activeTaxProfiles: TaxProfile[] = [];
   loading = false;
+  cleanupLoading = false;
   
   // Modal
   modalRef?: NgbModalRef;
@@ -41,6 +44,41 @@ export class TaxProfileMasterComponent implements OnInit {
   ngOnInit(): void {
     this.loadTaxProfiles();
     this.initTaxProfileForm();
+  }
+
+  // Cleanup all tax profiles except "no tax" profile
+  cleanupTaxProfiles(): void {
+    const confirmMessage = 'This will delete ALL tax profiles except "no tax" profiles. Medicines using deleted profiles will be updated to use the "no tax" profile. This action cannot be undone. Are you sure?';
+    
+    if (confirm(confirmMessage)) {
+      this.cleanupLoading = true;
+      
+      this.inventoryService.cleanupTaxProfiles().subscribe({
+        next: (result) => {
+          this.cleanupLoading = false;
+          
+          let message = `Tax profile cleanup completed successfully!\n\n`;
+          message += `Deleted profiles: ${result.deletedCount}\n`;
+          
+          if (result.errorCount > 0) {
+            message += `Errors encountered: ${result.errorCount}\n`;
+            if (result.errors) {
+              message += `Error details: ${result.errors}`;
+            }
+          }
+          
+          alert(message);
+          
+          // Reload tax profiles to show updated list
+          this.loadTaxProfiles();
+        },
+        error: (error) => {
+          this.cleanupLoading = false;
+          console.error('Cleanup failed:', error);
+          alert(`Failed to cleanup tax profiles: ${error.message || 'Unknown error occurred'}`);
+        }
+      });
+    }
   }
 
   // Initialize form for creating/editing tax profiles
@@ -74,12 +112,27 @@ export class TaxProfileMasterComponent implements OnInit {
     this.updateTotalRate();
   }
 
-  // Update total rate based on components
+  // Update total rate based on components and auto-generate profile name
   updateTotalRate(): void {
     const componentsArray = this.components.value;
     const total = componentsArray.reduce((sum: number, component: any) => 
       sum + (+component.rate || 0), 0);
-    this.taxProfileForm.patchValue({ totalRate: total });
+    
+    // Auto-generate profile name based on total rate
+    let profileName: string;
+    
+    // Special case: if total is 0 (both CGST and SGST are 0), set as "No Tax"
+    if (total === 0) {
+      profileName = 'No Tax';
+    } else {
+      profileName = `GST ${total}%`;
+    }
+    
+    // Update form values
+    this.taxProfileForm.patchValue({ 
+      totalRate: total,
+      profileName: profileName
+    });
   }
 
   // Load all tax profiles
@@ -113,8 +166,8 @@ export class TaxProfileMasterComponent implements OnInit {
       this.currentProfileId = profile.id;
       
       this.taxProfileForm.patchValue({
-        profileName: profile.profileName,
         totalRate: profile.totalRate
+        // Don't set profileName here as it will be auto-generated
       });
       
       // Add existing components
@@ -127,6 +180,8 @@ export class TaxProfileMasterComponent implements OnInit {
             })
           );
         });
+        // Trigger update of total rate and profile name after adding components
+        this.updateTotalRate();
       }
     } else {
       // Create mode
@@ -188,6 +243,12 @@ export class TaxProfileMasterComponent implements OnInit {
         };
       })
     };
+    
+    // Special handling for "No Tax" profiles - assign specific ID
+    if (formValue.profileName === 'No Tax' && parseFloat(formValue.totalRate) === 0) {
+      (taxProfileData as any).id = 'tax_no_tax';
+      console.log('Setting special ID for No Tax profile: tax_no_tax');
+    }
     
     console.log('Submitting tax profile data:', taxProfileData);
     

@@ -97,7 +97,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (appointments: any[]) => {
-          this.todaysAppointmentCount = appointments.length;
+          // Filter out completed, finished, and cancelled appointments
+          const activeAppointments = appointments.filter(appointment => {
+            const status = appointment.status?.toLowerCase();
+            return status !== 'completed' && status !== 'finished' && status !== 'cancelled';
+          });
+          
+          this.todaysAppointmentCount = activeAppointments.length;
+          console.log('Today\'s appointments:', {
+            total: appointments.length,
+            active: activeAppointments.length,
+            excluded: appointments.length - activeAppointments.length
+          });
           this.loadingAppointments = false;
         },
         error: (error: any) => {
