@@ -8,6 +8,7 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../../environments/environment';
 import { Service } from '../../../models/inventory.models';
 import { catchError, finalize, of } from 'rxjs';
+import { AuthService, UserProfile } from '../../../../../app/auth/shared/auth.service';
 
 @Component({
   selector: 'app-service-master',
@@ -29,6 +30,10 @@ export class ServiceMasterComponent implements OnInit {
   filteredServices: Service[] = [];
   loading = false;
   
+  // Permission controls
+  isSuperAdmin = false;
+  private user: UserProfile | null = null;
+  
   // Filter options
   serviceGroups = ['ALL', 'CONSULTATION', 'OPD', 'PACKAGE'];
   selectedGroup = 'ALL';
@@ -43,12 +48,40 @@ export class ServiceMasterComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private modalService: NgbModal,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
+    this.loadUserPermissions();
     this.loadServices();
     this.initServiceForm();
+  }
+    
+  /**
+   * Check if current user has super admin permissions
+   * Only super admin can delete services
+   */
+  private loadUserPermissions(): void {
+    this.user = this.authService.getCurrentUser();
+    
+    if (this.user) {
+      // Check if user is super admin (by email or role)
+      const email = this.user.email || '';
+      const role = this.user.role || '';
+      
+      const isSuperAdminEmail = email.toLowerCase() === 'hanan-clinic@lemicare.com';
+      const isSuperAdminRole = role.toUpperCase() === 'ROLE_SUPER_ADMIN' || 
+                             role.toUpperCase() === 'SUPER_ADMIN';
+      
+      this.isSuperAdmin = isSuperAdminEmail || isSuperAdminRole;
+      
+      console.log('Service Master Permissions:', {
+        email,
+        role,
+        isSuperAdmin: this.isSuperAdmin
+      });
+    }
   }
 
   // Initialize form for creating/editing services
@@ -156,7 +189,7 @@ export class ServiceMasterComponent implements OnInit {
       this.http.put<any>(`${environment.apiUrl}/api/services/${this.currentServiceId}`, serviceData)
         .pipe(finalize(() => this.formSubmitting = false))
         .subscribe({
-          next: (response) => {
+          next: (response: any) => {
             if (response.success) {
               this.loadServices();
               this.modalRef?.close();
@@ -165,7 +198,7 @@ export class ServiceMasterComponent implements OnInit {
               alert('Error updating service: ' + (response.message || 'Unknown error'));
             }
           },
-          error: (error) => {
+          error: (error: any) => {
             console.error('Error updating service:', error);
             alert('Error updating service: ' + (error.message || 'Unknown error'));
           }
@@ -175,7 +208,7 @@ export class ServiceMasterComponent implements OnInit {
       this.http.post<any>(`${environment.apiUrl}/api/services`, serviceData)
         .pipe(finalize(() => this.formSubmitting = false))
         .subscribe({
-          next: (response) => {
+          next: (response: any) => {
             if (response.success) {
               this.loadServices();
               this.modalRef?.close();
@@ -184,7 +217,7 @@ export class ServiceMasterComponent implements OnInit {
               alert('Error creating service: ' + (response.message || 'Unknown error'));
             }
           },
-          error: (error) => {
+          error: (error: any) => {
             console.error('Error creating service:', error);
             alert('Error creating service: ' + (error.message || 'Unknown error'));
           }
@@ -196,7 +229,7 @@ export class ServiceMasterComponent implements OnInit {
   updateServiceStatus(serviceId: string, active: boolean): void {
     this.http.patch<any>(`${environment.apiUrl}/api/services/${serviceId}/status`, { active })
       .subscribe({
-        next: (response) => {
+        next: (response: any) => {
           if (response.success) {
             this.loadServices();
           } else {
@@ -204,7 +237,7 @@ export class ServiceMasterComponent implements OnInit {
             alert('Error updating service status: ' + (response.message || 'Unknown error'));
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error updating service status:', error);
           alert('Error updating service status: ' + (error.message || 'Unknown error'));
         }
@@ -357,7 +390,7 @@ export class ServiceMasterComponent implements OnInit {
     if (confirm('Are you sure you want to delete this service? This action cannot be undone.')) {
       this.http.delete<any>(`${environment.apiUrl}/api/services/${serviceId}`)
         .subscribe({
-          next: (response) => {
+          next: (response: any) => {
             if (response.success) {
               this.loadServices();
             } else {
@@ -365,7 +398,7 @@ export class ServiceMasterComponent implements OnInit {
               alert('Error deleting service: ' + (response.message || 'Unknown error'));
             }
           },
-          error: (error) => {
+          error: (error: any) => {
             console.error('Error deleting service:', error);
             alert('Error deleting service: ' + (error.message || 'Unknown error'));
           }
@@ -378,7 +411,7 @@ export class ServiceMasterComponent implements OnInit {
     return new Intl.NumberFormat('en-IN', { 
       style: 'currency', 
       currency: 'INR',
-      minimumFractionDigits: 2
+      maximumFractionDigits: 0 
     }).format(amount);
   }
 }

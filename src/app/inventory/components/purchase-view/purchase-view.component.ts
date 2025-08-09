@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { InventoryService } from '../../services/inventory.service';
+import { ReturnsService, PurchaseReturn, PurchaseReturnItem } from '../../services/returns.service';
 import { Purchase, Supplier, Medicine, PurchaseItemDto, TaxComponentItem } from '../../models/inventory.models';
 
 @Component({
@@ -21,9 +22,16 @@ export class PurchaseViewComponent implements OnInit {
   suppliers: Map<string, Supplier> = new Map();
   medicines: Map<string, Medicine> = new Map();
   error: string | null = null;
+  
+  // Purchase return related properties
+  purchaseReturns: PurchaseReturn[] = [];
+  hasReturns: boolean = false;
+  returnItemsByBatchMap: Map<string, PurchaseReturnItem[]> = new Map();
+  totalReturnedAmount: number = 0;
 
   constructor(
     private inventoryService: InventoryService,
+    private returnsService: ReturnsService,
     private route: ActivatedRoute,
     private router: Router,
     private datePipe: DatePipe
@@ -73,6 +81,8 @@ export class PurchaseViewComponent implements OnInit {
         } else {
           // Process purchase directly
           this.purchase = this.processPurchaseData(data);
+          // After processing purchase data, load returns for this purchase
+          this.loadPurchaseReturns();
           this.loading = false;
         }
       },
@@ -413,6 +423,73 @@ export class PurchaseViewComponent implements OnInit {
     } catch {
       return 'N/A';
     }
+  }
+
+  /**
+   * Load purchase returns for the current purchase
+   */
+  loadPurchaseReturns(): void {
+    if (!this.purchase || !this.purchase.id) {
+      console.warn('Cannot load returns: No purchase ID available');
+      return;
+    }
+
+   
+  }
+
+  /**
+   * Process purchase return data to calculate statistics and create batch mapping
+   */
+  processReturnData(): void {
+    // Reset tracking maps and totals
+    this.returnItemsByBatchMap.clear();
+    this.totalReturnedAmount = 0;
+    
+    // Process each return
+    this.purchaseReturns.forEach(returnData => {
+      // Add to total returned amount
+      this.totalReturnedAmount += returnData.totalReturnedAmount || 0;
+      
+      // Process return items
+      if (returnData.items && returnData.items.length > 0) {
+        returnData.items.forEach((item: PurchaseReturnItem) => {
+          // Create a compound key from medicineId and batchNo to match with purchase items
+          const batchKey = `${item.medicineId}_${item.batchNo}`;
+          
+          // Add to batch map
+          if (!this.returnItemsByBatchMap.has(batchKey)) {
+            this.returnItemsByBatchMap.set(batchKey, []);
+          }
+          this.returnItemsByBatchMap.get(batchKey)?.push(item);
+        });
+      }
+    });
+    
+    console.log(`Processed returns: ${this.returnItemsByBatchMap.size} batches returned, total amount: ${this.totalReturnedAmount}`);
+  }
+
+  /**
+   * Get total returned quantity for a specific batch
+   * @param medicineId Medicine ID
+   * @param batchNo Batch number
+   * @returns Total quantity returned for this batch
+   */
+  getReturnedQuantityForBatch(medicineId: string, batchNo: string): number {
+    const batchKey = `${medicineId}_${batchNo}`;
+    const returnItems = this.returnItemsByBatchMap.get(batchKey) || [];
+    
+    // Sum up return quantities for this batch
+    return returnItems.reduce((total, item) => total + (item.returnQuantity || 0), 0);
+  }
+
+  /**
+   * Helper for formatting a date string or timestamp
+   * @param date Date to format
+   * @returns Formatted date string
+   */
+  formatDateDisplay(date: any): string {
+    if (!date) return '';
+    return this.datePipe.transform(date, 'dd MMM yyyy') || '';
   }
 
   /**

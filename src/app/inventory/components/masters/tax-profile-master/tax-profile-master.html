@@ -81,7 +81,8 @@
               <button class="btn btn-sm me-1" style="border: 1px solid #6b1d14; color: #6b1d14; background-color: transparent; font-family: 'Roboto', sans-serif;" (click)="openTaxProfileModal(taxProfileModal, profile)">
                 <fa-icon [icon]="faEdit"></fa-icon>
               </button>
-              <button class="btn btn-sm" style="border: 1px solid #dc3545; color: #dc3545; background-color: transparent; font-family: 'Roboto', sans-serif;" (click)="deleteTaxProfile(profile.id)">
+              <!-- Delete button only visible to super admin users -->
+              <button *ngIf="isSuperAdmin" class="btn btn-sm" style="border: 1px solid #dc3545; color: #dc3545; background-color: transparent; font-family: 'Roboto', sans-serif;" (click)="deleteTaxProfile(profile.id)">
                 <fa-icon [icon]="faDelete"></fa-icon>
               </button>
             </td>

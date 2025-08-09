@@ -26,6 +26,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   memosExpanded = false;
   sidebarCollapsed = false;
   
+  // Permission properties
+  isSuperAdmin = false;
+  // We don't need showBillingMenu anymore as we only hide the Billing Dashboard item, not the entire menu
+  
   // Today's appointments count for global display
   todaysAppointmentCount: number = 0;
   loadingAppointments: boolean = false;
@@ -124,6 +128,33 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!this.user) {
       console.log('No user found in session, redirecting to login');
       this.router.navigate(['/auth/login']);
+    } else {
+      // Load user permissions once authenticated
+      this.loadUserPermissions();
+    }
+  }
+  
+  /**
+   * Determine user permissions based on role and email
+   * Only super admin has access to billing dashboard
+   */
+  private loadUserPermissions(): void {
+    if (this.user) {
+      // Check if user is super admin (by email or role)
+      const email = this.user.email || '';
+      const role = this.user.role || '';
+      
+      const isSuperAdminEmail = email.toLowerCase() === 'hanan-clinic@lemicare.com';
+      const isSuperAdminRole = role.toUpperCase() === 'ROLE_SUPER_ADMIN' || 
+                             role.toUpperCase() === 'SUPER_ADMIN';
+      
+      this.isSuperAdmin = isSuperAdminEmail || isSuperAdminRole;
+      
+      console.log('Dashboard Permissions:', {
+        email,
+        role,
+        isSuperAdmin: this.isSuperAdmin
+      });
     }
   }
   

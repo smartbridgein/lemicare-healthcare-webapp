@@ -92,7 +92,7 @@
                 <button class="btn btn-sm me-1" style="border: 1px solid #6b1d14; color: #6b1d14; background-color: transparent; font-family: 'Roboto', sans-serif;" (click)="openServiceModal(serviceModal, service)">
                   <fa-icon [icon]="faEdit"></fa-icon>
                 </button>
-                <button class="btn btn-sm" style="border: 1px solid #dc3545; color: #dc3545; background-color: transparent; font-family: 'Roboto', sans-serif;" (click)="deleteService(service.id)">
+                <button *ngIf="isSuperAdmin" class="btn btn-sm" style="border: 1px solid #dc3545; color: #dc3545; background-color: transparent; font-family: 'Roboto', sans-serif;" (click)="deleteService(service.id)">
                   <fa-icon [icon]="faDelete"></fa-icon>
                 </button>
               </div>

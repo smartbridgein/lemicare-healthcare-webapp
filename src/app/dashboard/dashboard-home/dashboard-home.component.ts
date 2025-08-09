@@ -19,6 +19,7 @@ import { ExpiringMedicinesReportComponent } from '../../inventory/components/exp
 import { LowStockMedicinesReportComponent } from '../../inventory/components/low-stock-medicines-report/low-stock-medicines-report.component';
 import { BillingService } from '../../billing/shared/billing.service';
 import { environment } from '../../../environments/environment';
+import { AuthService, UserProfile } from '../../auth/shared/auth.service';
 
 @Component({
   selector: 'app-dashboard-home',
@@ -40,6 +41,14 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
   loadingInventory = false;
   recentPatients: any[] = [];
   upcomingAppointments: any[] = [];
+  
+  // User and permission properties
+  currentUser: UserProfile | null = null;
+  isSuperAdmin: boolean = false;
+  isAdmin: boolean = false;
+  hasEditAccess: boolean = false;
+  hasRevenueViewAccess: boolean = false;
+  hasReportDownloadAccess: boolean = false;
   
   // Patient name caching for appointments
   private patientNamesCache = new Map<string, string>();
@@ -87,7 +96,8 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
     private viewContainerRef: ViewContainerRef,
     private router: Router,
     private applicationRef: ApplicationRef,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private authService: AuthService
   ) { }
 
   /**
@@ -103,6 +113,9 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Load user profile and check permissions
+    this.loadUserPermissions();
+    
     this.loadDashboardStats();
     this.loadRecentPatients();
     
@@ -131,6 +144,49 @@ export class DashboardHomeComponent implements OnInit, OnDestroy {
     this.destroy$.subscribe(() => {
       clearInterval(refreshInterval);
     });
+  }
+  
+  /**
+   * Load user permissions based on role and email
+   */
+  loadUserPermissions(): void {
+    this.currentUser = this.authService.getCurrentUser();
+    
+    if (this.currentUser) {
+      const userEmail = this.currentUser.email.toLowerCase();
+      
+      // Check user role and email to determine permissions
+      this.isSuperAdmin = userEmail === 'hanan-clinic@lemicare.com' || 
+                           this.currentUser.role === 'ROLE_SUPER_ADMIN';
+      
+      // Admin roles - check both role and specific emails
+      this.isAdmin = this.currentUser.role === 'ROLE_ADMIN' || 
+                     userEmail === 'hanan@lemicare.com' || 
+                     userEmail === 'srilekha@lemicare.com';
+      
+      // Set specific permissions based on user role
+      this.hasEditAccess = this.isSuperAdmin;
+      this.hasRevenueViewAccess = this.isSuperAdmin || 
+                                 (this.isAdmin && userEmail === 'hanan@lemicare.com');
+      this.hasReportDownloadAccess = this.isSuperAdmin || this.isAdmin;
+      
+      console.log('User permissions loaded:', {
+        email: userEmail,
+        isSuperAdmin: this.isSuperAdmin,
+        isAdmin: this.isAdmin,
+        hasEditAccess: this.hasEditAccess,
+        hasRevenueViewAccess: this.hasRevenueViewAccess,
+        hasReportDownloadAccess: this.hasReportDownloadAccess
+      });
+    } else {
+      console.warn('No user profile found. Access will be restricted.');
+      // Default to no permissions if user profile not found
+      this.isSuperAdmin = false;
+      this.isAdmin = false;
+      this.hasEditAccess = false;
+      this.hasRevenueViewAccess = false;
+      this.hasReportDownloadAccess = false;
+    }
   }
   
   ngOnDestroy(): void {

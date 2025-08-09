@@ -225,6 +225,7 @@ export interface Purchase {
   purchaseId?: string; // From API response
   supplierId: string;
   supplier?: Supplier;
+  supplierName?: string; // Added to match API response structure
   invoiceDate: string | any; // Can be string or timestamp object with seconds/nanos
   referenceId?: string;
   totalAmount: number;
@@ -263,6 +264,7 @@ export interface CreatePurchaseRequest {
 // PurchaseItemDto matches backend DTO for create/update operations
 export interface PurchaseItemDto {
   medicineId: string;
+  medicineName?: string; // Added to match API response
   batchNo: string;
   expiryDate: string | any; // Can be string or timestamp object with seconds/nanos
   packQuantity: number;
@@ -279,6 +281,7 @@ export interface PurchaseItemDto {
   taxProfileId: string;
   taxRateApplied?: number;
   taxComponents?: TaxComponentItem[];
+  createdBatchId?: string; // Added to match API response
 }
 
 export interface TaxComponentItem {

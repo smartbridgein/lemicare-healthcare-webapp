@@ -48,6 +48,7 @@ export interface SaleReturnItemDto {
   medicineId: string;
   batchNo: string;
   returnQuantity: number;
+  taxProfileId?: string;
 }
 
 // Purchase Return Interfaces
@@ -77,6 +78,12 @@ export interface PurchaseReturnRequest {
   returnDate: string;
   supplierId: string;
   reason: string;
+  totalReturnAmount?: number;
+  totalBaseAmount?: number;
+  totalCGST?: number;
+  totalSGST?: number;
+  totalTaxAmount?: number;
+  totalDiscountAmount?: number;
   items: PurchaseReturnItemDto[];
 }
 
@@ -84,6 +91,12 @@ export interface PurchaseReturnItemDto {
   medicineId: string;
   batchNo: string;
   returnQuantity: number;
+  returnValue?: number;
+  baseReturnValue?: number;
+  cgst?: number;
+  sgst?: number;
+  taxProfileId?: string;
+  taxRate?: number;
 }
 
 @Injectable({

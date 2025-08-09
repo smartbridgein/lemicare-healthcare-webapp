@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BillingService } from '../shared/billing.service';
 import { Advance } from '../shared/billing.model';
+import { AuthService, UserProfile } from '../../auth/shared/auth.service';
 
 @Component({
   selector: 'app-advance-list',
@@ -21,11 +22,45 @@ export class AdvanceListComponent implements OnInit {
   todayCount = 0;
   todayAmount = 0;
   
-  constructor(private billingService: BillingService) {}
+  // Permission properties
+  isSuperAdmin = false;
+  private user: UserProfile | null = null;
+  
+  constructor(
+    private billingService: BillingService,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.loading = true;
+    this.loadUserPermissions();
     this.loadAdvances();
+  }
+  
+  /**
+   * Check if current user has super admin permissions
+   * Only super admin can delete advances
+   */
+  private loadUserPermissions(): void {
+    this.user = this.authService.getCurrentUser();
+    
+    if (this.user) {
+      // Check if user is super admin (by email or role)
+      const email = this.user.email || '';
+      const role = this.user.role || '';
+      
+      const isSuperAdminEmail = email.toLowerCase() === 'hanan-clinic@lemicare.com';
+      const isSuperAdminRole = role.toUpperCase() === 'ROLE_SUPER_ADMIN' || 
+                             role.toUpperCase() === 'SUPER_ADMIN';
+      
+      this.isSuperAdmin = isSuperAdminEmail || isSuperAdminRole;
+      
+      console.log('Advance List Permissions:', {
+        email,
+        role,
+        isSuperAdmin: this.isSuperAdmin
+      });
+    }
   }
 
   loadAdvances(): void {

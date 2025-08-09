@@ -122,7 +122,8 @@
                     (click)="toggleMedicineStatus(medicine)">
                     <i class="fas" [ngClass]="medicine.status === 'ACTIVE' ? 'fa-toggle-on' : 'fa-toggle-off'"></i>
                   </button>
-                  <button class="btn btn-sm" 
+                  <!-- Delete button only visible to super admin users -->
+                  <button *ngIf="isSuperAdmin" class="btn btn-sm" 
                     style="border: 1px solid #e74a3b; color: white; background-color: #e74a3b;" 
                     title="Delete Medicine" 
                     (click)="openDeleteConfirmation(medicine)">

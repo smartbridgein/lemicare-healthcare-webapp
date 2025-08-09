@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { InventoryService } from '../../../services/inventory.service';
 import { Medicine, TaxProfile, StockStatus } from '../../../models/inventory.models';
+import { AuthService, UserProfile } from '../../../../../app/auth/shared/auth.service';
 
 @Component({
   selector: 'app-medicine-master',
@@ -41,10 +42,15 @@ export class MedicineMasterComponent implements OnInit {
   itemsPerPage = 25;
   totalItems = 0;
   totalPages = 0;
+  
+  // Permission properties
+  isSuperAdmin = false;
+  private user: UserProfile | null = null;
 
   constructor(
     private inventoryService: InventoryService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private authService: AuthService
   ) {
     this.initializeForm();
   }
@@ -68,8 +74,35 @@ export class MedicineMasterComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadUserPermissions();
     this.loadMedicines();
     this.loadTaxProfiles();
+  }
+
+  /**
+   * Check if current user has super admin permissions
+   * Only super admin can delete medicines
+   */
+  private loadUserPermissions(): void {
+    this.user = this.authService.getCurrentUser();
+    
+    if (this.user) {
+      // Check if user is super admin (by email or role)
+      const email = this.user.email || '';
+      const role = this.user.role || '';
+      
+      const isSuperAdminEmail = email.toLowerCase() === 'hanan-clinic@lemicare.com';
+      const isSuperAdminRole = role.toUpperCase() === 'ROLE_SUPER_ADMIN' || 
+                             role.toUpperCase() === 'SUPER_ADMIN';
+      
+      this.isSuperAdmin = isSuperAdminEmail || isSuperAdminRole;
+      
+      console.log('Medicine Master Permissions:', {
+        email,
+        role,
+        isSuperAdmin: this.isSuperAdmin
+      });
+    }
   }
   
   loadTaxProfiles(): void {

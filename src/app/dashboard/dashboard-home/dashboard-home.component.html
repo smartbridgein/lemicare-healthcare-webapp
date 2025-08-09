@@ -20,8 +20,8 @@
       </div>
     </div>
 
-    <!-- Revenue Card -->
-    <div class="stat-card classic-card revenue-card">
+    <!-- Revenue Card - Only visible to users with revenue view access -->
+    <div class="stat-card classic-card revenue-card" *ngIf="hasRevenueViewAccess">
       <div class="card-side-accent"></div>
       <div class="stat-content">
         <div class="stat-header">Revenue</div>
@@ -155,7 +155,7 @@
                   <a [routerLink]="['/patients', patient.patientId]" class="btn-action view" title="View Patient Details">
                     <i class="fas fa-eye"></i>
                   </a>
-                  <a [routerLink]="['/appointments/new']" [queryParams]="{patientId: patient.patientId}" class="btn-action edit" title="Schedule Appointment">
+                  <a *ngIf="hasEditAccess" [routerLink]="['/appointments/new']" [queryParams]="{patientId: patient.patientId}" class="btn-action edit" title="Schedule Appointment">
                     <i class="fas fa-calendar-plus"></i>
                   </a>
                 </div>
@@ -236,11 +236,14 @@
               </td>
               
               <td class="action-column">
-                <button class="view-button" 
-                        (click)="viewAppointmentDetails(appointment)">
-                  <i class="fas fa-eye"></i>
-                  VIEW
-                </button>
+                <div class="appointment-actions">
+                  <button class="action-btn" (click)="viewAppointmentDetails(appointment)" title="View Details">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button *ngIf="hasEditAccess" class="action-btn" (click)="openRescheduleModal(appointment)" title="Reschedule">
+                    <i class="fas fa-calendar-alt"></i>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -268,16 +271,36 @@
 
   <!-- Inventory Alerts Row - Full Width -->
   <div class="inventory-alerts-row full-width">
-    <h3 class="section-title">Inventory Alerts Dashboard</h3>
+    <div class="section-header-container">
+      <h3 class="section-title">Inventory Alerts Dashboard</h3>
+      <!-- Only show export button if user has report download access -->
+      <div class="section-header-actions" *ngIf="hasReportDownloadAccess">
+        <button class="download-report-btn" title="Download Inventory Report">
+          <i class="fas fa-file-download"></i> Export Reports
+        </button>
+      </div>
+    </div>
     <div class="alert-panels-full-width">
       <!-- Expiring Medicines Report - Full Width -->
       <div class="alert-panel-full">
         <app-expiring-medicines-report></app-expiring-medicines-report>
+        <!-- Only show management controls if user has edit access -->
+        <div class="edit-controls" *ngIf="hasEditAccess">
+          <button class="btn-action edit" title="Manage Expiring Medicines">
+            <i class="fas fa-cog"></i> Manage
+          </button>
+        </div>
       </div>
       
       <!-- Low Stock Medicines Report - Full Width -->
       <div class="alert-panel-full">
         <app-low-stock-medicines-report></app-low-stock-medicines-report>
+        <!-- Only show management controls if user has edit access -->
+        <div class="edit-controls" *ngIf="hasEditAccess">
+          <button class="btn-action edit" title="Manage Low Stock Items">
+            <i class="fas fa-cog"></i> Manage
+          </button>
+        </div>
       </div>
     </div>
   </div>

@@ -177,7 +177,8 @@
                     <i class="far fa-eye"></i>
                     <span class="visually-hidden">View</span>
                   </button>
-                  <button class="btn btn-sm" 
+                  <!-- Delete button only visible to super admin users -->
+                  <button *ngIf="isSuperAdmin" class="btn btn-sm" 
                     style="background-color: white; border: 1px solid #6b1d14; color: #6b1d14;"
                     (click)="deleteAdvance(advance.id)">
                     <i class="far fa-trash-alt"></i>

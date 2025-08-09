@@ -7,6 +7,7 @@ import { ReportExportService } from '../shared/report-export.service';
 import { BillingDashboardStats, RevenueStats, RevenuePeriod, CategoryReport, Invoice, CashMemo, Receipt, Advance } from '../shared/billing.model';
 import { RevenueChartComponent } from './revenue-chart/revenue-chart.component';
 import { CategoryChartComponent } from './category-chart/category-chart.component';
+import { AuthService, UserProfile } from '../../auth/shared/auth.service';
 
 @Component({
   selector: 'app-billing-dashboard',
@@ -16,6 +17,10 @@ import { CategoryChartComponent } from './category-chart/category-chart.componen
   styleUrls: ['./billing-dashboard.component.scss']
 })
 export class BillingDashboardComponent implements OnInit {
+  // Permission properties
+  isSuperAdmin = false;
+  hasAccessToBillingDashboard = false;
+  currentUser: UserProfile | null = null;
   stats: BillingDashboardStats = {
     totalCashMemos: 0,
     totalInvoices: 0,
@@ -70,11 +75,51 @@ export class BillingDashboardComponent implements OnInit {
   @ViewChild('revenueChartContainer') revenueChartContainer!: ElementRef;
   @ViewChild('categoryChartContainer') categoryChartContainer!: ElementRef;
 
-  constructor(private billingService: BillingService, private reportExportService: ReportExportService) {}
+  constructor(
+    private billingService: BillingService, 
+    private reportExportService: ReportExportService,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
+    this.loadUserPermissions();
     this.loadDashboardData();
     this.loadRevenueStats();
+  }
+
+  /**
+   * Loads user permissions based on user profile
+   * Only super admin (email hanan-clinic@lemicare.com) has access to billing dashboard
+   */
+  private loadUserPermissions(): void {
+    // Get current user profile
+    this.currentUser = this.authService.getCurrentUser();
+    
+    if (this.currentUser) {
+      
+      // Check if user is super admin (by email or role)
+      const email = this.currentUser.email || '';
+      const role = this.currentUser.role || '';
+      
+      const isSuperAdminEmail = email.toLowerCase() === 'hanan-clinic@lemicare.com';
+      const isSuperAdminRole = role.toUpperCase() === 'ROLE_SUPER_ADMIN' || 
+                             role.toUpperCase() === 'SUPER_ADMIN';
+      
+      this.isSuperAdmin = isSuperAdminEmail || isSuperAdminRole;
+      
+      // Only super admin has access to billing dashboard
+      this.hasAccessToBillingDashboard = this.isSuperAdmin;
+      
+      console.log('Billing Dashboard Access:', { 
+        email, 
+        role,
+        isSuperAdmin: this.isSuperAdmin, 
+        hasAccess: this.hasAccessToBillingDashboard 
+      });
+    } else {
+      this.hasAccessToBillingDashboard = false;
+      console.log('No user profile found, access denied to billing dashboard');
+    }
   }
 
   loadDashboardData(): void {

@@ -5,12 +5,13 @@ import { FormsModule } from '@angular/forms';
 import { InventoryService } from '../../services/inventory.service';
 import { Purchase, Supplier, Medicine, TaxComponentItem, PurchaseItemDto } from '../../models/inventory.models';
 import { Subscription } from 'rxjs';
+import { AuthService, UserProfile } from '../../../auth/shared/auth.service';
 
 @Component({
   selector: 'app-purchases',
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule],
-  providers: [DatePipe],
+  providers: [DatePipe, AuthService],
   templateUrl: './purchases.component.html',
   styleUrls: ['./purchases.component.scss']
 })
@@ -21,6 +22,8 @@ export class PurchasesComponent implements OnInit, OnDestroy {
   loading: boolean = true;
   suppliers: Map<string, Supplier> = new Map();
   medicines: Map<string, Medicine> = new Map();
+  isSuperAdmin: boolean = false;
+  private user: UserProfile | null = null;
   
   // Date filter properties
   dateFilterOptions = [
@@ -61,10 +64,31 @@ export class PurchasesComponent implements OnInit, OnDestroy {
     private inventoryService: InventoryService,
     private route: ActivatedRoute,
     private router: Router,
-    private datePipe: DatePipe
+    private datePipe: DatePipe,
+    private authService: AuthService
   ) { }
 
+  loadUserPermissions(): void {
+    this.user = this.authService.getCurrentUser();
+    
+    if (this.user) {
+      // Check if user is super admin (by email or role)
+      const email = this.user.email || '';
+      const role = this.user.role || '';
+      
+      const isSuperAdminEmail = email.toLowerCase() === 'hanan-clinic@lemicare.com';
+      const isSuperAdminRole = role.toUpperCase() === 'ROLE_SUPER_ADMIN' || 
+                            role.toUpperCase() === 'SUPER_ADMIN';
+      
+      this.isSuperAdmin = isSuperAdminEmail || isSuperAdminRole;
+      console.log('User permissions loaded for Purchase Component. Super admin:', this.isSuperAdmin);
+    }
+  }
+
   ngOnInit(): void {
+    // Load user permissions
+    this.loadUserPermissions();
+    
     // Listen for query params changes - particularly for refresh signal
     this.routeSubscription = this.route.queryParams.subscribe(params => {
       const refresh = params['refresh'];

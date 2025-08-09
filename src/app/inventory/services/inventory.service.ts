@@ -118,6 +118,12 @@ export interface PurchaseReturnRequest {
   returnDate: string; // ISO format date string
   supplierId: string;
   reason: string;
+  totalReturnAmount?: number;
+  totalBaseAmount?: number;
+  totalCGST?: number;
+  totalSGST?: number;
+  totalTaxAmount?: number;
+  totalDiscountAmount?: number;
   items: PurchaseReturnItemDto[];
 }
 
@@ -125,6 +131,12 @@ export interface PurchaseReturnItemDto {
   medicineId: string;
   batchNo: string;
   returnQuantity: number;
+  returnValue?: number;
+  baseReturnValue?: number;
+  cgst?: number;
+  sgst?: number;
+  taxProfileId?: string;
+  taxRate?: number;
 }
 
 export interface SaleReturn {
@@ -1052,6 +1064,8 @@ export class InventoryService {
             return {
               id: purchase.purchaseId || purchase.id,
               supplierId: purchase.supplierId,
+              // Map supplierName from API response or fallback to supplier.name if available
+              supplierName: purchase.supplierName || (purchase.supplier ? purchase.supplier.name : undefined),
               supplier: purchase.supplier ? {
                 id: purchase.supplier.supplierId || '', 
                 supplierId: purchase.supplier.supplierId,

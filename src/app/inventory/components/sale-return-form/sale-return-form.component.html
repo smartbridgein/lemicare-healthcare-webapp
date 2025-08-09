@@ -91,106 +91,207 @@
         </div>
 
         <!-- Sale Details (shown when sale is selected) -->
-        <div class="card mb-4" *ngIf="selectedSale">
-          <div class="card-header bg-light">
-            <h5 class="mb-0">Selected Sale Details</h5>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-3">
-                <label class="form-label fw-bold">Sale ID</label>
-                <input type="text" class="form-control" [value]="returnsService.formatSaleId(selectedSale.saleId || selectedSale.id || '')" readonly />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label fw-bold">Customer/Patient</label>
-                <input type="text" class="form-control" [value]="selectedSale.patientName || selectedSale.walkInCustomerName || 'Walk-in Customer'" readonly />
-              </div>
-              <div class="col-md-2">
-                <label class="form-label fw-bold">Sale Type</label>
-                <input type="text" class="form-control" [value]="selectedSale.saleType" readonly />
-              </div>
-              <div class="col-md-2">
-                <label class="form-label fw-bold">Sale Date</label>
-                <input type="text" class="form-control" [value]="getSafeDate(selectedSale.saleDate) | date:'dd/MM/yyyy'" readonly />
-              </div>
-              <div class="col-md-2">
-                <label class="form-label fw-bold">Total Amount</label>
-                <input type="text" class="form-control" [value]="'₹' + (selectedSale.grandTotal | number:'1.2-2')" readonly />
-              </div>
-            </div>
-            <div class="row mt-3" *ngIf="selectedSale.doctorName">
-              <div class="col-md-4">
-                <label class="form-label fw-bold">Doctor</label>
-                <input type="text" class="form-control" [value]="selectedSale.doctorName" readonly />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label fw-bold">Phone</label>
-                <input type="text" class="form-control" [value]="selectedSale.phoneNumber || selectedSale.walkInCustomerMobile || 'N/A'" readonly />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label fw-bold">Payment Mode</label>
-                <input type="text" class="form-control" [value]="selectedSale.paymentMode || selectedSale.paymentMethod || 'N/A'" readonly />
-              </div>
-            </div>
-          </div>
-        </div>
         
-        <!-- Return Details -->
+        
+        <!-- Sale Information -->
         <div class="row mb-4" *ngIf="selectedSale">
+          <!-- Sale Information Card - Left Side -->
           <div class="col-md-6">
-            <label for="reason" class="form-label fw-bold">Return Reason *</label>
-            <textarea 
-              class="form-control" 
-              id="reason" 
-              formControlName="reason" 
-              rows="3" 
-              placeholder="Please specify the reason for return"
-              required></textarea>
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-primary bg-gradient text-white">
+                <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Sale Information</h5>
+              </div>
+              <div class="card-body">
+                <!-- First row: Sale ID, Date, Type, Patient ID -->
+                <div class="row mb-3">
+                  <div class="col-md-3">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Sale ID</label>
+                      <p class="mb-0 fw-bold text-dark">{{ selectedSale?.saleId || selectedSale?.id }}</p>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Sale Date</label>
+                      <p class="mb-0 fw-bold text-dark">{{ formatSaleDate(selectedSale?.saleDate) }}</p>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Sale Type</label>
+                      <p class="mb-0 fw-bold text-dark">{{ selectedSale?.saleType || 'N/A' }}</p>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Patient ID</label>
+                      <p class="mb-0 fw-bold text-dark">{{ selectedSale?.patientId || 'N/A' }}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Second row: GST Type, Grand Total, Taxable Amount, Tax Amount -->
+                <div class="row mb-3">
+                  <div class="col-md-3">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">GST Type</label>
+                      <span [ngClass]="{
+                        'badge bg-success': selectedSale?.gstType === 'INCLUSIVE',
+                        'badge bg-warning text-dark': selectedSale?.gstType === 'EXCLUSIVE',
+                        'badge bg-secondary': !selectedSale?.gstType || selectedSale?.gstType === 'NON_GST'
+                      }" class="align-self-start">
+                        {{ selectedSale?.gstType || 'NON_GST' }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Grand Total</label>
+                      <p class="mb-0 fw-bold text-success">₹{{ selectedSale?.grandTotal || 0 | number:'1.2-2' }}</p>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Taxable Amount</label>
+                      <p class="mb-0 fw-bold text-dark">₹{{ selectedSale?.totalTaxableAmount || 0 | number:'1.2-2' }}</p>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Tax Amount</label>
+                      <p class="mb-0 fw-bold text-dark">₹{{ selectedSale?.totalTaxAmount || 0 | number:'1.2-2' }}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Third row: MRP Amount, Discount Amount, Customer, Doctor -->
+                <div class="row mb-3">
+                  <div class="col-md-3">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">MRP Amount</label>
+                      <p class="mb-0 fw-bold text-dark">₹{{ selectedSale?.totalMrpAmount || 0 | number:'1.2-2' }}</p>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Discount Amount</label>
+                      <p class="mb-0 fw-bold text-danger">₹{{ selectedSale?.totalDiscountAmount || 0 | number:'1.2-2' }}</p>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Customer</label>
+                      <p class="mb-0 fw-bold text-dark">{{ selectedSale?.walkInCustomerName || 'Walk-in' }}</p>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Doctor</label>
+                      <p class="mb-0 fw-bold text-dark">{{ selectedSale?.doctorName || 'No Doctor' }}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Fourth row: Payment Mode, Transaction Ref -->
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Payment Mode</label>
+                      <p class="mb-0 fw-bold text-dark">{{ selectedSale?.paymentMode || 'Not specified' }}</p>
+                    </div>
+                  </div>
+                  <div class="col-md-9">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Transaction Reference</label>
+                      <p class="mb-0 fw-bold text-dark">{{ selectedSale?.transactionReference || 'N/A' }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="col-md-3">
-            <label for="refundMode" class="form-label fw-bold">Refund Mode *</label>
-            <select class="form-control" id="refundMode" formControlName="refundMode" required>
-              <option value="CASH">Cash</option>
-              <option value="CARD">Card</option>
-              <option value="UPI">UPI</option>
-              <option value="BANK_TRANSFER">Bank Transfer</option>
-              <option value="CHEQUE">Cheque</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label for="refundReference" class="form-label fw-bold">Refund Reference</label>
-            <input 
-              type="text" 
-              class="form-control" 
-              id="refundReference" 
-              formControlName="refundReference" 
-              placeholder="Transaction/Reference ID" />
-          </div>
-        </div>
-        
-        <!-- Overall Discount -->
-        <div class="row mb-4" *ngIf="selectedSale">
-          <div class="col-md-4">
-            <label for="overallDiscountPercentage" class="form-label fw-bold">Overall Discount %</label>
-            <input 
-              type="number" 
-              class="form-control" 
-              id="overallDiscountPercentage" 
-              formControlName="overallDiscountPercentage" 
-              min="0" 
-              max="100" 
-              step="0.01" 
-              placeholder="0.00" 
-              (input)="calculateTotalReturnAmount()" />
-          </div>
-          <div class="col-md-8">
-            <label for="notes" class="form-label fw-bold">Additional Notes</label>
-            <textarea 
-              class="form-control" 
-              id="notes" 
-              formControlName="notes" 
-              rows="2" 
-              placeholder="Any additional notes or comments about the return"></textarea>
+          
+          <!-- Return Details Card - Right Side -->
+          <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-success bg-gradient text-white">
+                <h5 class="mb-0"><i class="bi bi-arrow-return-left me-2"></i>Return Details</h5>
+              </div>
+              <div class="card-body">
+                <!-- Return Reason -->
+                <div class="row mb-3">
+                  <div class="col-12">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Return Reason <span class="text-danger">*</span></label>
+                      <textarea 
+                        class="form-control" 
+                        id="reason" 
+                        formControlName="reason" 
+                        rows="3" 
+                        placeholder="Please specify the reason for return"
+                        required></textarea>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Refund Mode and Reference -->
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Refund Mode <span class="text-danger">*</span></label>
+                      <select class="form-control" id="refundMode" formControlName="refundMode" required>
+                        <option value="CASH">Cash</option>
+                        <option value="CARD">Card</option>
+                        <option value="UPI">UPI</option>
+                        <option value="BANK_TRANSFER">Bank Transfer</option>
+                        <option value="CHEQUE">Cheque</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Refund Reference</label>
+                      <input 
+                        type="text" 
+                        class="form-control" 
+                        id="refundReference" 
+                        formControlName="refundReference" 
+                        placeholder="Transaction/Reference ID" />
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Overall Discount and Additional Notes -->
+                <div class="row">
+                  <div class="col-md-4">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Overall Discount %</label>
+                      <input 
+                        type="number" 
+                        class="form-control" 
+                        id="overallDiscountPercentage" 
+                        formControlName="overallDiscountPercentage" 
+                        min="0" 
+                        max="100" 
+                        step="0.01" 
+                        placeholder="0.00" 
+                        (input)="calculateTotalReturnAmount()" />
+                    </div>
+                  </div>
+                  <div class="col-md-8">
+                    <div class="d-flex flex-column">
+                      <label class="text-muted small mb-1">Additional Notes</label>
+                      <textarea 
+                        class="form-control" 
+                        id="notes" 
+                        formControlName="notes" 
+                        rows="2" 
+                        placeholder="Any additional notes or comments about the return"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -209,6 +310,7 @@
                   <th>Expiry Date</th>
                   <th>Original Qty</th>
                   <th>Unit Price</th>
+                  <th>Tax Profile</th>
                   <th>Return Qty</th>
                   <th>Return Value</th>
                 </tr>
@@ -232,6 +334,9 @@
                     <span class="text-success fw-bold">₹{{ getFormGroup(item).get('unitPrice')?.value | number:'1.2-2' }}</span>
                   </td>
                   <td>
+                    <small class="badge bg-info">{{ getFormGroup(item).get('taxProfileId')?.value }}</small>
+                  </td>
+                  <td>
                     <input 
                       type="number" 
                       class="form-control" 
@@ -247,9 +352,42 @@
                 </tr>
               </tbody>
               <tfoot class="table-light">
-                <tr>
-                  <td colspan="6" class="text-end fw-bold">Total Return Amount:</td>
-                  <td class="fw-bold text-danger fs-5">₹{{ returnForm.get('totalReturnAmount')?.value | number:'1.2-2' }}</td>
+                <tr class="bg-light">
+                  <td colspan="5" class="text-end pe-4"><strong>Total Before Discount:</strong></td>
+                  <td class="text-end"><strong>₹{{ returnForm.get('totalBeforeDiscount')?.value | number:'1.2-2' }}</strong></td>
+                  <td></td>
+                </tr>
+                <tr class="bg-light">
+                  <td colspan="5" class="text-end pe-4"><strong>Total Discount:</strong></td>
+                  <td class="text-end"><strong>₹{{ returnForm.get('totalDiscountAmount')?.value | number:'1.2-2' }}</strong></td>
+                  <td></td>
+                </tr>
+                <tr class="bg-light">
+                  <td colspan="5" class="text-end pe-4"><strong>Taxable Amount:</strong></td>
+                  <td class="text-end"><strong>₹{{ (returnForm.get('totalBeforeDiscount')?.value - returnForm.get('totalDiscountAmount')?.value) | number:'1.2-2' }}</strong></td>
+                  <td></td>
+                </tr>
+                <!-- CGST/SGST for intra-state transactions -->
+                <tr *ngIf="returnForm.get('gstType')?.value !== 'NON_GST' && returnForm.get('cgstTotal')?.value > 0" class="bg-light">
+                  <td colspan="5" class="text-end pe-4"><strong>CGST Amount:</strong></td>
+                  <td class="text-end"><strong class="text-primary">₹{{ returnForm.get('cgstTotal')?.value | number:'1.2-2' }}</strong></td>
+                  <td></td>
+                </tr>
+                <tr *ngIf="returnForm.get('gstType')?.value !== 'NON_GST' && returnForm.get('sgstTotal')?.value > 0" class="bg-light">
+                  <td colspan="5" class="text-end pe-4"><strong>SGST Amount:</strong></td>
+                  <td class="text-end"><strong class="text-primary">₹{{ returnForm.get('sgstTotal')?.value | number:'1.2-2' }}</strong></td>
+                  <td></td>
+                </tr>
+                <!-- IGST for inter-state transactions -->
+                <tr *ngIf="returnForm.get('gstType')?.value !== 'NON_GST' && returnForm.get('igstTotal')?.value > 0" class="bg-light">
+                  <td colspan="5" class="text-end pe-4"><strong>IGST Amount:</strong></td>
+                  <td class="text-end"><strong class="text-primary">₹{{ returnForm.get('igstTotal')?.value | number:'1.2-2' }}</strong></td>
+                  <td></td>
+                </tr>
+                <tr class="bg-light">
+                  <td colspan="5" class="text-end pe-4"><strong>Total Return Amount:</strong></td>
+                  <td class="text-end"><strong class="text-success">₹{{ returnForm.get('totalReturnAmount')?.value | number:'1.2-2' }}</strong></td>
+                  <td></td>
                 </tr>
               </tfoot>
             </table>
@@ -265,7 +403,7 @@
             <button 
               type="submit" 
               class="btn btn-success btn-lg" 
-              [disabled]="returnForm.invalid || isLoading || itemsArray.length === 0 || !hasItemsToReturn()">
+              [disabled]="isLoading || itemsArray.length === 0">
               <i class="fas fa-spinner fa-spin me-2" *ngIf="isLoading"></i>
               <i class="fas fa-check-circle me-2" *ngIf="!isLoading"></i>
               {{ isLoading ? 'Processing Return...' : 'Create Sale Return' }}
@@ -283,25 +421,43 @@
     </div>
     <div class="card-body">
       <div class="row">
-        <div class="col-md-3">
+        <div class="col-md-2">
           <div class="text-center">
             <h6 class="text-muted">Total Return Amount</h6>
             <h4 class="text-success">₹{{ returnForm.get('totalReturnAmount')?.value | number:'1.2-2' }}</h4>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
+          <div class="text-center">
+            <h6 class="text-muted">Discount Amount</h6>
+            <h4 class="text-danger">₹{{ returnForm.get('totalDiscountAmount')?.value | number:'1.2-2' }}</h4>
+          </div>
+        </div>
+        <div class="col-md-2">
           <div class="text-center">
             <h6 class="text-muted">Items to Return</h6>
             <h4 class="text-info">{{ getItemsToReturnCount() }}</h4>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2" *ngIf="returnForm.get('gstType')?.value !== 'NON_GST'">
+          <div class="text-center">
+            <h6 class="text-muted">CGST</h6>
+            <h4 class="text-info">₹{{ returnForm.get('cgstTotal')?.value | number:'1.2-2' }}</h4>
+          </div>
+        </div>
+        <div class="col-md-2" *ngIf="returnForm.get('gstType')?.value !== 'NON_GST'">
+          <div class="text-center">
+            <h6 class="text-muted">SGST</h6>
+            <h4 class="text-info">₹{{ returnForm.get('sgstTotal')?.value | number:'1.2-2' }}</h4>
+          </div>
+        </div>
+        <div class="col-md-2">
           <div class="text-center">
             <h6 class="text-muted">Refund Mode</h6>
             <h4 class="text-warning">{{ returnForm.get('refundMode')?.value }}</h4>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <div class="text-center">
             <h6 class="text-muted">Net Refund Amount</h6>
             <h4 class="text-primary">₹{{ returnForm.get('netRefundAmount')?.value | number:'1.2-2' }}</h4>

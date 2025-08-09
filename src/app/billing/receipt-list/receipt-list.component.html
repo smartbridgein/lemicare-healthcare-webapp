@@ -205,7 +205,8 @@
                                         <i class="far fa-eye"></i>
                                     </button>
                                     
-                                    <button class="btn btn-sm" 
+                                    <!-- Delete button only visible to super admin users -->
+                                    <button *ngIf="isSuperAdmin" class="btn btn-sm" 
                                         (click)="deleteReceipt(receipt.id)" 
                                         title="Delete Receipt"
                                         style="background-color: #6b1d14; color: #ffffff; border: 1px solid #5a1912;">

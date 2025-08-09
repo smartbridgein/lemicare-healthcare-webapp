@@ -231,7 +231,8 @@
                                         <span class="action-text">Pay</span>
                                     </button>
                                    
-                                    <button class="btn-action btn-maroon" 
+                                    <!-- Delete button only visible to super admin users -->
+                                    <button *ngIf="isSuperAdmin" class="btn-action btn-maroon" 
                                         (click)="invoice.id && confirmDelete(invoice.id)" 
                                         title="Delete Invoice"
                                         [disabled]="!invoice.id">

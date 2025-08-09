@@ -6,6 +6,7 @@ import { TaxProfile, TaxComponent } from '../../../models/inventory.models';
 import { NgbModal, NgbModalRef, NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { faPencilAlt, faPlus, faTimes, faTrash, faBroom, faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+import { AuthService, UserProfile } from '../../../../../app/auth/shared/auth.service';
 
 @Component({
   selector: 'app-tax-profile-master',
@@ -29,6 +30,10 @@ export class TaxProfileMasterComponent implements OnInit {
   loading = false;
   cleanupLoading = false;
   
+  // Permission controls
+  isSuperAdmin = false;
+  private user: UserProfile | null = null;
+  
   // Modal
   modalRef?: NgbModalRef;
   taxProfileForm!: FormGroup;
@@ -38,12 +43,40 @@ export class TaxProfileMasterComponent implements OnInit {
   constructor(
     private inventoryService: InventoryService,
     private modalService: NgbModal,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
+    this.loadUserPermissions();
     this.loadTaxProfiles();
     this.initTaxProfileForm();
+  }
+  
+  /**
+   * Check if current user has super admin permissions
+   * Only super admin can delete tax profiles
+   */
+  private loadUserPermissions(): void {
+    this.user = this.authService.getCurrentUser();
+    
+    if (this.user) {
+      // Check if user is super admin (by email or role)
+      const email = this.user.email || '';
+      const role = this.user.role || '';
+      
+      const isSuperAdminEmail = email.toLowerCase() === 'hanan-clinic@lemicare.com';
+      const isSuperAdminRole = role.toUpperCase() === 'ROLE_SUPER_ADMIN' || 
+                             role.toUpperCase() === 'SUPER_ADMIN';
+      
+      this.isSuperAdmin = isSuperAdminEmail || isSuperAdminRole;
+      
+      console.log('Tax Profile Master Permissions:', {
+        email,
+        role,
+        isSuperAdmin: this.isSuperAdmin
+      });
+    }
   }
 
   // Cleanup all tax profiles except "no tax" profile

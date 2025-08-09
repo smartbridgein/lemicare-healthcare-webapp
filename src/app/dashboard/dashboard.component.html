@@ -39,6 +39,7 @@
             <li><a [routerLink]="['/patients/registration']" routerLinkActive="active"><i class="fas fa-user-plus"></i> New Registration</a></li>
           </ul>
         </li>
+        <!-- Billing menu - accessible to all users, but Billing Dashboard only for super admin -->
         <li class="nav-item" [ngClass]="{'expanded': billingExpanded}">
           <a (click)="toggleSubmenu('billing')" class="nav-link submenu-toggle">
             <i class="fas fa-dollar-sign"></i>
@@ -46,7 +47,7 @@
             <i class="fas ml-auto" [ngClass]="billingExpanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
           </a>
           <ul class="submenu" [ngClass]="{'show': billingExpanded}">
-            <li><a [routerLink]="['/billing']" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active"><i class="fas fa-tachometer-alt"></i> Billing Dashboard</a></li>
+            <li *ngIf="isSuperAdmin"><a [routerLink]="['/billing']" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active"><i class="fas fa-tachometer-alt"></i> Billing Dashboard</a></li>
             <li><a [routerLink]="['/billing/invoices']" routerLinkActive="active"><i class="fas fa-file-invoice"></i> Invoices</a></li>
             <li><a [routerLink]="['/billing/receipts']" routerLinkActive="active"><i class="fas fa-receipt"></i> Receipts</a></li>
             <li><a [routerLink]="['/billing/advances']" routerLinkActive="active"><i class="fas fa-hand-holding-usd"></i> Advance Payments</a></li>
@@ -79,7 +80,7 @@
             <li><a [routerLink]="['/inventory/sales']" routerLinkActive="active"><i class="fas fa-cash-register"></i> Sales</a></li>
             <li><a [routerLink]="['/inventory/returns']" routerLinkActive="active"><i class="fas fa-undo-alt"></i> Returns</a></li>
             <li><a [routerLink]="['/inventory/stock']" routerLinkActive="active"><i class="fas fa-boxes"></i> Stocks</a></li>
-            <li><a [routerLink]="['/inventory/reports']" routerLinkActive="active"><i class="fas fa-chart-line"></i> Reports</a></li>
+            <li *ngIf="isSuperAdmin"><a [routerLink]="['/inventory/reports']" routerLinkActive="active"><i class="fas fa-chart-line"></i> Reports</a></li>
           </ul>
         </li>
         

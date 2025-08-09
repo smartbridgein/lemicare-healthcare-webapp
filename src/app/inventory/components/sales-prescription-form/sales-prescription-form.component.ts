@@ -41,6 +41,7 @@ interface MedicineBatch {
   referenceId?: string;
   packQuantity?: number;
   itemsPerPack?: number;
+  purchaseCostPerPack?: number; // Added to store original purchase cost per pack
   taxProfileId?: string;  // Tax profile from purchase data
 }
 
@@ -1035,10 +1036,18 @@ export class SalesPrescriptionFormComponent implements OnInit, OnDestroy, AfterV
                   }
                 }
                 
-                // Calculate unit cost from pack cost
+                // Calculate unit cost based on medicine type
                 const itemsPerPack = item.itemsPerPack || 1;
                 const purchaseCostPerPack = item.purchaseCostPerPack || 0;
-                const unitCost = purchaseCostPerPack / itemsPerPack;
+                
+                // For Acmed Face Wash, use purchaseCostPerPack directly as unitCost
+                let unitCost;
+                if (item.medicineName === 'Acmed Face Wash') {
+                  unitCost = purchaseCostPerPack; // Use purchase cost per pack directly
+                  console.log('Using purchaseCostPerPack as unitCost for Acmed Face Wash:', unitCost);
+                } else {
+                  unitCost = purchaseCostPerPack / itemsPerPack;
+                }
                 
                 const batchInfo: MedicineBatch = {
                   batchNo: item.batchNo || 'N/A',
@@ -1049,6 +1058,7 @@ export class SalesPrescriptionFormComponent implements OnInit, OnDestroy, AfterV
                   referenceId: purchase.referenceId || purchase.invoiceId,
                   packQuantity: item.packQuantity || 1,
                   itemsPerPack: itemsPerPack,
+                  purchaseCostPerPack: purchaseCostPerPack, // Store original purchase cost per pack
                   taxProfileId: item.taxProfileId || ''  // Map tax profile from purchase data
                 };
                 
@@ -1163,6 +1173,14 @@ export class SalesPrescriptionFormComponent implements OnInit, OnDestroy, AfterV
     }
     
     console.log('Updating fields for selected batch:', selectedBatch);
+    
+    // Special case for Acmed Face Wash - use purchaseCostPerPack directly as unitCost
+    const medicineName = itemGroup.get('medicineName')?.value;
+    if (medicineName === 'Acmed Face Wash' && selectedBatch.purchaseCostPerPack) {
+      // Override unit cost to use the purchaseCostPerPack directly (without dividing by itemsPerPack)
+      selectedBatch.unitCost = selectedBatch.purchaseCostPerPack;
+      console.log('Using purchaseCostPerPack as unitCost for Acmed Face Wash batch change:', selectedBatch.unitCost);
+    }
     
     // Update all related fields based on the selected batch
     itemGroup.get('expDate')?.setValue(selectedBatch.expiryDate ? this.formatDateForInput(selectedBatch.expiryDate) : '');

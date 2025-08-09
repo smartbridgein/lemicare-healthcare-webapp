@@ -338,7 +338,7 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
     
     // Check if we already have this patient name in our cache
     if (this.patientNamesCache.has(patientId)) {
-      return this.patientNamesCache.get(patientId) || patientId;
+      return this.patientNamesCache.get(patientId) || this.formatPatientId(patientId);
     }
     
     // Check if any appointment already has the patient name loaded
@@ -360,8 +360,17 @@ export class AppointmentListComponent implements OnInit, AfterViewInit, OnDestro
     // Otherwise fetch it from the API
     this.loadPatientName(patientId);
     
-    // Return 'Loading...' instead of patient ID while we wait for the API
-    return 'Loading...';
+    // Return formatted patient ID instead of raw ID while we wait for the API
+    return this.formatPatientId(patientId);
+  }
+  
+  // Helper method to format patient IDs to be more user-friendly
+  private formatPatientId(patientId: string): string {
+    if (!patientId) return 'Unknown Patient';
+    
+    // Format the ID to be more readable (e.g., "Patient #12345" instead of raw ID)
+    const shortId = patientId.replace(/^PAT[-_]?/i, '').substring(0, 8);
+    return `Patient #${shortId}`;
   }
 
   

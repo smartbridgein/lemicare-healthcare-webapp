@@ -1,0 +1,716 @@
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormArray, FormControl, Validators } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
+import { Observable, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap, finalize, map, catchError, take } from 'rxjs/operators';
+
+import { InventoryService } from '../../services/inventory.service';
+import { Purchase, PurchaseItemDto, Medicine, Supplier } from '../../models/inventory.models';
+import { ReturnsService, PurchaseReturnRequest, PurchaseReturnItemDto } from '../../services/returns.service';
+import { ToastService } from '../../../shared/services/toast.service';
+
+@Component({
+  selector: 'app-purchase-return-form',
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule],
+  templateUrl: './purchase-return-form.component.html',
+  styleUrls: ['./purchase-return-form.component.css']
+})
+export class PurchaseReturnFormComponent implements OnInit {
+  returnForm!: FormGroup;
+  isSearching = false;
+  filteredPurchases: Purchase[] = [];
+  selectedPurchase: Purchase | null = null;
+  purchaseSearchText = '';
+  isLoading = false;
+  isSubmitting = false;
+  searchControl = new FormControl('');
+  searchResults$!: Observable<Purchase[]>;
+  medicines: Medicine[] = [];
+  isPurchaseDetailsExpanded = true;
+
+  constructor(
+    private fb: FormBuilder, 
+    private inventoryService: InventoryService,
+    public returnsService: ReturnsService, // Changed to public for template access
+    private toastService: ToastService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {}
+
+  ngOnInit(): void {
+    this.initForm();
+    this.setupSearchObservable();
+    this.loadMedicines();
+  }
+
+  // Setup search observable for better performance
+  setupSearchObservable(): void {
+    this.searchResults$ = this.searchControl.valueChanges.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(term => {
+        this.purchaseSearchText = term;
+        if (!term || term.trim().length < 3) {
+          return of([]);
+        }
+        this.isSearching = true;
+        return this.returnsService.searchPurchasesForReturn(term).pipe(
+          map(purchases => {
+            this.filteredPurchases = purchases;
+            return purchases;
+          }),
+          catchError(err => {
+            console.error('Error searching purchases:', err);
+            return of([]);
+          }),
+          finalize(() => {
+            this.isSearching = false;
+            this.cdr.detectChanges();
+          })
+        );
+      })
+    );
+  }
+
+  initForm(): void {
+    this.returnForm = this.fb.group({
+      originalPurchaseId: ['', Validators.required],
+      purchaseInvoiceNumber: [''],
+      purchaseDate: [''],
+      supplierName: [''],
+      supplierId: ['', Validators.required],
+      returnDate: [this.formatDateForInput(new Date()), Validators.required],
+      reason: ['', [Validators.required, Validators.minLength(5)]],
+      totalReturnAmount: [0],
+      totalBaseAmount: [0],
+      totalCGST: [0],
+      totalSGST: [0]
+    });
+
+    // Clear items array when initializing form
+    this.clearItemsArray();
+  }
+
+  // Getter for items array
+  get itemsArray(): FormArray {
+    return this.returnForm.get('items') as FormArray;
+  }
+
+  // Helper method to cast AbstractControl to FormGroup for template binding
+  getFormGroup(item: any): FormGroup {
+    return item as FormGroup;
+  }
+
+  selectPurchase(purchase: any): void {
+    this.isLoading = true;
+    // Fetch full purchase details before setting up the form
+    this.returnsService.getPurchaseById(purchase.id)
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (fullPurchaseDetails) => {
+          this.prepareAndContinueWithPurchase(fullPurchaseDetails);
+        },
+        error: (error) => {
+          console.error('Error fetching purchase details:', error);
+          this.toastService.showError('Failed to load purchase details');
+        }
+      });
+  }
+
+  // Helper method to prepare purchase data and continue processing
+  // This extracts the supplier name and ensures the supplier object is properly formatted
+  // before continuing with the purchase selection process
+  prepareAndContinueWithPurchase(purchase: any): void {
+    if (!purchase.supplier || !purchase.supplier.id) {
+      // Need to fetch supplier info if not available
+      this.inventoryService.getSuppliers()
+        .subscribe({
+          next: (suppliers) => {
+            // Find matching supplier if available
+            const matchingSupplier = suppliers.find(s => s.id === purchase.supplierId);
+            if (matchingSupplier) {
+              purchase.supplier = matchingSupplier;
+            } else {
+              this.setDefaultSupplierInfo(purchase);
+            }
+            this.continueSelectPurchase(purchase);
+          },
+          error: (error) => {
+            console.error('Error fetching suppliers:', error);
+            this.setDefaultSupplierInfo(purchase);
+            this.continueSelectPurchase(purchase);
+          }
+        });
+    } else {
+      this.continueSelectPurchase(purchase);
+    }
+  }
+
+  // Helper method to set default supplier info from available data
+  setDefaultSupplierInfo(purchase: any): void {
+    if (!purchase.supplier) {
+      purchase.supplier = {
+        id: purchase.supplierId || 'unknown',
+        name: purchase.supplierName || 'Unknown Supplier',
+        contactPerson: '',
+        phoneNumber: '',
+        email: '',
+        address: '',
+        gstNumber: ''
+      };
+    }
+  }
+
+  continueSelectPurchase(purchase: any): void {
+    this.selectedPurchase = purchase;
+    this.populateFormWithPurchaseData(purchase);
+    this.purchaseSearchText = '';
+    this.searchControl.setValue('', {emitEvent: false});
+    this.filteredPurchases = [];
+  }
+
+  populateFormWithPurchaseData(purchase: any): void {
+    // Clear existing items
+    this.clearItemsArray();
+    
+    // Patch the basic purchase info
+    this.returnForm.patchValue({
+      originalPurchaseId: purchase.id,
+      purchaseInvoiceNumber: purchase.invoiceNumber || 'N/A',
+      purchaseDate: this.formatDisplayDate(purchase.purchaseDate),
+      supplierName: purchase.supplier?.name || 'Unknown Supplier',
+      supplierId: purchase.supplier?.id || purchase.supplierId || 'unknown',
+      returnDate: this.formatDateForInput(new Date()), // Set current date as return date
+      totalReturnAmount: 0, // Will be calculated based on items
+      totalBaseAmount: 0,
+      totalCGST: 0,
+      totalSGST: 0
+    });
+
+    // Create items form array if not exists
+    if (!this.returnForm.get('items')) {
+      this.returnForm.addControl('items', this.fb.array([]));
+    }
+
+    // Populate items
+    if (purchase.items && purchase.items.length > 0) {
+      purchase.items.forEach((item: any) => {
+        (this.returnForm.get('items') as FormArray).push(this.createItemFormGroup(item));
+      });
+    }
+
+    // For debugging
+    console.log('Form populated with purchase:', {
+      purchase,
+      formValue: this.returnForm.value,
+      itemsCount: this.itemsArray.length
+    });
+
+    // Force change detection
+    this.cdr.detectChanges();
+  }
+
+  createItemFormGroup(item: any): FormGroup {
+    const medicineName = this.getMedicineName(item.medicineId);
+    
+    // Get base price and tax breakdown from purchase item
+    const purchasePrice = item.unitPrice || 0;
+    const taxRate = item.taxRate || 0;
+    const quantity = item.quantity || 0;
+    const totalAmount = item.totalAmount || (purchasePrice * quantity);
+
+    // Calculate base price per unit without tax
+    const baseAmountPerUnit = taxRate > 0 
+      ? purchasePrice / (1 + taxRate / 100)
+      : purchasePrice;
+    
+    return this.fb.group({
+      medicineId: [item.medicineId],
+      medicineName: [medicineName],
+      batchNo: [item.batchNo || 'N/A'],
+      expiryDate: [this.formatDisplayDate(item.expiryDate)],
+      originalQuantity: [quantity],
+      returnQuantity: [0, [Validators.min(0), Validators.max(quantity)]],
+      purchasePrice: [purchasePrice],
+      returnValue: [0], // Will be calculated when returnQuantity changes
+      baseReturnValue: [0], // Base amount without tax
+      taxProfileId: [item.taxProfileId || 'N/A'],
+      taxRate: [taxRate],
+      cgst: [0],
+      sgst: [0],
+      baseAmountPerUnit: [baseAmountPerUnit], // Store for calculations
+    });
+  }
+
+  // Helper method to get medicine name from ID
+  getMedicineName(medicineId: string): string {
+    const medicine = this.medicines.find(m => m.id === medicineId);
+    return medicine ? medicine.name : 'Unknown Medicine';
+  }
+
+  // Calculate return value when return quantity changes with tax handling
+  calculateReturnValue(formGroup: FormGroup, returnQuantity: number): void {
+    const purchasePrice = formGroup.get('purchasePrice')?.value || 0;
+    const originalQuantity = formGroup.get('originalQuantity')?.value || 0;
+    const taxRate = formGroup.get('taxRate')?.value || 0;
+    const baseAmountPerUnit = formGroup.get('baseAmountPerUnit')?.value || purchasePrice;
+    
+    // Calculate return values with tax breakdown
+    const baseReturnValue = baseAmountPerUnit * returnQuantity;
+    let netReturnValue = baseReturnValue;
+    let cgst = 0;
+    let sgst = 0;
+    
+    // Apply tax if applicable
+    if (taxRate > 0) {
+      const taxAmount = baseReturnValue * (taxRate / 100);
+      const halfTax = taxAmount / 2;
+      cgst = halfTax;
+      sgst = halfTax;
+      netReturnValue = baseReturnValue + taxAmount;
+      
+      console.log('Tax calculation:', {
+        baseReturnValue,
+        taxRate,
+        taxAmount,
+        cgst,
+        sgst,
+        netReturnValue
+      });
+    } else {
+      console.log('No tax applied to return value calculation');
+    }
+    
+    // Round values for display
+    const roundedReturnValue = Math.round(netReturnValue * 100) / 100;
+    const roundedBaseValue = Math.round(baseReturnValue * 100) / 100;
+    const roundedCgst = Math.round(cgst * 100) / 100;
+    const roundedSgst = Math.round(sgst * 100) / 100;
+    
+    // Update the form with all calculated values
+    formGroup.patchValue({ 
+      returnValue: roundedReturnValue,
+      baseReturnValue: roundedBaseValue,
+      cgst: roundedCgst,
+      sgst: roundedSgst 
+    });
+    
+    console.log('Return Value Calculation:', {
+      returnQuantity,
+      purchasePrice,
+      originalQuantity,
+      lineItemTotalAmount: originalQuantity * purchasePrice,
+      taxRate,
+      baseAmountPerUnit,
+      baseReturnValue: roundedBaseValue,
+      cgst: roundedCgst,
+      sgst: roundedSgst,
+      netReturnValue: roundedReturnValue
+    });
+  }
+
+  // Handle return quantity change from input
+  onReturnQuantityChange(formGroup: FormGroup, event: any): void {
+    const returnQuantity = parseInt(event.target.value) || 0;
+    const maxQuantity = formGroup.get('originalQuantity')?.value || 0;
+    
+    // Validate return quantity
+    if (returnQuantity > maxQuantity) {
+      event.target.value = maxQuantity;
+      formGroup.patchValue({ returnQuantity: maxQuantity });
+      this.calculateReturnValue(formGroup, maxQuantity);
+    } else {
+      formGroup.patchValue({ returnQuantity: returnQuantity });
+      this.calculateReturnValue(formGroup, returnQuantity);
+    }
+    
+    // Recalculate total
+    this.calculateTotalReturnAmount();
+  }
+  
+  // Calculate total return amount for all items with tax breakdown
+  calculateTotalReturnAmount(): void {
+    let totalReturnAmount = 0;
+    let totalBaseAmount = 0;
+    let totalCGST = 0;
+    let totalSGST = 0;
+    
+    this.itemsArray.controls.forEach(control => {
+      const returnValue = control.get('returnValue')?.value || 0;
+      const baseValue = control.get('baseReturnValue')?.value || 0;
+      const cgst = control.get('cgst')?.value || 0;
+      const sgst = control.get('sgst')?.value || 0;
+      
+      totalReturnAmount += returnValue;
+      totalBaseAmount += baseValue;
+      totalCGST += cgst;
+      totalSGST += sgst;
+    });
+    
+    // Round values for display
+    const roundedTotal = Math.round(totalReturnAmount * 100) / 100;
+    const roundedBase = Math.round(totalBaseAmount * 100) / 100;
+    const roundedCGST = Math.round(totalCGST * 100) / 100;
+    const roundedSGST = Math.round(totalSGST * 100) / 100;
+    
+    // Update the form with total return amount and tax breakdown
+    this.returnForm.patchValue({ 
+      totalReturnAmount: roundedTotal,
+      totalBaseAmount: roundedBase,
+      totalCGST: roundedCGST,
+      totalSGST: roundedSGST
+    });
+    
+    // Force change detection to update UI
+    this.cdr.detectChanges();
+    
+    // Enhanced debug info for tracking total calculations with tax breakdown
+    console.log('Total return amount calculation:', {
+      totalReturnAmount: roundedTotal,
+      totalBaseAmount: roundedBase,
+      totalCGST: roundedCGST,
+      totalSGST: roundedSGST,
+      formValue: this.returnForm.get('totalReturnAmount')?.value,
+      itemsCount: this.itemsArray.length,
+      itemsWithValues: this.itemsArray.controls.filter(c => (c.get('returnValue')?.value || 0) > 0).length,
+      itemsWithTax: this.itemsArray.controls.filter(c => 
+        (c.get('cgst')?.value || 0) > 0 || (c.get('sgst')?.value || 0) > 0
+      ).length
+    });
+  }
+
+  clearItemsArray(): void {
+    while (this.itemsArray && this.itemsArray.length !== 0) {
+      this.itemsArray.removeAt(0);
+    }
+  }
+
+  // Load medicines for reference
+  loadMedicines(): void {
+    this.inventoryService.getMedicines()
+      .subscribe({
+        next: (medicines) => {
+          this.medicines = medicines;
+          console.log('Medicines loaded:', medicines.length);
+        },
+        error: (error) => {
+          console.error('Error loading medicines:', error);
+        }
+      });
+  }
+
+  /**
+   * Validates that no item has a return quantity greater than its original quantity
+   * @returns Array of invalid items with details for error messages
+   */
+  private validateReturnQuantities(): Array<{medicineName: string, originalQuantity: number, returnQuantity: number}> {
+    const invalidItems: Array<{medicineName: string, originalQuantity: number, returnQuantity: number}> = [];
+    
+    this.itemsArray.controls.forEach((control) => {
+      const returnQuantity = control.get('returnQuantity')?.value || 0;
+      if (returnQuantity <= 0) return; // Skip items with no return quantity
+      
+      const originalQuantity = control.get('originalQuantity')?.value || 0;
+      const medicineName = control.get('medicineName')?.value || 'Unknown Medicine';
+      
+      if (returnQuantity > originalQuantity) {
+        invalidItems.push({
+          medicineName,
+          originalQuantity,
+          returnQuantity
+        });
+      }
+    });
+    
+    return invalidItems;
+  }
+
+  onSubmit(): void {
+    if (this.returnForm.invalid) {
+      this.markFormGroupTouched(this.returnForm);
+      return;
+    }
+
+    if (this.itemsArray.length === 0) {
+      this.toastService.showError('Please select at least one item to return');
+      return;
+    }
+
+    // Check if any items have return quantity > 0
+    const hasItemsToReturn = this.itemsArray.controls.some(
+      control => control.get('returnQuantity')?.value > 0
+    );
+
+    if (!hasItemsToReturn) {
+      this.toastService.showError('Please enter a return quantity for at least one item');
+      return;
+    }
+    
+    // Perform advanced validation to prevent returning more items than purchased
+    const invalidReturnItems = this.validateReturnQuantities();
+    if (invalidReturnItems.length > 0) {
+      const firstInvalidItem = invalidReturnItems[0];
+      this.toastService.showError(
+        `Cannot return more items than purchased. Medicine: ${firstInvalidItem.medicineName}, ` +
+        `Maximum allowed: ${firstInvalidItem.originalQuantity}, ` +
+        `Attempted: ${firstInvalidItem.returnQuantity}`
+      );
+      return;
+    }
+
+    this.isLoading = true;
+    this.isSubmitting = true;
+    const formValue = this.returnForm.value;
+    
+    // Create the return request
+    const returnData: PurchaseReturnRequest = {
+      originalPurchaseId: formValue.originalPurchaseId,
+      supplierId: formValue.supplierId,
+      returnDate: formValue.returnDate, // Send as is, API expects ISO string
+      reason: formValue.reason,
+      totalReturnAmount: formValue.totalReturnAmount,
+      totalBaseAmount: formValue.totalBaseAmount,
+      totalCGST: formValue.totalCGST,
+      totalSGST: formValue.totalSGST,
+      totalTaxAmount: (formValue.totalCGST || 0) + (formValue.totalSGST || 0),
+      items: this.itemsArray.controls
+        .filter(control => control.get('returnQuantity')?.value > 0)
+        .map(control => ({
+          medicineId: control.get('medicineId')?.value,
+          batchNo: control.get('batchNo')?.value,
+          returnQuantity: control.get('returnQuantity')?.value,
+          returnValue: control.get('returnValue')?.value,
+          baseReturnValue: control.get('baseReturnValue')?.value || control.get('returnValue')?.value,
+          cgst: control.get('cgst')?.value || 0,
+          sgst: control.get('sgst')?.value || 0,
+          taxProfileId: control.get('taxProfileId')?.value || 'N/A',
+          taxRate: control.get('taxRate')?.value || 0
+        }))
+    };
+
+    this.returnsService.createPurchaseReturn(returnData)
+      .pipe(finalize(() => {
+        this.isLoading = false;
+        this.isSubmitting = false;
+      }))
+      .subscribe({
+        next: (response) => {
+          this.toastService.showSuccess('Purchase return created successfully');
+          this.router.navigate(['/inventory/returns']);
+        },
+        error: (error) => {
+          console.error('Error creating purchase return', error);
+          
+          // Enhanced error handling for specific errors
+          if (error?.status === 500) {
+            // Check for quantity validation errors in response
+            if (error?.error?.message?.includes('exceed') || 
+                error?.error?.message?.includes('quantity') || 
+                error?.error?.message?.includes('more than')) {
+              // Try to parse the error message if it contains detailed information
+              try {
+                const errorData = JSON.parse(error.error.message);
+                if (errorData.invalidItems && errorData.invalidItems.length > 0) {
+                  const item = errorData.invalidItems[0];
+                  this.toastService.showError(
+                    `Cannot return more items than purchased. Medicine: ${item.medicineName}, ` +
+                    `Maximum allowed: ${item.originalQuantity}, ` +
+                    `Attempted: ${item.returnQuantity}`
+                  );
+                } else {
+                  this.toastService.showError(error.error.message);
+                }
+              } catch (e) {
+                // If parsing fails, just show the message directly
+                this.toastService.showError(
+                  error.error.message || 'Cannot return more items than purchased. Please check return quantities.'
+                );
+              }
+            } else if (error?.error?.message) {
+              // Display the server's error message if available
+              this.toastService.showError(error.error.message);
+            } else {
+              // Show custom message for HTTP 500 specifically related to returns
+              this.toastService.showError(
+                'Invalid return quantities. Please ensure you are not returning more items than were purchased.'
+              );
+            }
+          } else {
+            // Default error message for other errors
+            this.toastService.showError('Failed to create purchase return. Please try again.');
+          }
+        }
+      });
+  }
+
+  // Format date to YYYY-MM-DDThh:mm
+  formatDateForInput(date: Date | { seconds: number, nanos: number } | null): string {
+    if (!date) {
+      return '';
+    }
+    
+    let dateObj: Date;
+    
+    if (date instanceof Date) {
+      dateObj = date;
+    } else if (typeof date === 'object' && 'seconds' in date) {
+      // Handling Firestore timestamp format
+      dateObj = new Date(date.seconds * 1000);
+    } else {
+      dateObj = new Date(date as any);
+    }
+    
+    return dateObj.toISOString().substring(0, 16);
+  }
+
+  // Helper method to format date for submission
+  formatDateForSubmission(date: string | Date | { seconds: number, nanos: number } | null): string {
+    if (!date) {
+      return '';
+    }
+    
+    if (typeof date === 'string') {
+      // Already a string, just ensure it's an ISO format
+      return new Date(date).toISOString();
+    }
+    
+    let dateObj: Date;
+    
+    if (date instanceof Date) {
+      dateObj = date;
+    } else if (typeof date === 'object' && 'seconds' in date) {
+      // Handling Firestore timestamp format
+      dateObj = new Date(date.seconds * 1000);
+    } else {
+      dateObj = new Date(date as any);
+    }
+    
+    return dateObj.toISOString();
+  }
+
+  // Helper method to format date for display in UI
+  formatDisplayDate(date: string | Date | { seconds: number, nanos: number } | null): string {
+    if (!date) {
+      return 'N/A';
+    }
+    
+    let dateObj: Date;
+    
+    if (typeof date === 'string') {
+      dateObj = new Date(date);
+    } else if (date instanceof Date) {
+      dateObj = date;
+    } else if (typeof date === 'object' && 'seconds' in date) {
+      // Handling Firestore timestamp format
+      dateObj = new Date(date.seconds * 1000);
+    } else {
+      dateObj = new Date(date as any);
+    }
+    
+    return dateObj.toLocaleDateString();
+  }
+
+  // Helper method to mark all form controls as touched
+  markFormGroupTouched(formGroup: FormGroup) {
+    Object.values(formGroup.controls).forEach(control => {
+      control.markAsTouched();
+
+      if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
+      }
+    });
+  }
+  
+  /**
+   * Reset the form to its initial state
+   */
+  resetForm(): void {
+    // Clear the selected purchase
+    this.selectedPurchase = null;
+    
+    // Reset the search control
+    this.searchControl.reset('');
+    this.purchaseSearchText = '';
+    this.filteredPurchases = [];
+    
+    // Reset the form
+    this.initForm();
+    
+    this.toastService.showInfo('Form has been reset');
+  }
+  
+  // Cancel and go back to list
+  cancel(): void {
+    this.router.navigate(['/inventory/returns']);
+  }
+  
+  // Check if there are items to return
+  hasItemsToReturn(): boolean {
+    const result = this.itemsArray.controls.some(
+      control => (control.get('returnQuantity')?.value || 0) > 0
+    );
+    // Debug log for button enablement
+    console.log('Button enablement status:', {
+      formValid: !this.returnForm.invalid,
+      notLoading: !this.isLoading,
+      hasItems: this.itemsArray.length > 0,
+      hasItemsToReturn: result,
+      buttonEnabled: !this.returnForm.invalid && !this.isLoading && this.itemsArray.length > 0 && result
+    });
+    
+    // If form is invalid, log which controls are invalid
+    if (this.returnForm.invalid) {
+      const invalidControls: Record<string, {errors: any, value: any}> = {};
+      Object.keys(this.returnForm.controls).forEach(key => {
+        const control = this.returnForm.get(key);
+        if (control && control.invalid) {
+          invalidControls[key] = {
+            errors: control.errors,
+            value: control.value
+          };
+        }
+      });
+      console.log('Invalid controls:', invalidControls);
+    }
+    
+    return result;
+  }
+  
+  // Helper method to get the count of items that have a return quantity > 0
+  getItemsToReturnCount(): number {
+    return this.itemsArray.controls.filter(control => {
+      const returnQty = control.get('returnQuantity')?.value || 0;
+      return returnQty > 0;
+    }).length;
+  }
+  
+  // Helper method to check if any items have tax profiles
+  hasTaxItems(): boolean {
+    if (!this.itemsArray || this.itemsArray.length === 0) return false;
+    
+    return this.itemsArray.controls.some(control => {
+      const taxProfileId = control.get('taxProfileId')?.value;
+      return taxProfileId && taxProfileId !== 'N/A';
+    });
+  }
+  
+  // Simplified helper method to check if any items can be returned
+  hasAnyItemToReturn(): boolean {
+    if (!this.itemsArray || this.itemsArray.length === 0) return false;
+    
+    const hasItems = this.itemsArray.controls.some(
+      control => (control.get('returnQuantity')?.value || 0) > 0
+    );
+    
+    console.log('hasAnyItemToReturn check:', { 
+      hasItems,
+      itemsLength: this.itemsArray.length,
+      itemsWithQuantity: this.itemsArray.controls
+        .filter(c => (c.get('returnQuantity')?.value || 0) > 0).length
+    });
+    
+    return hasItems;
+  }
+}

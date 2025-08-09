@@ -62,7 +62,7 @@
               <button class="action-btn view-btn" (click)="viewPurchaseDetails(purchase)" title="View details" style="background-color: #6b1d14; color: white; border: none; border-radius: 4px; padding: 5px 8px; margin-right: 5px; font-family: 'Roboto', sans-serif;">
                 <i class="fas fa-eye"></i>
               </button>
-              <button class="action-btn edit-btn" (click)="editPurchase(purchase)" title="Edit purchase" style="background-color: #e6c157; color: #6b1d14; border: none; border-radius: 4px; padding: 5px 8px; font-family: 'Roboto', sans-serif;">
+              <button *ngIf="isSuperAdmin" class="action-btn edit-btn" (click)="editPurchase(purchase)" title="Edit purchase" style="background-color: #e6c157; color: #6b1d14; border: none; border-radius: 4px; padding: 5px 8px; font-family: 'Roboto', sans-serif;">
                 <i class="fas fa-edit"></i>
               </button>
             </td>

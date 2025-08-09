@@ -1,21 +1,80 @@
+<style>
+  .text-maroon {
+    color: #6b1d14;
+  }
+  
+  .bg-maroon {
+    background-color: #6b1d14;
+  }
+  
+  .bg-gold {
+    background-color: #e6c157;
+  }
+  
+  .card {
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .card-header {
+    padding: 1rem;
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+  }
+  
+  .form-control:disabled, .form-control:read-only {
+    background-color: #f8f9fa;
+    border-color: #e9ecef;
+  }
+  
+  .form-label.text-uppercase {
+    letter-spacing: 0.5px;
+    font-size: 0.75rem;
+  }
+  
+  /* Improved spacing between sections */
+  .section-spacing {
+    margin-bottom: 1.5rem;
+  }
+</style>
+
 <div class="container-fluid py-4">
-  <!-- Back button and page title -->
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <button type="button" class="btn btn-outline-primary" routerLink="/inventory/returns">
-      <i class="fas fa-arrow-left me-2"></i>Back to Returns
-    </button>
-    <h3 class="mb-0">Create Purchase Return</h3>
-    <div></div> <!-- Empty div for flex spacing -->
+  <!-- Classic header with medical icon -->
+  <div class="classic-header mb-4 bg-white rounded shadow position-relative overflow-hidden">
+    <!-- Decorative pills icons in background -->
+    <div class="position-absolute" style="top: -15px; right: 20px; opacity: 0.05; transform: rotate(15deg);">
+      <i class="fas fa-pills fa-5x"></i>
+    </div>
+    <div class="position-absolute" style="bottom: -15px; left: 30px; opacity: 0.05; transform: rotate(-10deg);">
+      <i class="fas fa-prescription-bottle-alt fa-4x"></i>
+    </div>
+    
+    <div class="d-flex justify-content-between align-items-center p-4">
+      <!-- Blue Back to Returns button -->
+      <button type="button" class="btn btn-primary rounded-pill shadow-sm px-4" routerLink="/inventory/returns">
+        <i class="fas fa-arrow-left me-2"></i>Back to Returns
+      </button>
+      
+      <!-- Centered header with icon -->
+      <div class="text-center position-relative">
+        <div class="d-inline-block p-2 rounded-circle bg-light mb-2">
+          <i class="fas fa-exchange-alt fa-2x text-maroon"></i>
+        </div>
+        <h2 class="mb-0 fw-bold text-maroon">Create Purchase Return</h2>
+        <div class="header-decoration mt-1" style="height: 3px; width: 180px; background: linear-gradient(90deg, transparent, #6b1d14, transparent); margin: 0 auto;"></div>
+      </div>
+      
+      <div style="width: 135px;"></div> <!-- Empty div for flex spacing with correct width -->
+    </div>
   </div>
 
-  <div class="card border-0 shadow-sm">
-    <div class="card-header bg-primary text-white">
+  <div class="card border-0 shadow-lg rounded-3 mb-4">
+    <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #6b1d14 0%, #922a1e 100%); color: white;">
       <div class="d-flex justify-content-between align-items-center">
-        <h4 class="mb-0">Purchase Return Form</h4>
-        <small>All fields marked with * are required</small>
+        <h4 class="mb-0 fw-bold">Purchase Return Form</h4>
+        <small><i class="fas fa-info-circle me-1"></i>All fields marked with * are required</small>
       </div>
     </div>
-    <div class="card-body">
+    <div class="card-body p-4">
       <form [formGroup]="returnForm" (ngSubmit)="onSubmit()">
         <div class="row mb-4">
           <div class="col-md-6">
@@ -39,7 +98,7 @@
               </div>
               <!-- Purchase Search Results -->
               <div class="position-relative" *ngIf="searchResults$ | async as results">
-                <ul class="list-group position-absolute w-100" style="z-index: 1000;" 
+                <ul class="list-group position-absolute w-100" style="z-index: 1000; max-height: 200px; overflow-y: auto;" 
                     *ngIf="results.length > 0">
                   <li 
                     *ngFor="let purchase of results" 
@@ -49,11 +108,13 @@
                       <span><strong>{{ returnsService.formatPurchaseId(purchase.id || purchase.purchaseId || '') }}</strong></span>
                       <span class="badge bg-primary">{{ purchase.referenceId || 'No Ref' }}</span>
                     </div>
-                    <small class="text-muted d-block">{{ purchase.supplier?.name || 'Unknown Supplier' }}</small>
+                    <small class="text-muted d-block">{{ purchase.supplierName || purchase.supplier?.name || 'Loading supplier...' }}</small>
                     <small class="text-success">₹{{ purchase.totalAmount | number:'1.2-2' }}</small>
                   </li>
                 </ul>
               </div>
+              <!-- Hidden field to bind originalPurchaseId from form -->
+              <input type="hidden" formControlName="originalPurchaseId">
             </div>
           </div>
           <div class="col-md-6">
@@ -69,60 +130,149 @@
             </div>
           </div>
         </div>
-
-        <!-- Supplier -->
-        <div class="form-group mb-3">
-          <label for="supplierName" class="form-label">Supplier</label>
-          <input 
-            type="text" 
-            id="supplierName" 
-            formControlName="supplierName"
-            class="form-control" 
-            readonly />
+        
+        <!-- Purchase Details (Moved inside form) -->
+        <div class="card mb-4 border shadow-sm" *ngIf="selectedPurchase?.id">
+          <div class="card-header bg-light border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+              <h5 class="mb-0 fw-bold text-maroon">Selected Purchase Details</h5>
+              <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" (click)="isPurchaseDetailsExpanded = !isPurchaseDetailsExpanded">
+                <i class="fas" [ngClass]="isPurchaseDetailsExpanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                {{ isPurchaseDetailsExpanded ? 'Collapse' : 'Expand' }}
+              </button>
+            </div>
+          </div>
+          <div class="card-body bg-light-subtle" *ngIf="isPurchaseDetailsExpanded">
+            <!-- Basic Purchase Information -->
+            <div class="row mb-3">
+              <div class="col-md-3 mb-3">
+                <label class="form-label fw-bold text-secondary small text-uppercase">Purchase ID</label>
+                <input type="text" class="form-control form-control-sm bg-white border" [value]="returnsService.formatPurchaseId(selectedPurchase?.purchaseId || selectedPurchase?.id || '')" readonly />
+              </div>
+              <div class="col-md-3 mb-3">
+                <label class="form-label fw-bold text-secondary small text-uppercase">Supplier</label>
+                <input type="text" class="form-control form-control-sm bg-white border" [value]="returnForm.get('supplierName')?.value || (selectedPurchase?.supplier?.name || 'Loading supplier...')" readonly />
+              </div>
+              <div class="col-md-3 mb-3">
+                <label class="form-label fw-bold text-secondary small text-uppercase">Purchase Date</label>
+                <input type="text" class="form-control form-control-sm bg-white border" [value]="formatDisplayDate(selectedPurchase?.invoiceDate)" readonly />
+              </div>
+              <div class="col-md-3 mb-3">
+                <label class="form-label fw-bold text-secondary small text-uppercase">Total Amount</label>
+                <input type="text" class="form-control form-control-sm bg-white border text-success fw-bold" [value]="'₹' + ((selectedPurchase?.totalAmount || 0) | number:'1.2-2')" readonly />
+              </div>
+            </div>
+            
+            <!-- Item Details Section -->
+            <div class="mt-3 border-top pt-3" *ngIf="selectedPurchase && selectedPurchase.items && selectedPurchase.items.length > 0">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0">Item Details</h6>
+                <span class="badge bg-info">{{ selectedPurchase.items.length }} item(s)</span>
+              </div>
+              
+              <div class="table-responsive">
+                <table class="table table-bordered table-hover table-sm">
+                  <thead class="table-light">
+                    <tr>
+                      <th>#</th>
+                      <th>Medicine</th>
+                      <th>Batch No</th>
+                      <th>Pack Qty (Free)</th>
+                      <th>Items/Pack</th>
+                      <th>Total Qty</th>
+                      <th>MRP</th>
+                      <th>Purchase Cost</th>
+                      <th>Discount</th>
+                      <th>Tax</th>
+                      <th>Expiry</th>
+                      <th>Net Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of selectedPurchase.items; let i = index">
+                      <td class="align-middle">{{ i + 1 }}</td>
+                      <td class="align-middle">
+                        <div class="fw-bold">{{ item?.medicineName || 'Unknown Medicine' }}</div>
+                        <small class="text-muted">ID: {{ item?.medicineId }}</small>
+                      </td>
+                      <td class="align-middle">{{ item?.batchNo || 'N/A' }}</td>
+                      <td class="align-middle">{{ item?.packQuantity || 0 }} <span *ngIf="item?.freePackQuantity" class="text-success">(+{{ item?.freePackQuantity }})</span></td>
+                      <td class="align-middle">{{ item?.itemsPerPack || 0 }}</td>
+                      <td class="align-middle fw-bold">{{ item?.totalReceivedQuantity || ((item?.packQuantity || 0) * (item?.itemsPerPack || 0)) }}</td>
+                      <td class="align-middle">₹{{ (item?.mrpPerItem || 0) | number:'1.2-2' }}</td>
+                      <td class="align-middle">₹{{ (item?.purchaseCostPerPack || 0) | number:'1.2-2' }}</td>
+                      <td class="align-middle">
+                        <div>{{ item?.discountPercentage || 0 }}%</div>
+                        <small class="text-muted">₹{{ (item?.lineItemDiscountAmount || 0) | number:'1.2-2' }}</small>
+                      </td>
+                      <td class="align-middle">
+                        <div>{{ item?.taxProfileId || 'N/A' }}</div>
+                        <small class="text-muted" *ngIf="item?.taxComponents">
+                          <span *ngFor="let tax of item.taxComponents; let last = last">
+                            {{ tax.name }}: {{ tax.rate }}%<span *ngIf="!last">, </span>
+                          </span>
+                        </small>
+                        <small class="text-muted d-block" *ngIf="item?.taxRateApplied">
+                          Rate: {{ item?.taxRateApplied }}%
+                        </small>
+                      </td>
+                      <td class="align-middle">{{ formatDisplayDate(item?.expiryDate) || 'N/A' }}</td>
+                      <td class="align-middle fw-bold">₹{{ (item?.lineItemTotalAmount || 0) | number:'1.2-2' }}</td>
+                    </tr>
+                  </tbody>
+                  <tfoot class="table-light">
+                    <tr>
+                      <td colspan="11" class="text-end fw-bold">Total:</td>
+                      <td class="fw-bold">₹{{ (selectedPurchase?.totalAmount || 0) | number:'1.2-2' }}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+            
+            <!-- Financial Details -->
+            <div class="row mb-3 mt-3 pt-3 border-top">
+              <div class="col-md-3">
+                <label class="form-label fw-bold">Taxable Amount</label>
+                <input type="text" class="form-control" [value]="'₹' + ((selectedPurchase?.totalTaxableAmount || 0) | number:'1.2-2')" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-bold">Tax Amount</label>
+                <input type="text" class="form-control" [value]="'₹' + ((selectedPurchase?.totalTaxAmount || 0) | number:'1.2-2')" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-bold">Discount Amount</label>
+                <input type="text" class="form-control" [value]="'₹' + ((selectedPurchase?.totalDiscountAmount || 0) | number:'1.2-2')" readonly />
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-bold">GST Type</label>
+                <input type="text" class="form-control" [value]="selectedPurchase?.gstType || 'Not Specified'" readonly />
+              </div>
+            </div>
+          </div>
         </div>
         
-        <!-- Return Details -->
-        <div class="row mb-4">
-          <div class="col-md-6">
-            <label for="reason" class="form-label">Return Reason *</label>
-            <textarea 
-              class="form-control" 
-              id="reason" 
-              formControlName="reason" 
-              rows="3" 
-              placeholder="Please specify the reason for return"
-              required></textarea>
-          </div>
-          <div class="col-md-3">
-            <label for="refundMode" class="form-label">Refund Mode *</label>
-            <select class="form-control" id="refundMode" formControlName="refundMode" required>
-              <option value="CASH">Cash</option>
-              <option value="CARD">Card</option>
-              <option value="UPI">UPI</option>
-              <option value="BANK_TRANSFER">Bank Transfer</option>
-              <option value="CHEQUE">Cheque</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label for="refundReference" class="form-label">Refund Reference</label>
-            <input 
-              type="text" 
-              class="form-control" 
-              id="refundReference" 
-              formControlName="refundReference" 
-              placeholder="Transaction/Reference ID" />
-          </div>
+        <!-- Hidden supplier field for form validation -->
+        <div class="form-group mb-3" style="display: none;">
+          <input 
+            type="hidden" 
+            id="supplierName" 
+            formControlName="supplierName" />
         </div>
-
+        
         <!-- Purchase Items -->
-        <div class="mb-4" *ngIf="selectedPurchase">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Purchase Items for Return</h5>
-            <span class="badge bg-info">{{ itemsArray.length }} items available</span>
+        <!-- Purchase Items for Return Section -->
+        <div class="card mb-4 border shadow-sm" *ngIf="selectedPurchase">
+          <div class="card-header bg-light border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+              <h5 class="mb-0 fw-bold text-maroon">Purchase Items for Return</h5>
+              <span class="badge rounded-pill" style="background-color: #e6c157;">{{ itemsArray.length }} items available</span>
+            </div>
           </div>
-          <div class="table-responsive">
-            <table class="table table-bordered table-hover">
-              <thead class="table-dark">
+          <div class="card-body p-3">
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover">
+                <thead style="background: linear-gradient(135deg, #6b1d14 0%, #922a1e 100%); color: white;">
                 <tr>
                   <th>Medicine</th>
                   <th>Batch No</th>
@@ -131,10 +281,13 @@
                   <th>Purchase Price</th>
                   <th>MRP</th>
                   <th>Return Qty</th>
-                  <th>Return Value</th>
+                  <th>
+                    Return Value
+                    <small *ngIf="hasTaxItems()" class="d-block">(Incl. Tax)</small>
+                  </th>
                 </tr>
               </thead>
-              <tbody formArrayName="items">
+              <tbody class="align-middle" formArrayName="items">
                 <tr *ngFor="let item of itemsArray.controls; let i = index" [formGroupName]="i" class="align-middle">
                   <td>
                     <div class="fw-bold">{{ getFormGroup(item).get('medicineName')?.value }}</div>
@@ -144,13 +297,14 @@
                     <span class="badge bg-secondary">{{ getFormGroup(item).get('batchNo')?.value }}</span>
                   </td>
                   <td>
-                    <small>{{ getFormGroup(item).get('expiryDate')?.value | date:'dd/MM/yyyy' }}</small>
+                    <small>{{ formatDisplayDate(getFormGroup(item).get('expiryDate')?.value) }}</small>
                   </td>
                   <td>
                     <span class="badge bg-primary">{{ getFormGroup(item).get('originalQuantity')?.value }}</span>
                   </td>
                   <td>
                     <span class="text-success fw-bold">₹{{ getFormGroup(item).get('purchasePrice')?.value | number:'1.2-2' }}</span>
+                    <!-- Debug value: {{ getFormGroup(item).value | json }} -->
                   </td>
                   <td>
                     <span class="text-info">₹{{ getFormGroup(item).get('mrpPerItem')?.value | number:'1.2-2' }}</span>
@@ -168,82 +322,125 @@
                       (change)="onReturnQuantityChange(getFormGroup(item), $event)" />
                   </td>
                   <td>
-                    <span class="fw-bold text-danger">₹{{ getFormGroup(item).get('returnValue')?.value | number:'1.2-2' }}</span>
+                    <div class="fw-bold text-danger">₹{{ getFormGroup(item).get('returnValue')?.value | number:'1.2-2' }}</div>
+                    <ng-container *ngIf="getFormGroup(item).get('taxProfileId')?.value && getFormGroup(item).get('taxProfileId')?.value !== 'N/A'">
+                      <div class="mt-2 p-2 rounded" style="background-color: #f8f9fa; border-left: 3px solid #6b1d14;">
+                        <div class="small mb-1">
+                          <span class="fw-bold">Base:</span> ₹{{ getFormGroup(item).get('baseReturnValue')?.value | number:'1.2-2' }}
+                        </div>
+                        <div class="small mb-1">
+                          <span class="fw-bold">CGST:</span> ₹{{ getFormGroup(item).get('cgst')?.value | number:'1.2-2' }}
+                        </div>
+                        <div class="small">
+                          <span class="fw-bold">SGST:</span> ₹{{ getFormGroup(item).get('sgst')?.value | number:'1.2-2' }}
+                        </div>
+                      </div>
+                    </ng-container>
                   </td>
                 </tr>
               </tbody>
-              <tfoot class="table-light">
-                <tr>
-                  <td colspan="7" class="text-end fw-bold">Total Return Amount:</td>
-                  <td class="fw-bold text-danger fs-5">₹{{ returnForm.get('totalReturnAmount')?.value | number:'1.2-2' }}</td>
+              <tfoot>
+                <tr style="background-color: #f8f9fa;">
+                  <td colspan="7" class="text-end fw-bold" style="border-top: 2px solid #6b1d14;">Total Return Amount:</td>
+                  <td class="fw-bold fs-5" style="color: #6b1d14; border-top: 2px solid #6b1d14;">₹{{ returnForm.get('totalReturnAmount')?.value | number:'1.2-2' }}</td>
                 </tr>
               </tfoot>
             </table>
           </div>
         </div>
 
+        <!-- Return Details Card -->
+        <div class="card mb-4 border shadow-sm" *ngIf="selectedPurchase">
+          <div class="card-header bg-light border-bottom">
+            <h5 class="mb-0 fw-bold text-maroon">Return & Refund Details</h5>
+          </div>
+          <div class="card-body p-3">
+            <div class="row">
+              <div class="col-md-6">
+                <label for="reason" class="form-label">Return Reason *</label>
+                <textarea 
+                  class="form-control bg-white" 
+                  id="reason" 
+                  formControlName="reason" 
+                  rows="3" 
+                  placeholder="Please specify the reason for return"
+                  required></textarea>
+              </div>
+              <div class="col-md-3">
+                <label for="refundMode" class="form-label">Refund Mode *</label>
+                <select class="form-select bg-white" id="refundMode" formControlName="refundMode" required>
+                  <option value="CASH">Cash</option>
+                  <option value="CARD">Card</option>
+                  <option value="UPI">UPI</option>
+                  <option value="BANK_TRANSFER">Bank Transfer</option>
+                  <option value="CHEQUE">Cheque</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label for="refundReference" class="form-label">Refund Reference</label>
+                <input 
+                  type="text" 
+                  class="form-control bg-white" 
+                  id="refundReference" 
+                  formControlName="refundReference" 
+                  placeholder="Transaction/Reference ID" />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Additional Notes -->
-        <div class="row mb-4" *ngIf="selectedPurchase">
-          <div class="col-md-12">
-            <label for="notes" class="form-label">Additional Notes</label>
-            <textarea 
-              class="form-control" 
-              id="notes" 
-              formControlName="notes" 
-              rows="2" 
-              placeholder="Any additional notes or comments about the return"></textarea>
+        <div class="card mb-4 border shadow-sm" *ngIf="selectedPurchase">
+          <div class="card-header bg-light border-bottom">
+            <h5 class="mb-0 fw-bold text-maroon">Additional Notes</h5>
+          </div>
+          <div class="card-body p-3">
+            <div class="row">
+              <div class="col-md-12">
+                <textarea 
+                  class="form-control bg-white" 
+                  id="notes" 
+                  formControlName="notes" 
+                  rows="2" 
+                  placeholder="Any additional notes or comments about the return"></textarea>
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- Submit Buttons -->
-        <div class="d-flex justify-content-between align-items-center">
-          <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
-            <i class="fas fa-arrow-left me-2"></i>Back to Returns
-          </button>
-          <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-warning" (click)="resetForm()" *ngIf="selectedPurchase">
-              <i class="fas fa-undo me-2"></i>Reset Form
-            </button>
-            <button 
-              type="submit" 
-              class="btn btn-success btn-lg" 
-              [disabled]="returnForm.invalid || isLoading || itemsArray.length === 0 || !hasItemsToReturn()">
-              <i class="fas fa-spinner fa-spin me-2" *ngIf="isLoading"></i>
-              <i class="fas fa-check-circle me-2" *ngIf="!isLoading"></i>
-              {{ isLoading ? 'Processing Return...' : 'Create Purchase Return' }}
-            </button>
+        <div class="card border shadow-sm mb-2">
+          <div class="card-body p-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <button type="button" class="btn btn-outline-secondary rounded-pill shadow-sm px-4" (click)="cancel()">
+                <i class="fas fa-arrow-left me-2"></i>Back to Returns
+              </button>
+              <div class="d-flex gap-3">
+                <button type="button" class="btn btn-outline-warning rounded-pill shadow-sm px-4" (click)="resetForm()" *ngIf="selectedPurchase">
+                  <i class="fas fa-undo me-2"></i>Reset Form
+                </button>
+                <button 
+                  type="submit" 
+                  class="btn btn-lg shadow-sm px-4 rounded-pill" 
+                  style="background: linear-gradient(135deg, #6b1d14 0%, #922a1e 100%); color: white;"
+                  [disabled]="returnForm.invalid || isLoading || !hasAnyItemToReturn()">
+                  <i class="fas fa-spinner fa-spin me-2" *ngIf="isLoading"></i>
+                  <i class="fas fa-check-circle me-2" *ngIf="!isLoading"></i>
+                  {{ isLoading ? 'Processing Return...' : 'Create Purchase Return' }}
+                </button>
+              </div>
+            
+            <!-- Debug info for form state -->
+              </div>
+            </div>
           </div>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Purchase Details -->
-  <div class="card mb-4" *ngIf="selectedPurchase">
-    <div class="card-header bg-light">
-      <h5 class="mb-0">Selected Purchase Details</h5>
-    </div>
-    <div class="card-body">
-      <div class="row">
-        <div class="col-md-3">
-          <label class="form-label fw-bold">Purchase ID</label>
-          <input type="text" class="form-control" [value]="returnsService.formatPurchaseId(selectedPurchase.id || selectedPurchase.purchaseId || '')" readonly />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label fw-bold">Supplier</label>
-          <input type="text" class="form-control" [value]="selectedPurchase.supplier?.name || 'Unknown Supplier'" readonly />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label fw-bold">Purchase Date</label>
-          <input type="text" class="form-control" [value]="selectedPurchase.invoiceDate | date:'dd/MM/yyyy'" readonly />
-        </div>
-        <div class="col-md-3">
-          <label class="form-label fw-bold">Total Amount</label>
-          <input type="text" class="form-control" [value]="'₹' + (selectedPurchase.totalAmount | number:'1.2-2')" readonly />
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Purchase Details moved inside the form above the Return Details -->
+  
 
   <!-- Return Summary Card -->
   <div class="card border-success" *ngIf="selectedPurchase && returnForm.get('totalReturnAmount')?.value > 0">
@@ -256,6 +453,13 @@
           <div class="text-center">
             <h6 class="text-muted">Total Return Amount</h6>
             <h4 class="text-success">₹{{ returnForm.get('totalReturnAmount')?.value | number:'1.2-2' }}</h4>
+            <ng-container *ngIf="returnForm.get('totalCGST')?.value > 0 || returnForm.get('totalSGST')?.value > 0">
+              <div class="small text-muted">
+                <div>Base: ₹{{ returnForm.get('totalBaseAmount')?.value | number:'1.2-2' }}</div>
+                <div>CGST: ₹{{ returnForm.get('totalCGST')?.value | number:'1.2-2' }}</div>
+                <div>SGST: ₹{{ returnForm.get('totalSGST')?.value | number:'1.2-2' }}</div>
+              </div>
+            </ng-container>
           </div>
         </div>
         <div class="col-md-3">

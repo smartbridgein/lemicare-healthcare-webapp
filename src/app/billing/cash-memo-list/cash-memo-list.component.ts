@@ -7,6 +7,7 @@ import { CashMemo } from '../shared/billing.model';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { AuthService, UserProfile } from '../../auth/shared/auth.service';
 
 // Define service interface
 interface Service {
@@ -34,6 +35,10 @@ export class CashMemoListComponent implements OnInit {
   selectedCashMemo: any = null;
   detailedCashMemo: any = null;
   loadingDetails = false;
+
+  // Permission properties
+  isSuperAdmin = false;
+  private user: UserProfile | null = null;
   
   // Services data for mapping service IDs to names
   services: Service[] = [];
@@ -51,12 +56,40 @@ export class CashMemoListComponent implements OnInit {
   constructor(
     private billingService: BillingService,
     private modalService: NgbModal,
-    private http: HttpClient
+    private http: HttpClient,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
+    this.loadUserPermissions();
     this.loadServices();
     this.loadCashMemos();
+  }
+
+  /**
+   * Check if current user has super admin permissions
+   * Only super admin can delete cash memos
+   */
+  private loadUserPermissions(): void {
+    this.user = this.authService.getCurrentUser();
+    
+    if (this.user) {
+      // Check if user is super admin (by email or role)
+      const email = this.user.email || '';
+      const role = this.user.role || '';
+      
+      const isSuperAdminEmail = email.toLowerCase() === 'hanan-clinic@lemicare.com';
+      const isSuperAdminRole = role.toUpperCase() === 'ROLE_SUPER_ADMIN' || 
+                             role.toUpperCase() === 'SUPER_ADMIN';
+      
+      this.isSuperAdmin = isSuperAdminEmail || isSuperAdminRole;
+      
+      console.log('Cash Memo List Permissions:', {
+        email,
+        role,
+        isSuperAdmin: this.isSuperAdmin
+      });
+    }
   }
 
   // Load services from API

@@ -938,51 +938,112 @@ export class PurchaseReturnFormComponent implements OnInit {
     );
 
     if (!hasItemsToReturn) {
-      this.toastService.showError('Please enter a return quantity for at least one item');
-      return;
-    }
-
-    this.isLoading = true;
-    const formValue = this.returnForm.value;
     
-    // Create the return request
-    const returnData: PurchaseReturnRequest = {
-      originalPurchaseId: formValue.originalPurchaseId,
-      supplierId: formValue.supplierId,
-      returnDate: formValue.returnDate, // Send as is, API expects ISO string
-      reason: formValue.reason,
-      totalReturnAmount: formValue.totalReturnAmount,
-      totalBaseAmount: formValue.totalBaseAmount,
-      totalCGST: formValue.totalCGST,
-      totalSGST: formValue.totalSGST,
-      totalTaxAmount: (formValue.totalCGST || 0) + (formValue.totalSGST || 0),
-      items: this.itemsArray.controls
-        .filter(control => control.get('returnQuantity')?.value > 0)
-        .map(control => ({
-          medicineId: control.get('medicineId')?.value,
-          batchNo: control.get('batchNo')?.value,
-          returnQuantity: control.get('returnQuantity')?.value,
-          returnValue: control.get('returnValue')?.value,
-          baseReturnValue: control.get('baseReturnValue')?.value || control.get('returnValue')?.value,
-          cgst: control.get('cgst')?.value || 0,
-          sgst: control.get('sgst')?.value || 0,
-          taxProfileId: control.get('taxProfileId')?.value || 'N/A',
-          taxRate: control.get('taxRate')?.value || 0
-        }))
-    };
+    totalReturnAmount += returnValue;
+    totalBaseAmount += baseValue;
+    totalCGST += cgst;
+    totalSGST += sgst;
+  });
+  
+  // Round values for display
+  const roundedTotal = Math.round(totalReturnAmount * 100) / 100;
+  const roundedBase = Math.round(totalBaseAmount * 100) / 100;
+  const roundedCGST = Math.round(totalCGST * 100) / 100;
+  const roundedSGST = Math.round(totalSGST * 100) / 100;
+  
+  // Update the form with total return amount and tax breakdown
+  this.returnForm.patchValue({ 
+    totalReturnAmount: roundedTotal,
+    totalBaseAmount: roundedBase,
+    totalCGST: roundedCGST,
+    totalSGST: roundedSGST
+  });
+  
+  // Force change detection to update UI
+  this.cdr.detectChanges();
+  
+  // Enhanced debug info for tracking total calculations with tax breakdown
+  console.log('Total return amount calculation:', {
+    totalReturnAmount: roundedTotal,
+    totalBaseAmount: roundedBase,
+    totalCGST: roundedCGST,
+    totalSGST: roundedSGST,
+    formValue: this.returnForm.get('totalReturnAmount')?.value,
+    itemsCount: this.itemsArray.length,
+    itemsWithValues: this.itemsArray.controls.filter(c => (c.get('returnValue')?.value || 0) > 0).length,
+    itemsWithTax: this.itemsArray.controls.filter(c => 
+      (c.get('cgst')?.value || 0) > 0 || (c.get('sgst')?.value || 0) > 0
+    ).length
+  });
+}
 
-    this.returnsService.createPurchaseReturn(returnData)
-      .pipe(finalize(() => this.isLoading = false))
-      .subscribe({
-        next: (response) => {
-          this.toastService.showSuccess('Purchase return created successfully');
-          this.router.navigate(['/inventory/returns']);
-        },
-        error: (error) => {
-          console.error('Error creating purchase return', error);
-          this.toastService.showError('Failed to create purchase return');
+clearItemsArray(): void {
+  while (this.itemsArray.length !== 0) {
+    this.itemsArray.removeAt(0);
+  }
+}
+
+// Load medicines for reference
+loadMedicines(): void {
+  this.inventoryService.getMedicines()
+    .subscribe({
+      next: (medicines) => {
+        this.medicines = medicines;
+        console.log('Medicines loaded:', medicines.length);
+      },
+      error: (error) => {
+        console.error('Error loading medicines:', error);
+      }
+    });
+}
+
+onSubmit(): void {
+  if (this.returnForm.invalid) {
+    this.markFormGroupTouched(this.returnForm);
+    return;
+  }
+
+  if (this.itemsArray.length === 0) {
+    this.toastService.showError('Please select at least one item to return');
+    return;
+  }
+
+  // Check if any items have return quantity > 0
+  const hasItemsToReturn = this.itemsArray.controls.some(
+    control => control.get('returnQuantity')?.value > 0
+  );
+
+  if (!hasItemsToReturn) {
+            this.toastService.showError(
+              `Cannot return more items than purchased. Medicine: ${firstInvalidItem.medicineName}, ` +
+              `Maximum allowed: ${firstInvalidItem.originalQuantity}, ` +
+              `Attempted: ${firstInvalidItem.returnQuantity}`
+            );
+          } else if (error?.error?.message) {
+            // Display the server's error message if available
+            this.toastService.showError(error.error.message);
+          } else {
+            // Show custom message for HTTP 500 specifically related to returns
+            this.toastService.showError(
+              'Invalid return quantities. Please ensure you are not returning more items than were purchased.'
+            );
+          }
+        } else {
+          // Default error message for other errors
+          this.toastService.showError('Failed to create purchase return. Please try again.');
         }
-      });
+      
+      if (returnQuantity > originalQuantity) {
+        invalidItems.push({
+          medicineName,
+          originalQuantity,
+          returnQuantity
+        });
+      }
+    });
+    
+    return invalidItems;
+  }
   }
 
   // Helper method to mark all form controls as touched
