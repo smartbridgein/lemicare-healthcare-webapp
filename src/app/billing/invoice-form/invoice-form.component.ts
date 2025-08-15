@@ -1214,8 +1214,8 @@ export class InvoiceFormComponent implements OnInit, OnDestroy {
   }
 
   searchPatients(term: string): void {
-    // Use the provided search term
-    this.patientSearchTerm = term;
+    // Use the provided search term and convert to lowercase for case-insensitive matching
+    this.patientSearchTerm = term.trim().toLowerCase();
     
     // Allow search by ID (numbers only) even if shorter than 3 characters
     // or by name if length is greater than 2 characters
@@ -1227,7 +1227,8 @@ export class InvoiceFormComponent implements OnInit, OnDestroy {
       
       console.log(`Searching for patients with ${isIdSearch ? 'ID' : 'term'}:`, this.patientSearchTerm);
       
-      this.patientService.searchPatients(this.patientSearchTerm)
+      // First get all patients to perform client-side filtering
+      this.patientService.getAllPatients()
         .pipe(
           finalize(() => {
             this.loading = false;
@@ -1235,13 +1236,39 @@ export class InvoiceFormComponent implements OnInit, OnDestroy {
         )
         .subscribe({
           next: (patients: Patient[]) => {
-            console.log('Patients found:', patients);
-            this.patientResults = patients.map(patient => ({
-              id: patient.id || '', // Ensure ID is never undefined
-              name: `${patient.firstName || ''} ${patient.lastName || ''}`.trim(),
-              contactNumber: patient.mobileNumber || ''
-            }));
-            console.log('Mapped patient results:', this.patientResults);
+            console.log(`Got ${patients?.length || 0} total patients, filtering for term: "${this.patientSearchTerm}"`);
+            
+            if (patients && patients.length > 0) {
+              // Client-side filtering logic
+              const filteredPatients = patients.filter(patient => {
+                if (!this.patientSearchTerm) return false;
+                
+                // Search in patientId, firstName, lastName, and mobileNumber
+                const patientIdMatch = patient.patientId?.toLowerCase().includes(this.patientSearchTerm) || false;
+                const firstNameMatch = patient.firstName?.toLowerCase().includes(this.patientSearchTerm) || false;
+                const lastNameMatch = patient.lastName?.toLowerCase().includes(this.patientSearchTerm) || false;
+                const mobileMatch = patient.mobileNumber?.toLowerCase().includes(this.patientSearchTerm) || false;
+                const fullNameMatch = `${patient.firstName || ''} ${patient.lastName || ''}`.toLowerCase().includes(this.patientSearchTerm) || false;
+                
+                const isMatch = patientIdMatch || firstNameMatch || lastNameMatch || mobileMatch || fullNameMatch;
+                if (isMatch) {
+                  console.log(`Match found: ${patient.firstName} ${patient.lastName} - matches term "${this.patientSearchTerm}"`);
+                }
+                return isMatch;
+              });
+              
+              console.log(`Filtered down to ${filteredPatients.length} patients matching "${this.patientSearchTerm}"`);
+              
+              // Map filtered patients to the expected format
+              this.patientResults = filteredPatients.map(patient => ({
+                id: patient.id || '', // Ensure ID is never undefined
+                name: `${patient.firstName || ''} ${patient.lastName || ''}`.trim(),
+                contactNumber: patient.mobileNumber || ''
+              }));
+            } else {
+              this.patientResults = [];
+            }
+            console.log('Final patient results:', this.patientResults);
           },
           error: (error: any) => {
             console.error('Error searching patients:', error);

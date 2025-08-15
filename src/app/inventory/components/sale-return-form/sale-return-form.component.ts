@@ -934,8 +934,16 @@ export class SaleReturnFormComponent implements OnInit {
         
         totalTaxAmount += taxAmount;
         
-        // Calculate final value - should be the taxable amount (without tax)
-        let finalAmount = afterDiscountAmount; // Just the amount after discount, without tax
+        // Calculate final value - taxable amount is afterDiscountAmount
+        // For return value, we need taxable + tax
+        let taxableAmount = afterDiscountAmount;
+        let finalAmount = taxableAmount;
+        
+        // Add tax to the final amount for exclusive GST
+        // For inclusive, the tax is already factored into the price
+        if (gstType === 'EXCLUSIVE' && taxRate > 0) {
+          finalAmount += taxAmount;
+        }
         
         // Add to total refund amount
         totalRefundAmount += finalAmount;

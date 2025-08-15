@@ -1,14 +1,15 @@
 // Development environment configuration
+// Cloud environment configuration pointing to Cloud Run services
 export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:8084', // Inventory service
-  apiUrlInventory: 'http://localhost:8082', // Inventory service
-  opdApiUrl: 'http://localhost:8084', // OPD management service
-  billingApiUrl: 'http://localhost:8084', // Billing service
-  authApiUrl: 'http://localhost:8081',
+  production: true,
+  apiUrlInventory: 'https://inventory-service-191932434541.asia-south1.run.app', // Inventory service
+  apiUrl: 'https://opd-management-service-191932434541.asia-south1.run.app',
+  billingApiUrl: 'https://opd-management-service-191932434541.asia-south1.run.app',
+  authApiUrl: 'https://auth-service-191932434541.asia-south1.run.app',
+  opdApiUrl: 'https://opd-management-service-191932434541.asia-south1.run.app', // OPD management service
   version: '1.0.0',
   firebase: {
-    // Updated with actual Firebase configuration values
+    // Using same Firebase configuration as development
     apiKey: "AIzaSyCNy_JhG3vHVOP_3lZ6QtR62ZtSHXbPA-A",
     authDomain: "cosmicdoc.firebaseapp.com",
     projectId: "cosmicdoc",

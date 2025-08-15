@@ -17,6 +17,9 @@ interface StockByCategoryItem {
   outOfStockCount: number;
   medicines?: EnhancedMedicine[];
   expanded?: boolean;
+  showAllMedicines?: boolean; // Flag to control lazy loading of medicines
+  searchTerm?: string; // Category-specific search term
+  originalMedicines?: EnhancedMedicine[]; // Original list of medicines before category-specific filtering
 }
 
 interface EnhancedMedicine {
@@ -158,6 +161,7 @@ export class StockComponent implements OnInit, OnDestroy {
     this.error = null;
     
     // Load medicines, suppliers, and tax profiles in parallel
+    // Force refresh to get ALL medicines with no pagination limit
     forkJoin({
       medicines: this.inventoryService.getMedicines(true),
       suppliers: this.inventoryService.getSuppliers().pipe(
@@ -184,6 +188,7 @@ export class StockComponent implements OnInit, OnDestroy {
         this.buildStockByCategory();
         this.calculateSummary();
         this.applyFilters();
+        console.log(`Successfully loaded ${medicines.length} total medicines`);
         this.isLoading = false;
       },
       error: (err) => {
@@ -372,44 +377,82 @@ export class StockComponent implements OnInit, OnDestroy {
       ).length
     };
   }
-  
+
   applyFilters(): void {
-    let filtered = [...this.stockByCategory];
+    console.log(`Filtering with searchTerm="${this.searchTerm}", category="${this.selectedCategory}", stockStatus="${this.selectedStockStatus}"`);
+    console.log(`Total medicines before filtering: ${this.allMedicines.length}`);
+    console.log(`Available categories: ${this.availableCategories.join(', ')}`);
     
-    // Apply category filter
+    // Step 1: Create a deep copy of the original stock data to avoid modifying it
+    let filtered = JSON.parse(JSON.stringify(this.stockByCategory));
+    
+    // Step 2: Log categories before filtering
+    const categoriesBeforeFilter = filtered.map((c: StockByCategoryItem) => 
+      `${c.category} (${c.medicines?.length || 0} medicines)`).join(', ');
+    console.log(`Categories before filtering: ${categoriesBeforeFilter}`);
+    
+    // Step 3: Apply category filter first at the category level
+    // Only filter by category when explicitly selected
     if (this.selectedCategory !== 'all') {
-      filtered = filtered.filter(item => item.category === this.selectedCategory);
-    }
-    
-    // Apply search filter
-    if (this.searchTerm.trim()) {
-      const term = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(item =>
-        item.category.toLowerCase().includes(term) ||
-        item.medicines?.some(medicine =>
-          medicine.name.toLowerCase().includes(term) ||
-          medicine.genericName.toLowerCase().includes(term) ||
-          medicine.manufacturer.toLowerCase().includes(term)
-        )
+      console.log(`Filtering for category: ${this.selectedCategory}`);
+      filtered = filtered.filter((item: StockByCategoryItem) => 
+        item.category === this.selectedCategory
       );
     }
     
-    // Apply stock status filter to medicines within categories
-    if (this.selectedStockStatus !== 'all') {
-      filtered.forEach(category => {
-        if (category.medicines) {
-          category.medicines = category.medicines.filter(med => 
-            med.stockStatus === this.selectedStockStatus
-          );
-        }
-      });
+    // Step 4: For each category, filter its medicines based on search term and stock status
+    filtered.forEach((category: StockByCategoryItem) => {
+      if (!category.medicines || !Array.isArray(category.medicines)) {
+        category.medicines = [];
+        return;
+      }
       
-      // Remove categories with no medicines after filtering
-      filtered = filtered.filter(category => 
-        category.medicines && category.medicines.length > 0
-      );
-    }
+      // Make a copy of the current category's medicines
+      let filteredMedicines = [...category.medicines];
+      console.log(`Processing category: ${category.category} with ${filteredMedicines.length} medicines`);
+      
+      // Step 5: Apply search filter to medicines if there's a search term
+      if (this.searchTerm && this.searchTerm.trim()) {
+        const term = this.searchTerm.toLowerCase().trim();
+        console.log(`Searching for: "${term}" in medicines`);
+        
+        filteredMedicines = filteredMedicines.filter(medicine =>
+          (medicine.name && medicine.name.toLowerCase().includes(term)) ||
+          (medicine.genericName && medicine.genericName.toLowerCase().includes(term)) ||
+          (medicine.manufacturer && medicine.manufacturer.toLowerCase().includes(term)) ||
+          (medicine.medicineId && medicine.medicineId.toLowerCase().includes(term)) ||
+          // Removed category from search since we're already filtering by category separately
+          (medicine.hsnCode && medicine.hsnCode.toLowerCase().includes(term))
+        );
+        
+        console.log(`Found ${filteredMedicines.length} medicines matching "${term}" in category ${category.category}`);
+      }
+      
+      // Step 6: Apply stock status filter to medicines
+      if (this.selectedStockStatus !== 'all') {
+        const countBeforeStatusFilter = filteredMedicines.length;
+        filteredMedicines = filteredMedicines.filter(med => 
+          med.stockStatus === this.selectedStockStatus
+        );
+        console.log(`Stock status filter "${this.selectedStockStatus}": ${countBeforeStatusFilter} → ${filteredMedicines.length} medicines`);
+      }
+      
+      // Step 7: Update the category's medicines
+      category.medicines = filteredMedicines;
+    });
     
+    // Step 8: Remove empty categories after filtering
+    filtered = filtered.filter((category: StockByCategoryItem) => 
+      category.medicines && category.medicines.length > 0
+    );
+    
+    // Step 9: Count total medicines after filtering
+    const totalMedicinesAfterFilter = filtered.reduce((sum: number, category: StockByCategoryItem) => 
+      sum + (category.medicines?.length || 0), 0
+    );
+    console.log(`Total medicines after filtering: ${totalMedicinesAfterFilter}`);
+    
+    // Step 10: Update the filtered stock for display
     this.filteredStock = filtered;
   }
   
@@ -427,6 +470,60 @@ export class StockComponent implements OnInit, OnDestroy {
   
   toggleCategory(category: StockByCategoryItem): void {
     category.expanded = !category.expanded;
+    
+    // When expanding a category, initialize necessary properties if not set
+    if (category.expanded) {
+      if (category.showAllMedicines === undefined) {
+        category.showAllMedicines = false;
+      }
+      
+      // Store original medicines for category search if not already stored
+      if (!category.originalMedicines && category.medicines) {
+        category.originalMedicines = [...category.medicines];
+      }
+      
+      // Initialize search term if needed
+      if (category.searchTerm === undefined) {
+        category.searchTerm = '';
+      }
+    }
+  }
+  
+  /**
+   * Handle search within a specific category
+   * @param category The category to search within
+   */
+  onCategorySearchChange(category: StockByCategoryItem): void {
+    console.log(`Searching in category ${category.category} for "${category.searchTerm}"`);  
+    
+    // Ensure we have the original list to search from
+    if (!category.originalMedicines) {
+      category.originalMedicines = [...(category.medicines || [])];
+    }
+    
+    // If search term is empty, restore original medicines
+    if (!category.searchTerm || category.searchTerm.trim() === '') {
+      category.medicines = [...category.originalMedicines];
+      console.log(`Search cleared, restored ${category.medicines.length} original medicines`);
+      return;
+    }
+    
+    // Filter medicines in this category based on search term
+    const term = category.searchTerm.toLowerCase().trim();
+    category.medicines = category.originalMedicines.filter(medicine =>
+      (medicine.name && medicine.name.toLowerCase().includes(term)) ||
+      (medicine.genericName && medicine.genericName.toLowerCase().includes(term)) ||
+      (medicine.manufacturer && medicine.manufacturer.toLowerCase().includes(term)) ||
+      (medicine.medicineId && medicine.medicineId.toLowerCase().includes(term)) ||
+      (medicine.hsnCode && medicine.hsnCode.toLowerCase().includes(term))
+    );
+    
+    console.log(`Category search found ${category.medicines.length} of ${category.originalMedicines.length} medicines matching "${term}"`);
+  }
+  
+  toggleShowAllMedicines(category: StockByCategoryItem): void {
+    category.showAllMedicines = !category.showAllMedicines;
+    console.log(`${category.category}: ${category.showAllMedicines ? 'Showing all' : 'Showing first 20'} medicines (total: ${category.medicines?.length || 0})`);
   }
   
   toggleMedicine(medicine: EnhancedMedicine): void {
@@ -519,5 +616,14 @@ export class StockComponent implements OnInit, OnDestroy {
       default:
         return 0;
     }
+  }
+  
+  /**
+   * Get the total count of all medicines across all filtered categories
+   * @returns Total number of medicines matching current filters
+   */
+  getTotalMedicinesCount(): number {
+    return this.filteredStock.reduce((total: number, category: StockByCategoryItem) => 
+      total + (category.medicines?.length || 0), 0);
   }
 }

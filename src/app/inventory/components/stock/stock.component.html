@@ -72,12 +72,21 @@
     <div class="col-md-4">
       <div class="input-group">
         <input type="text" 
-               class="form-control" 
-               placeholder="Search medicines, categories, manufacturers..." 
+               class="form-control form-control-lg" 
+               placeholder="Search any medicine by name, ID, manufacturer..." 
                [(ngModel)]="searchTerm" 
-               (input)="onSearchChange()">
+               (input)="onSearchChange()"
+               autocomplete="off"
+               aria-label="Search medicines">
         <span class="input-group-text bg-white">
           <i class="fas fa-search text-primary"></i>
+        </span>
+      </div>
+      <!-- Search count indicator with category breakdown -->
+      <div *ngIf="searchTerm && searchTerm.length > 0" class="text-muted small mt-1">
+        Found {{ getTotalMedicinesCount() }} medicines in {{ filteredStock.length }} categories matching "{{ searchTerm }}"
+        <span *ngIf="filteredStock.length > 1" class="d-block mt-1">
+          <small class="text-info">Pro tip: Select a specific category for more focused results</small>
         </span>
       </div>
     </div>
@@ -220,8 +229,30 @@
             <span class="text-muted">No medicines found in this category</span>
           </div>
 
+                  <!-- Category-specific search and medicine count -->
+          <div class="row mb-3" *ngIf="category.medicines && category.medicines.length > 0">
+            <div class="col-md-6">
+              <div class="input-group input-group-sm">
+                <input type="text" 
+                       class="form-control" 
+                       placeholder="Search in {{ category.category }}..." 
+                       [(ngModel)]="category.searchTerm" 
+                       (input)="onCategorySearchChange(category)"
+                       autocomplete="off">
+                <span class="input-group-text bg-white">
+                  <i class="fas fa-search"></i>
+                </span>
+              </div>
+            </div>
+            <div class="col-md-6 text-end text-muted small">
+              Showing {{ category.showAllMedicines ? category.medicines.length : (category.medicines.length > 20 ? 20 : category.medicines.length) }} 
+              of {{ category.originalMedicines?.length || category.medicines.length }} medicines
+            </div>
+          </div>
+          
           <!-- Medicines List -->
-          <div *ngFor="let medicine of category.medicines" class="medicine-item">
+          <!-- Only show first 20 medicines by default, then lazy load more as needed -->
+          <div *ngFor="let medicine of category.medicines | slice:0:(category.showAllMedicines ? category.medicines?.length || 0 : 20)" class="medicine-item">
             <!-- Medicine Header -->
             <div class="medicine-header" (click)="toggleMedicine(medicine)">
               <div class="row align-items-center">
@@ -463,6 +494,18 @@
                 </div>
               </div>
             </div>
+          </div>
+          
+          <!-- Show More/Less Button -->
+          <div *ngIf="category.medicines && category.medicines.length > 20" class="text-center mt-3 mb-2">
+            <button class="btn btn-sm btn-outline-primary" (click)="toggleShowAllMedicines(category)">
+              <span *ngIf="!category.showAllMedicines">
+                <i class="fas fa-plus-circle me-1"></i> Show All {{ category.medicines.length }} Medicines
+              </span>
+              <span *ngIf="category.showAllMedicines">
+                <i class="fas fa-minus-circle me-1"></i> Show Less
+              </span>
+            </button>
           </div>
         </div>
       </div>

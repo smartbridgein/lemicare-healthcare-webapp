@@ -801,7 +801,10 @@ export class CashMemoFormComponent implements OnInit, OnDestroy {
 
   onPatientSearchInput(event: Event): void {
     const target = event.target as HTMLInputElement;
-    this.patientSearchTerm = target.value;
+    // Trim the search term to avoid whitespace issues
+    this.patientSearchTerm = target.value.trim();
+    
+    console.log(`Patient search input: "${this.patientSearchTerm}"`);
     
     // Show the search dropdown as soon as user starts typing
     if (this.patientSearchTerm.length > 0) {
@@ -818,6 +821,10 @@ export class CashMemoFormComponent implements OnInit, OnDestroy {
   }
   
   searchPatients(term: string): void {
+    // Ensure term is trimmed to avoid whitespace issues
+    term = term.trim().toLowerCase();
+    console.log(`Searching for patients with term: "${term}" (length: ${term.length})`);
+    
     if (term.length > 2) {
       // Show loading indicator in search area
       const loadingResult = [{
@@ -827,18 +834,49 @@ export class CashMemoFormComponent implements OnInit, OnDestroy {
       }];
       this.patientResults = loadingResult;
       
-      this.patientService.searchPatients(term)
+      // First get all patients to perform client-side filtering
+      this.patientService.getAllPatients()
         .subscribe({
           next: (patients) => {
+            console.log(`Got ${patients?.length || 0} total patients, filtering for term: "${term}"`);
+            
             if (patients && patients.length > 0) {
-              this.patientResults = patients.slice(0, 10).map(patient => ({
+              // Client-side filtering logic
+              const filteredPatients = patients.filter(patient => {
+                if (!term) return false;
+                
+                // Search in patientId, firstName, lastName, and mobileNumber
+                const patientIdMatch = patient.patientId?.toLowerCase().includes(term) || false;
+                const firstNameMatch = patient.firstName?.toLowerCase().includes(term) || false;
+                const lastNameMatch = patient.lastName?.toLowerCase().includes(term) || false;
+                const mobileMatch = patient.mobileNumber?.toLowerCase().includes(term) || false;
+                const fullNameMatch = `${patient.firstName || ''} ${patient.lastName || ''}`.toLowerCase().includes(term) || false;
+                
+                const isMatch = patientIdMatch || firstNameMatch || lastNameMatch || mobileMatch || fullNameMatch;
+                if (isMatch) {
+                  console.log(`Match found: ${patient.firstName} ${patient.lastName} - matches term "${term}"`);
+                }
+                return isMatch;
+              });
+              
+              console.log(`Filtered down to ${filteredPatients.length} patients matching "${term}"`);
+              
+              // Log the first few filtered results for debugging
+              filteredPatients.slice(0, 3).forEach((patient, idx) => {
+                console.log(`Filtered result ${idx+1}: ID=${patient.id || patient.patientId || 'unknown'}, ` + 
+                             `Name=${patient.firstName || ''} ${patient.lastName || ''}, ` +
+                             `Mobile=${patient.mobileNumber || 'none'}`);
+              });
+              
+              this.patientResults = filteredPatients.slice(0, 10).map(patient => ({
                 id: patient.id || patient.patientId || '',
                 name: `${patient.firstName} ${patient.lastName || ''}`,
-                contactNumber: patient.mobileNumber || '',  // Using mobileNumber from Patient model
+                contactNumber: patient.mobileNumber || '',
                 patientIdDisplay: patient.patientId || ''
               }));
             } else {
               // No results found
+              console.log(`No patients found matching search term: "${term}"`);
               this.patientResults = [{
                 id: 'no-results',
                 name: 'No patients found',

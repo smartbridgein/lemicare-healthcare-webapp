@@ -245,52 +245,30 @@
             <div class="row mb-4 border-bottom pb-3">
                 <div class="col-md-6">
                     <div class="d-flex flex-column">
-                        <div class="mb-2">
-                            <span class="fw-semibold">Bill Number:</span>
-                            <span class="badge bg-warning text-dark ms-2">{{ detailedCashMemo.billId }}</span>
+                        <div class="bill-header-item">
+                            <strong>Bill Number:</strong> <span>{{ detailedCashMemo.billId }}</span>
                         </div>
-                        <div class="mb-2">
-                            <span class="fw-semibold">Date:</span>
-                            <span class="ms-2">{{ detailedCashMemo.date | date: 'dd/MM/yyyy' }}</span>
+                        <div class="bill-header-item">
+                            <strong>Date:</strong> <span>{{ formatCashMemoDateTime(detailedCashMemo) }}</span>
                         </div>
-                        <div class="mb-2">
-                            <span class="fw-semibold">Created By:</span>
-                            <span class="ms-2">{{ detailedCashMemo.createdBy }}</span>
+                        <div class="bill-header-item">
+                            <strong>Created By:</strong> <span>{{ detailedCashMemo.createdBy || 'Hanan Clinic' }}</span>
                         </div>
-                        <div class="mb-2" *ngIf="detailedCashMemo.taxation">
-                            <span class="fw-semibold">GST Type:</span>
-                            <span [ngClass]="{
-                                'badge ms-2': true,
-                                'bg-info text-white': detailedCashMemo.taxation === 'Exclusive',
-                                'bg-warning text-dark': detailedCashMemo.taxation === 'Inclusive',
-                                'bg-secondary text-white': detailedCashMemo.taxation === 'Non-Gst'
-                            }" style="padding: 0.3rem 0.6rem;">
-                                {{ detailedCashMemo.taxation }}
-                            </span>
+                        <div class="bill-header-item">
+                            <strong>GST Type:</strong> <span>{{ detailedCashMemo.gstType || 'Non-Gst' }}</span>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="d-flex flex-column">
-                        <div class="mb-2">
-                            <span class="fw-semibold">Patient ID:</span>
-                            <span class="ms-2">{{ detailedCashMemo.patientId }}</span>
+                        <div class="bill-header-item">
+                            <strong>Patient ID:</strong> <span>{{ detailedCashMemo.patientId }}</span>
                         </div>
-                        <div class="mb-2">
-                            <span class="fw-semibold">Patient Name:</span>
-                            <span class="ms-2">{{ detailedCashMemo.patientName }}</span>
+                        <div class="bill-header-item">
+                            <strong>Patient Name:</strong> <span>{{ detailedCashMemo.patientName }}</span>
                         </div>
-                        <div class="mb-2">
-                            <span class="fw-semibold">Payment Mode:</span>
-                            <span [ngClass]="{
-                                'badge fs-6 ms-2': true,
-                                'bg-success text-white': detailedCashMemo.modeOfPayment === 'CASH',
-                                'bg-info text-white': detailedCashMemo.modeOfPayment === 'UPI',
-                                'bg-primary text-white': detailedCashMemo.modeOfPayment === 'CARD',
-                                'bg-secondary text-white': detailedCashMemo.modeOfPayment !== 'CASH' && detailedCashMemo.modeOfPayment !== 'UPI' && detailedCashMemo.modeOfPayment !== 'CARD'
-                            }" style="padding: 0.5rem 0.8rem; min-width: 80px; text-align: center;">
-                                {{ detailedCashMemo.modeOfPayment }}
-                            </span>
+                        <div class="bill-header-item" *ngIf="detailedCashMemo.modeOfPayment">
+                            <strong>Payment Mode:</strong> <span>{{ detailedCashMemo.modeOfPayment }}</span>
                         </div>
                     </div>
                 </div>
@@ -490,14 +468,23 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button type="button" class="btn btn-success" (click)="printCashMemo()">
-            <i class="fas fa-print me-2"></i>Print Cash Memo
-        </button>
-        <a [routerLink]="['/billing/cash-memos', detailedCashMemo?.id]" class="btn btn-warning" (click)="modal.close()">
-            <i class="fas fa-edit me-2"></i>Edit Cash Memo
-        </a>
-        <button type="button" class="btn btn-secondary" (click)="modal.close()">
-            <i class="fas fa-times me-2"></i>Close
-        </button>
+        <div class="d-flex flex-wrap justify-content-between w-100">
+            <div class="d-flex mb-2 mb-sm-0">
+                <button type="button" class="btn btn-success me-2" (click)="printCashMemo(false)">
+                    <i class="fas fa-print me-2"></i>Print
+                </button>
+                <button type="button" class="btn btn-primary" (click)="exportAsPDF()">
+                    <i class="fas fa-file-pdf me-2"></i>Export as PDF
+                </button>
+            </div>
+            <div class="d-flex">
+                <a [routerLink]="['/billing/cash-memos', detailedCashMemo?.id]" class="btn btn-warning me-2" (click)="modal.close()">
+                    <i class="fas fa-edit me-2"></i>Edit
+                </a>
+                <button type="button" class="btn btn-secondary" (click)="modal.close()">
+                    <i class="fas fa-times me-2"></i>Close
+                </button>
+            </div>
+        </div>
     </div>
 </ng-template>
